@@ -1,0 +1,15 @@
+{
+  "name": "navpro",
+  "version": "2.0.0",
+  "description": "NAVPRO — Kajian Kelayakan Finansial Web Application",
+  "private": true,
+  "scripts": {
+    "dev": "npx -y http-server ./ -p 3000 -c-1 -o",
+    "dev:api": "npm run dev --prefix backend",
+    "db:up": "docker compose up -d postgres",
+    "db:seed": "npm run seed --prefix backend",
+    "backend:install": "npm install --prefix backend",
+    "backend:dev": "npm run dev --prefix backend",
+    "start:stack": "docker compose up -d && sleep 3 && npm run db:seed --prefix backend"
+  }
+}

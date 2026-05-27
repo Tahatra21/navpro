@@ -1,0 +1,13 @@
+{
+  "wacc_annual": 9.72,
+  "inflation_annual": 3.0,
+  "inflation_monthly": 0.2466,
+  "bcr_mandatory": 1.23,
+  "bcr_minimum": 1.08,
+  "ppn_rate": 12.0,
+  "kurs_usd": 16500,
+  "currency": "IDR",
+  "effective_date": "2026-04-01",
+  "notes": "Test assumptions"
+}
+

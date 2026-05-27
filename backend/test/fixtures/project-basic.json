@@ -1,0 +1,20 @@
+{
+  "project_duration_months": 12,
+  "contract_start_date": "2026-06-01",
+  "wacc_override": null,
+  "inflation_rate_override": null,
+  "kurs_usd_override": null,
+  "bcr_threshold_override": null,
+  "otc_amount": 5000000,
+  "capex": [
+    { "name": "Core Network", "category": "NETWORK", "amount": 200000000, "period": 0, "currency": "IDR" },
+    { "name": "Installation", "category": "INTEGRATION", "amount": 20000000, "period": 0, "currency": "IDR" }
+  ],
+  "opex": [
+    { "name": "Maintenance", "category": "MAINTENANCE", "baseline_amount": 2500000, "inflation_rate": 0.003, "start_period": 1, "end_period": 12, "currency": "IDR" }
+  ],
+  "revenue": [
+    { "name": "Service Monthly", "monthly_amount": 30000000, "escalation_rate": 0.002, "start_period": 1, "end_period": 12, "currency": "IDR" }
+  ]
+}
+

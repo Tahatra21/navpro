@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: navpro
+      POSTGRES_PASSWORD: navpro_dev
+      POSTGRES_DB: navpro_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U navpro -d navpro_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://navpro:navpro_dev@postgres:5432/navpro_db
+      JWT_SECRET: navpro-dev-jwt-secret-change-in-production
+      CORS_ORIGIN: http://localhost:3000,http://127.0.0.1:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

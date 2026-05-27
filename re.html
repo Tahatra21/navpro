@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NAVPRO — Rekomendasi Pengembangan (HTML)</title>
+    <style>
+      :root{
+        --bg:#0b1020;
+        --card:#0f1730;
+        --text:#e7eaf3;
+        --muted:#aab2c8;
+        --border:rgba(255,255,255,.12);
+        --accent:#5aa8ff;
+      }
+      *{box-sizing:border-box}
+      body{
+        margin:0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: radial-gradient(1200px 600px at 20% -10%, rgba(90,168,255,.25), transparent 60%),
+                    radial-gradient(900px 500px at 90% 0%, rgba(125,211,252,.16), transparent 55%),
+                    var(--bg);
+        color:var(--text);
+        line-height:1.55;
+      }
+      header{
+        position:sticky; top:0;
+        backdrop-filter: blur(10px);
+        background: rgba(11,16,32,.72);
+        border-bottom:1px solid var(--border);
+        padding: 0.9rem 1rem;
+        z-index:10;
+      }
+      header .wrap{
+        max-width: 1100px;
+        margin: 0 auto;
+        display:flex;
+        gap:0.75rem;
+        align-items:center;
+        justify-content:space-between;
+      }
+      .title{
+        display:flex; flex-direction:column; gap:0.2rem;
+      }
+      .title strong{ font-size:0.95rem; letter-spacing:.02em }
+      .title span{ color:var(--muted); font-size:0.8rem }
+      .actions{
+        display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+      }
+      .btn{
+        appearance:none; border:1px solid var(--border);
+        background: rgba(255,255,255,.06);
+        color: var(--text);
+        padding:.45rem .7rem;
+        border-radius:10px;
+        cursor:pointer;
+        font-weight:650;
+        font-size:.82rem;
+      }
+      .btn:hover{ border-color: rgba(90,168,255,.6) }
+      .btn.primary{
+        border-color: rgba(90,168,255,.7);
+        background: rgba(90,168,255,.18);
+      }
+      main{
+        max-width: 1100px;
+        margin: 1.1rem auto 3rem auto;
+        padding: 0 1rem;
+      }
+      article{
+        background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+        border:1px solid var(--border);
+        border-radius:16px;
+        padding: 1.1rem 1.2rem;
+        overflow:hidden;
+      }
+      /* Rendered markdown-ish styling */
+      h1,h2,h3{ line-height:1.2; margin: 1.2rem 0 .6rem 0 }
+      h1{ font-size:1.45rem; margin-top:.2rem }
+      h2{ font-size:1.2rem; padding-top:.6rem; border-top:1px solid rgba(255,255,255,.08) }
+      h3{ font-size:1.0rem; color: var(--text) }
+      p{ margin:.55rem 0 }
+      a{ color: var(--accent); text-decoration:none }
+      a:hover{ text-decoration:underline }
+      code, pre{
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      }
+      code{
+        background: rgba(255,255,255,.07);
+        border: 1px solid rgba(255,255,255,.10);
+        padding: .08rem .28rem;
+        border-radius: 8px;
+        font-size: .92em;
+      }
+      pre{
+        background: rgba(0,0,0,.25);
+        border: 1px solid rgba(255,255,255,.10);
+        padding: .75rem .85rem;
+        border-radius: 12px;
+        overflow:auto;
+      }
+      ul{ padding-left: 1.25rem }
+      li{ margin: .2rem 0 }
+      table{
+        width:100%;
+        border-collapse: collapse;
+        margin: .8rem 0 1rem 0;
+        border:1px solid rgba(255,255,255,.12);
+        border-radius: 12px;
+        overflow:hidden;
+        width: 100%;
+      }
+      thead{ background: rgba(255,255,255,.06) }
+      th, td{
+        padding: .55rem .65rem;
+        border-bottom:1px solid rgba(255,255,255,.10);
+        vertical-align: top;
+        font-size: .9rem;
+      }
+      th{ text-align:left; font-size:.82rem; letter-spacing:.03em; text-transform: uppercase; color: var(--muted) }
+      tr:last-child td{ border-bottom:none }
+      blockquote{
+        margin: .75rem 0;
+        padding: .6rem .8rem;
+        border-left: 3px solid rgba(90,168,255,.7);
+        background: rgba(90,168,255,.08);
+        border-radius: 10px;
+        color: var(--text);
+      }
+      .note{
+        color:var(--muted);
+        font-size:.82rem;
+        margin-top:.7rem;
+      }
+      .error{
+        border:1px solid rgba(239,68,68,.35);
+        background: rgba(239,68,68,.10);
+        padding:.8rem;
+        border-radius: 12px;
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <div class="title">
+          <strong>NAVPRO — Rekomendasi Pengembangan</strong>
+          <span>Versi HTML statis (isi sama seperti <code>docs/rec.md</code>)</span>
+        </div>
+        <div class="actions">
+          <a class="btn primary" href="docs/rec.md" target="_blank" rel="noreferrer">Buka rec.md</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <article>
+        <h1>Rekomendasi Pengembangan NAVPRO (KKF Web App)</h1>
+        <blockquote>
+          <p>Basis review: <code>htj.md</code> (PRD), <code>exsum.md</code> (kecocokan vs Excel), <code>README.md</code> (operasional MVP saat ini).<br/>
+          Fokus: <strong>fungsionalitas</strong> dan <strong>tampilan/UX</strong>, disusun <strong>fase demi fase</strong> dari yang paling mudah hingga paling sulit.</p>
+        </blockquote>
+
+        <h2>Update Kondisi Saat Ini (per 2026-05-27)</h2>
+        <h3>Checklist Implementasi (Tabel)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Fase/Area</th>
+              <th>Item</th>
+              <th>Status</th>
+              <th>Catatan</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Phase 0 (Login)</td>
+              <td>Login UI polish (bg, logo/tagline, password row, remember me, Internal Use Only)</td>
+              <td>✅ Done</td>
+              <td><code>img/bg.png</code>, layout tidak overlap</td>
+            </tr>
+            <tr>
+              <td>Phase 1 (Wizard)</td>
+              <td>Wizard 6 langkah + validasi input kuat (FE+BE)</td>
+              <td>✅ Done</td>
+              <td>durasi 1–120, non-negatif, required fields, validasi CAPEX/OPEX/Revenue</td>
+            </tr>
+            <tr>
+              <td>Phase 2 (Versioning)</td>
+              <td>Versioning kalkulasi + snapshot per calculate</td>
+              <td>✅ Done</td>
+              <td>tabel <code>calculation_versions</code> + endpoint versi</td>
+            </tr>
+            <tr>
+              <td>Phase 2 (UI)</td>
+              <td>Version History + Load Snapshot (online/API)</td>
+              <td>✅ Done</td>
+              <td>tombol aktif saat API tersedia</td>
+            </tr>
+            <tr>
+              <td>Phase 2 (Export)</td>
+              <td>Export PDF rapi (print stylesheet)</td>
+              <td>✅ Done</td>
+              <td>termasuk audit log</td>
+            </tr>
+            <tr>
+              <td>Phase 2 (Export)</td>
+              <td>Export Excel <code>.xlsx</code> (SheetJS)</td>
+              <td>✅ Done</td>
+              <td>Summary + Cashflow + audit log</td>
+            </tr>
+            <tr>
+              <td>Phase 3 (Approval UI)</td>
+              <td>Approval queue + SLA badge (due/overdue)</td>
+              <td>✅ Done</td>
+              <td>termasuk limit ~5 baris + scroll</td>
+            </tr>
+            <tr>
+              <td>Phase 3 (Approval role)</td>
+              <td>Approval action visible untuk admin role</td>
+              <td>✅ Done</td>
+              <td>Super Admin &amp; Finance Admin</td>
+            </tr>
+            <tr>
+              <td>Admin UX</td>
+              <td>Admin panel UI/UX (sidebar sticky, header sticky, spacing)</td>
+              <td>✅ Done</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>Projects UX</td>
+              <td>Spacing kolom Kemungkinan vs Status</td>
+              <td>✅ Done</td>
+              <td>padding kolom diperlebar</td>
+            </tr>
+            <tr>
+              <td>Demo data</td>
+              <td>Tambah ~20 project status mix</td>
+              <td>✅ Done</td>
+              <td>untuk testing UI</td>
+            </tr>
+            <tr>
+              <td>Nav UX</td>
+              <td>Klik logo header kembali ke home</td>
+              <td>✅ Done</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>Phase 3 (SLA)</td>
+              <td>SLA reminder server-side + escalation + notif</td>
+              <td>✅ Done</td>
+              <td>scheduler backend + dedup <code>sla_events</code> + audit log + notif per role</td>
+            </tr>
+            <tr>
+              <td>Phase 3 (Approval)</td>
+              <td>Reject comment wajib + approval queue page khusus</td>
+              <td>✅ Done</td>
+              <td>Approvals page + Approve/Reject dari tabel + kolom Pengusul &amp; SLA Start</td>
+            </tr>
+            <tr>
+              <td>Phase 4 (Quality)</td>
+              <td>Refactor calc engine + regression tests (fixtures)</td>
+              <td>✅ Done</td>
+              <td>engine modular + <code>node --test</code> fixtures regression</td>
+            </tr>
+            <tr>
+              <td>Phase 4 (Infra)</td>
+              <td>Async jobs (Redis/BullMQ) untuk kalkulasi/export</td>
+              <td>🟡 Ready</td>
+              <td>BullMQ scaffold + endpoint calculate-async (aktif setelah set <code>REDIS_URL</code>)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Yang Belum / Perlu Aktivasi</h3>
+        <ul>
+          <li>
+            <strong>Async jobs BullMQ (kalkulasi/export)</strong> masih <strong>belum aktif</strong> sampai Anda menjalankan Redis dan mengisi environment variable <code>REDIS_URL</code>.
+            <div style="color: var(--muted); font-size: 0.9rem; margin-top: 0.15rem;">
+              Setelah aktif, endpoint <code>POST /api/v1/projects/:id/calculate-async</code> akan benar-benar enqueue job dan worker memprosesnya.
+            </div>
+          </li>
+          <li>
+            <strong>Async export jobs</strong> (PDF/XLSX via queue) masih <strong>belum diimplement</strong> (yang ada sekarang export masih client-side).
+          </li>
+        </ul>
+
+        <h2>Ringkasan Temuan Utama (Gap vs PRD)</h2>
+        <ul>
+          <li><strong>Frontend/stack tidak mengikuti PRD</strong>: PRD menargetkan Next.js + TS + Tailwind + shadcn, namun implementasi saat ini adalah <strong>static HTML/CSS/JS</strong>. Ini bukan masalah untuk MVP, tapi akan membatasi skalabilitas UI (wizard kompleks, state management, aksesibilitas, komponen reusable).</li>
+          <li><strong>Async job queue (BullMQ/Redis/worker) belum ada</strong>: PRD mengharuskan kalkulasi async + SLA checker + export job. Saat ini backend MVP (Express) cenderung sinkron.</li>
+          <li><strong>Export (sebagian gap sudah tertutup di MVP)</strong>: saat ini sudah ada <strong>print-ready PDF</strong> dan export <strong>Excel <code>.xlsx</code></strong> di frontend. PRD masih menargetkan job-based export (Puppeteer/ExcelJS) untuk skala/templating enterprise.</li>
+          <li><strong>CMS Admin Panel di PRD sangat kaya</strong>: PRD menguraikan modul asumsi/preset/SLA/template-notif/health/user mgmt. MVP saat ini umumnya baru baseline.</li>
+          <li><strong>Kualitas data &amp; audit</strong>: sebagian sudah ada audit log dan snapshot versi kalkulasi; PRD menuntut audit trail “immutable” yang lebih lengkap (standar event + delta konsisten + metadata).</li>
+        </ul>
+
+        <h2>Prinsip Arah Pengembangan (Supaya tidak “bongkar ulang”)</h2>
+        <ul>
+          <li><strong>Pertahankan MVP berjalan</strong>: lakukan refactor bertahap (strangler pattern). Jangan migrasi besar-besaran sebelum modul paling kritikal stabil.</li>
+          <li><strong>Kunci akurasi kalkulasi</strong>: <code>exsum.md</code> menunjukkan kecocokan finansial tinggi; pertahankan dengan regresi test berbasis fixture (input→output).</li>
+          <li><strong>Pisahkan “domain” dari “delivery”</strong>: engine kalkulasi dan rule conclusion harus jadi modul murni (testable), terlepas dari Express/Next/UI.</li>
+          <li><strong>UX seperti AWS Pricing Calculator</strong>: PRD jelas meniru UX AWS Calculator: transparansi, versioning, save snapshot, breakdown, export.</li>
+        </ul>
+
+        <h2>Fase 0 — Perbaikan cepat (1–2 hari) ✅ Paling mudah</h2>
+        <h3>Fungsionalitas</h3>
+        <ul>
+          <li><strong>Standarisasi validasi input</strong> di frontend + backend (durasi 1–120 integer, angka non-negatif, required fields). Output: error message konsisten, tidak ada kalkulasi dengan data kosong/invalid.</li>
+          <li><strong>Perbaiki mode offline</strong>: tampilkan banner yang jelas “Offline mode (localStorage)” + tombol “Coba konek ulang” + indikator status API yang stabil.</li>
+          <li><strong>Hardening login</strong>:
+            <ul>
+              <li>disable submit saat loading</li>
+              <li>rate limit minimal di backend (per IP/per email) atau delay exponential sederhana</li>
+              <li>pesan error jangan bocorkan detail (“email tidak ditemukan” vs “password salah”)</li>
+            </ul>
+          </li>
+        </ul>
+        <h3>Tampilan/UX</h3>
+        <ul>
+          <li><strong>Rapikan micro-layout login</strong> (sudah banyak perbaikan): konsistensi tipografi, alignment, spacing, dan responsif mobile.</li>
+          <li><strong>Aksesibilitas minimum</strong>: fokus ring jelas, label input yang bisa dibaca screen reader, kontras warna error/success.</li>
+        </ul>
+
+        <h2>Fase 1 — UX inti proyek &amp; kualitas data (3–7 hari)</h2>
+        <h3>Fungsionalitas</h3>
+        <ul>
+          <li><strong>Wizard 6 langkah (PRD: CRITICAL)</strong> walau masih di static JS:
+            <ul>
+              <li>Step 1: info dasar (project/customer/contract/PIC)</li>
+              <li>Step 2: durasi + override asumsi (WACC/inflasi/BCR)</li>
+              <li>Step 3: CAPEX multi-item + multi-periode</li>
+              <li>Step 4: OPEX (baseline + start/end + inflasi)</li>
+              <li>Step 5: Revenue (recurring + escalation + OTC)</li>
+              <li>Step 6: review + simpan</li>
+            </ul>
+          </li>
+          <li><strong>Draft guardrail</strong>: edit konfigurasi hanya untuk status <code>DRAFT</code>/<code>COMPUTED</code>/<code>REJECTED</code> dan role <code>SA</code>/<code>FINANCE_ADMIN</code>/<code>SUPER_ADMIN</code> (status lain read-only).</li>
+          <li><strong>Autosave (draft)</strong> per step:
+            <ul>
+              <li>indikator dirty “Perubahan belum disimpan”</li>
+              <li>status “Tersimpan HH:MM”</li>
+              <li>fallback draft lokal <code>localStorage</code> bila API belum bisa create (Step 1 belum lengkap)</li>
+            </ul>
+          </li>
+          <li><strong>Pencarian &amp; filter proyek</strong>: keyword (kode/nama) + filter status + matrix risk (Dampak/Kemungkinan).</li>
+        </ul>
+
+        <h3>Checklist Fase 1 (Tabel)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Status</th>
+              <th>Catatan</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Wizard 6 langkah (Step 1–6)</td>
+              <td>✅ Done</td>
+              <td>dialog wizard lengkap</td>
+            </tr>
+            <tr>
+              <td>Draft guardrail (editable statuses + roles)</td>
+              <td>✅ Done</td>
+              <td>edit hanya <code>DRAFT/COMPUTED/REJECTED</code> untuk <code>SA/FINANCE_ADMIN/SUPER_ADMIN</code></td>
+            </tr>
+            <tr>
+              <td>Autosave draft per step + indikator</td>
+              <td>✅ Done</td>
+              <td>dirty + “Tersimpan HH:MM” + fallback draft lokal</td>
+            </tr>
+            <tr>
+              <td>Search &amp; filter proyek (status + risk)</td>
+              <td>✅ Done</td>
+              <td>keyword + status + Dampak/Kemungkinan</td>
+            </tr>
+            <tr>
+              <td>Aksi daftar proyek (disederhanakan)</td>
+              <td>✅ Done</td>
+              <td>cukup ikon “mata” untuk ke Detail; semua aksi (edit/hitung/approval) ada di halaman Detail</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Tampilan/UX</h3>
+        <ul>
+          <li><strong>Project list</strong>: tabel ringkas; aksi cukup <em>view</em> (ikon mata) dan semua tindakan dilakukan di halaman Detail.</li>
+          <li><strong>Project detail</strong>: KPI cards + conclusion badge yang jelas + CTA yang tepat (Calculate/Submit).</li>
+        </ul>
+
+        <h2>Fase 2 — “PRD compliance” menengah: versioning, audit, export (1–3 minggu)</h2>
+        <h3>Fungsionalitas</h3>
+        <ul>
+          <li><strong>Versioning kalkulasi (snapshot)</strong>:
+            <ul>
+              <li>setiap <code>calculate</code> menyimpan <code>input_snapshot</code> + <code>result_snapshot</code></li>
+              <li>UI “Version history” (bandingkan versi A vs B)</li>
+            </ul>
+          </li>
+          <li><strong>Audit trail immutable</strong>:
+            <ul>
+              <li>standar event: <code>PROJECT_CREATED</code>, <code>PROJECT_UPDATED</code>, <code>CALC_STARTED</code>, <code>CALC_DONE</code>, <code>SUBMITTED</code>, <code>APPROVED_L1</code>, <code>APPROVED_FINAL</code>, <code>REJECTED</code>, <code>EXPORTED</code></li>
+              <li>simpan delta yang ringkas (old/new) dan metadata (actor, timestamp, ip/user-agent jika perlu)</li>
+            </ul>
+          </li>
+          <li><strong>Export</strong>:
+            <ul>
+              <li><strong>PDF</strong>: minimal “print-ready template” yang konsisten (header, identitas, KPI, cashflow ringkas + lampiran)</li>
+              <li><strong>Excel <code>.xlsx</code></strong>: sesuai PRD (ExcelJS) atau SheetJS; minimal satu sheet cashflow + satu sheet summary</li>
+            </ul>
+          </li>
+          <li><strong>Config assumptions (MVP CMS-lite)</strong>:
+            <ul>
+              <li>endpoint + UI sederhana untuk WACC/inflasi/BCR</li>
+              <li>effective date &amp; history</li>
+            </ul>
+          </li>
+        </ul>
+        <h3>Tampilan/UX</h3>
+        <ul>
+          <li><strong>Cashflow table dinamis</strong> (N bulan): virtual scrolling untuk 120 bulan, sticky columns/headers.</li>
+          <li><strong>Charts</strong>: XNPV trend + cumulative cashflow; pastikan tidak “misleading” (label, satuan, tooltip).</li>
+        </ul>
+
+        <h2>Fase 3 — Workflow approval lengkap + notifikasi + SLA (3–6 minggu)</h2>
+        <h3>Fungsionalitas</h3>
+        <ul>
+          <li><strong>Approval state machine</strong> sesuai PRD: <code>COMPUTED → SUBMITTED → UNDER_REVIEW → APPROVED_L1 → APPROVED_FINAL</code> dan reject path.</li>
+          <li><strong>Role-based queue</strong>: halaman “Approvals” untuk Manager &amp; GM/SRM (filter, sort by SLA due).</li>
+          <li><strong>SLA engine</strong>:
+            <ul>
+              <li>reminder H-24 / H-12</li>
+              <li>escalation jika lewat SLA</li>
+            </ul>
+          </li>
+          <li><strong>Notifikasi</strong>:
+            <ul>
+              <li>In-app (bell + unread)</li>
+              <li>Email template (minimal 3–5 event utama)</li>
+            </ul>
+          </li>
+        </ul>
+        <h3>Tampilan/UX</h3>
+        <ul>
+          <li><strong>Approval timeline</strong>: siapa, kapan, komentar (mirip audit trail yang human friendly).</li>
+          <li><strong>Callout risiko</strong>: bila BCR borderline (mis. 1.08–1.23) beri penanda “BERSYARAT” dengan rekomendasi tindakan.</li>
+        </ul>
+
+        <h2>Fase 4 — Arsitektur penuh PRD (Next.js + TS + async jobs + storage) 🧱 Paling sulit (6–12+ minggu)</h2>
+        <h3>Fungsionalitas &amp; Infrastruktur</h3>
+        <ul>
+          <li><strong>Migrasi frontend ke Next.js 14 + TS</strong> bertahap:
+            <ul>
+              <li>mulai dari halaman dashboard &amp; projects</li>
+              <li>pindahkan komponen wizard sebagai modul terpisah</li>
+            </ul>
+          </li>
+          <li><strong>Backend modernization (opsional)</strong>:
+            <ul>
+              <li>Express → Fastify (sesuai PRD) + schema validation</li>
+              <li>OpenAPI/Swagger sebagai kontrak</li>
+            </ul>
+          </li>
+          <li><strong>Async job queue</strong>:
+            <ul>
+              <li>Redis + BullMQ + worker untuk kalkulasi &amp; export</li>
+              <li>polling/WS update status job</li>
+            </ul>
+          </li>
+          <li><strong>MinIO untuk export artifacts</strong> + presigned URL + retention policy.</li>
+          <li><strong>Observability &amp; security hardening</strong>:
+            <ul>
+              <li>structured logging</li>
+              <li>health endpoint &amp; basic metrics</li>
+              <li>JWT key management (RS256), rotation plan, session TTL, audit retention</li>
+            </ul>
+          </li>
+        </ul>
+        <h3>Tampilan/UX</h3>
+        <ul>
+          <li><strong>Design system</strong> (shadcn/ui atau setara): konsistensi form/table/modal/badge, dark mode optional.</li>
+          <li><strong>Executive dashboard</strong>: portfolio KPI + heatmap + drill-down; performance (p95 API ≤ 200ms) sesuai PRD.</li>
+        </ul>
+
+        <h2>Rekomendasi Prioritas (Jika harus memilih 5 hal duluan)</h2>
+        <ol>
+          <li><strong>Wizard 6 langkah + validasi kuat</strong> (mengurangi error input dan mempercepat adopsi).</li>
+          <li><strong>Versioning kalkulasi + audit trail</strong> (nilai enterprise: traceable, bisa diaudit).</li>
+          <li><strong>Export PDF &amp; Excel <code>.xlsx</code></strong> (kebutuhan nyata untuk stakeholder &amp; dokumentasi).</li>
+          <li><strong>Approval queue + SLA reminder</strong> (menghilangkan approval via email manual).</li>
+          <li><strong>Refactor engine jadi modul testable + regression tests</strong> (agar perubahan UI/fitur tidak merusak akurasi finansial).</li>
+        </ol>
+
+        <h2>Catatan UI spesifik (Login &amp; Branding)</h2>
+        <ul>
+          <li>Login sekarang sudah modern; untuk konsistensi keseluruhan aplikasi, sebaiknya:
+            <ul>
+              <li>gunakan token warna/typography yang sama untuk komponen utama (button, input, badge status)</li>
+              <li>pastikan semua badge/status punya kontras yang memadai (AA minimal)</li>
+              <li>hindari teks “Internal Use Only” mengganggu konten—posisi pojok kanan bawah sudah tepat</li>
+            </ul>
+          </li>
+        </ul>
+      </article>
+    </main>
+  </body>
+</html>
+
