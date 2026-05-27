@@ -4,7 +4,8 @@
   "description": "NAVPRO — Kajian Kelayakan Finansial Web Application",
   "private": true,
   "scripts": {
-    "dev": "npx -y http-server ./ -p 3000 -c-1 -o",
+    "dev": "node ./scripts/dev-server.mjs",
+    "dev:http-server": "npx -y http-server ./ -p 3000 -c-1",
     "dev:api": "npm run dev --prefix backend",
     "db:up": "docker compose up -d postgres",
     "db:seed": "npm run seed --prefix backend",

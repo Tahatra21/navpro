@@ -1,0 +1,1 @@
+/Users/home/Project/navpro/backend/node_modules/@embedded-postgres/darwin-x64/native/bin/postgres "-D" "/Users/home/Project/navpro/.pgdata" "-p" "5432"

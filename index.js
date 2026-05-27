@@ -3,7 +3,7 @@
 const NAVPRO = {
   brand: 'NAVPRO',
   tagline: 'Your Compass for Viable Project',
-  productName: 'Kajian Kelayakan Finansial',
+  productName: 'Navigate Project',
   org: 'Enterprise Investment Platform',
   codePrefix: 'NAVPRO',
   pageSize: 10,

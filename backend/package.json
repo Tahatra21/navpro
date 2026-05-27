@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
+    "dev:embedded": "node src/dev/dev-embedded.js",
     "seed": "node src/seed.js",
     "seed:demo": "node src/seed-demo-projects.js",
     "test": "node --test"
@@ -16,6 +17,7 @@
     "bullmq": "^5.58.5",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "embedded-postgres": "^18.3.0-beta.17",
     "express": "^4.21.0",
     "ioredis": "^5.6.2",
     "jsonwebtoken": "^9.0.2",
