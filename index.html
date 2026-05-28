@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,12 +11,14 @@
   <!-- Load SheetJS for Excel export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
+
 <body data-role="SUPER_ADMIN" class="loading-active">
   <!-- Loading splash -->
   <div id="loading-screen" class="loading-screen" role="status" aria-live="polite" aria-busy="true">
     <div class="loading-screen-bg" aria-hidden="true"></div>
     <div class="loading-screen-inner">
-      <img src="img/pronav3.png" alt="NAVPRO — Your Compass for Viable Project" class="loading-logo" width="420" height="auto">
+      <img src="img/pronav3.png" alt="NAVPRO — Your Compass for Viable Project" class="loading-logo" width="420"
+        height="auto">
       <p class="loading-tagline">YOUR COMPASS FOR VIABLE PROJECT</p>
       <p class="loading-status" id="loading-status-text">Memuat NAVPRO…</p>
       <div class="loading-progress" aria-hidden="true">
@@ -40,20 +43,25 @@
 
           <form id="login-form" class="login-form login-form--simple" autocomplete="on" novalidate>
             <div class="login-simple-fields">
-              <input type="email" id="login-email" name="email" required
-                placeholder="email" autocomplete="username" class="login-simple-input">
+              <input type="email" id="login-email" name="email" required placeholder="email" autocomplete="username"
+                class="login-simple-input">
 
               <div class="login-simple-password-row">
                 <div class="login-simple-password">
-                  <input type="password" id="login-password" name="password" required
-                    placeholder="password" autocomplete="current-password" minlength="6" class="login-simple-input">
-                  <button type="button" class="login-password-toggle login-password-toggle--simple" id="login-password-toggle"
-                    aria-label="Tampilkan kata sandi" tabindex="-1">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <input type="password" id="login-password" name="password" required placeholder="password"
+                    autocomplete="current-password" minlength="6" class="login-simple-input">
+                  <button type="button" class="login-password-toggle login-password-toggle--simple"
+                    id="login-password-toggle" aria-label="Tampilkan kata sandi" tabindex="-1">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
                   </button>
                 </div>
                 <button type="submit" class="login-submit-round" id="login-submit-btn" aria-label="Masuk">
-                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M8 5l8 7-8 7"/></svg>
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path d="M8 5l8 7-8 7" />
+                  </svg>
                 </button>
               </div>
 
@@ -64,13 +72,6 @@
               <p id="login-error" class="login-error" role="alert" hidden></p>
             </div>
           </form>
-
-          <details class="login-demo login-demo--simple" id="login-demo-section">
-            <summary class="login-demo-summary">Akun demo (development)</summary>
-            <div class="login-demo-grid" id="login-demo-grid"></div>
-            <p class="login-demo-hint">Kata sandi demo: <code>Navpro@2026</code></p>
-          </details>
-
           <p class="login-footer-note login-footer-note--simple login-internal-badge">Internal Use Only - SOLAR v1.0</p>
         </div>
       </div>
@@ -78,1302 +79,1469 @@
   </div>
 
   <div id="app-shell" class="app-shell hidden" aria-hidden="true">
-  <div class="app-layout">
-    
-    <!-- Top Header Navigation -->
-    <header class="app-header">
-      <button type="button" class="logo-container logo-home-btn" onclick="app.navigateTo('dashboard')" aria-label="Kembali ke Dashboard">
-        <img src="img/logonav.png" alt="NAVPRO" class="logo-icon" width="64" height="64">
-        <div class="logo-copy">
-          <span class="logo-text">NAVPRO</span>
-          <span class="logo-subtext">YOUR COMPASS FOR VIABLE PROJECT</span>
-        </div>
-      </button>
-      
-      <nav aria-label="Main Navigation">
-        <ul class="nav-links">
-          <li>
-            <button class="nav-link-btn active" id="nav-dashboard-btn" onclick="app.navigateTo('dashboard')">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-              Dashboard
-            </button>
-          </li>
-          <li>
-            <button class="nav-link-btn" id="nav-projects-btn" onclick="app.navigateTo('projects')">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-              Daftar Proyek
-            </button>
-          </li>
-          <li>
-            <button class="nav-link-btn" id="nav-approvals-btn" onclick="app.navigateTo('approvals')" data-role-required="SUPER_ADMIN FINANCE_ADMIN MANAGER GM_SRM">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              Approvals
-            </button>
-          </li>
-          <li>
-            <button class="nav-link-btn" id="nav-admin-btn" onclick="app.navigateTo('admin')" data-role-required="SUPER_ADMIN FINANCE_ADMIN">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
-              Admin
-            </button>
-          </li>
-        </ul>
-      </nav>
-      
-      <div class="header-right">
-        <span id="backend-status-badge" class="backend-status-badge offline" title="Status koneksi API">Mode Offline</span>
-        <!-- Role simulator (offline / dev only) -->
-        <div class="role-switcher-container hidden" id="role-switcher-container">
-          <span class="role-switcher-label">Simulasikan Role:</span>
-          <select id="simulated-role-selector" class="role-select" onchange="app.switchRole(this.value)">
-            <option value="SUPER_ADMIN" selected>Super Admin</option>
-            <option value="FINANCE_ADMIN">Finance Admin</option>
-            <option value="SA">Solution Architect</option>
-            <option value="MANAGER">Manager</option>
-            <option value="GM_SRM">GM / SRM</option>
-            <option value="VIEWER">Viewer</option>
-          </select>
-        </div>
-        
-        <!-- Notifications Bell -->
-        <button class="notification-bell" onclick="app.toggleNotificationsPanel(event)" aria-label="Notifikasi">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-          <span class="notification-badge" id="app-notif-badge" style="display:none;"></span>
+    <div class="app-layout">
+
+      <!-- Top Header Navigation -->
+      <header class="app-header">
+        <button type="button" class="logo-container logo-home-btn" onclick="app.navigateTo('dashboard')"
+          aria-label="Kembali ke Dashboard">
+          <img src="img/logonav.png" alt="NAVPRO" class="logo-icon" width="64" height="64">
+          <div class="logo-copy">
+            <span class="logo-text">NAVPRO</span>
+            <span class="logo-subtext">YOUR COMPASS FOR VIABLE PROJECT</span>
+          </div>
         </button>
-        
-        <!-- Notification Panel Overlay -->
-        <div class="inapp-notifications-panel" id="notifications-dropdown">
-          <div class="inapp-notif-header">
-            <span>Notifikasi</span>
-            <button class="btn btn-secondary btn-sm" onclick="app.markAllNotificationsRead(event)">Tandai Dibaca</button>
-          </div>
-          <div class="inapp-notif-list" id="notifications-list-container">
-            <!-- Dynamic notifications injected here -->
-          </div>
-        </div>
-        
-        <!-- User Profile display -->
-        <div class="user-profile-menu">
-          <button type="button" class="user-profile" id="user-profile-btn"
-            aria-expanded="false" aria-haspopup="true" onclick="app.toggleUserMenu(event)">
-            <div class="avatar" id="user-avatar-initial">SA</div>
-            <div class="user-profile-text">
-              <div class="user-profile-name" id="user-display-name">Super Admin</div>
-              <div class="user-profile-role" id="user-display-role">Super Admin</div>
-            </div>
-            <svg class="user-profile-chevron" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+
+        <nav aria-label="Main Navigation">
+          <ul class="nav-links">
+            <li>
+              <button class="nav-link-btn active" id="nav-dashboard-btn" onclick="app.navigateTo('dashboard')">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path
+                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                Dashboard
+              </button>
+            </li>
+            <li>
+              <button class="nav-link-btn" id="nav-projects-btn" onclick="app.navigateTo('projects')">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                Daftar Proyek
+              </button>
+            </li>
+            <li>
+              <button class="nav-link-btn" id="nav-approvals-btn" onclick="app.navigateTo('approvals')"
+                data-role-required="SUPER_ADMIN FINANCE_ADMIN MANAGER GM_SRM">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M9 12l2 2 4-4" />
+                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Approvals
+              </button>
+            </li>
+            <li>
+              <button class="nav-link-btn" id="nav-admin-btn" onclick="app.navigateTo('admin')"
+                data-role-required="SUPER_ADMIN FINANCE_ADMIN">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                Admin
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="header-right">
+          <span id="backend-status-badge" class="backend-status-badge offline" title="Status koneksi API">Mode
+            Offline</span>
+          <!-- Role simulator (offline / dev only) -->
+
+          <!-- Notifications Bell -->
+          <button class="notification-bell" onclick="app.toggleNotificationsPanel(event)" aria-label="Notifikasi">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            <span class="notification-badge" id="app-notif-badge" style="display:none;"></span>
           </button>
-          <div class="user-profile-dropdown" id="user-profile-dropdown">
-            <div class="user-dropdown-header">
-              <span class="user-dropdown-email" id="user-display-email">—</span>
+
+          <!-- Notification Panel Overlay -->
+          <div class="inapp-notifications-panel" id="notifications-dropdown">
+            <div class="inapp-notif-header">
+              <span>Notifikasi</span>
+              <button class="btn btn-secondary btn-sm" onclick="app.markAllNotificationsRead(event)">Tandai
+                Dibaca</button>
             </div>
-            <button type="button" class="user-dropdown-item user-dropdown-logout" onclick="app.logout()">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-              Keluar
-            </button>
+            <div class="inapp-notif-list" id="notifications-list-container">
+              <!-- Dynamic notifications injected here -->
+            </div>
           </div>
-        </div>
-      </div>
-    </header>
-    
-    <!-- Main Dashboard Area -->
-    <main class="app-main">
-      
-      <!-- VIEW 1: EXECUTIVE DASHBOARD -->
-      <section id="dashboard-panel" class="page-panel active">
-        <div class="dashboard-container">
-          
-          <div class="page-header-row dashboard-header">
-            <div>
-              <p class="dashboard-eyebrow">Your Compass for Viable Project</p>
-              <h1 class="page-title">Dashboard Portofolio</h1>
-              <p class="page-subtitle">Ikhtisar kelayakan finansial, risiko investasi, dan status persetujuan seluruh proyek di NAVPRO</p>
-            </div>
-            <div>
-              <button class="btn btn-primary" onclick="app.openNewProjectWizard()" data-role-required="SUPER_ADMIN FINANCE_ADMIN SA">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
-                Proyek Baru
+
+          <!-- User Profile display -->
+          <div class="user-profile-menu">
+            <button type="button" class="user-profile" id="user-profile-btn" aria-expanded="false" aria-haspopup="true"
+              onclick="app.toggleUserMenu(event)">
+              <div class="avatar" id="user-avatar-initial">SA</div>
+              <div class="user-profile-text">
+                <div class="user-profile-name" id="user-display-name">Super Admin</div>
+                <div class="user-profile-role" id="user-display-role">Super Admin</div>
+              </div>
+              <svg class="user-profile-chevron" width="14" height="14" fill="none" stroke="currentColor"
+                stroke-width="2" viewBox="0 0 24 24">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            <div class="user-profile-dropdown" id="user-profile-dropdown">
+              <div class="user-dropdown-header">
+                <span class="user-dropdown-email" id="user-display-email">—</span>
+              </div>
+              <button type="button" class="user-dropdown-item user-dropdown-logout" onclick="app.logout()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+                </svg>
+                Keluar
               </button>
             </div>
           </div>
-          
-          <!-- Executive Statistics Cards -->
-          <div class="kpi-row">
-            <div class="card card-primary">
-              <div class="kpi-title">
-                <span>Total Proyek</span>
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color:var(--primary); opacity:0.8;"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-              </div>
-              <div class="kpi-value" id="dash-kpi-total-projects">0</div>
-              <div class="kpi-sub">
-                <span class="kpi-trend" id="dash-kpi-total-trend">—</span>
-                <span class="kpi-desc" id="dash-kpi-total-desc">• Terdaftar di NAVPRO</span>
-              </div>
-            </div>
-            <div class="card card-success">
-              <div class="kpi-title">
-                <span>Disetujui Final</span>
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color:var(--accent-green); opacity:0.8;"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
-              </div>
-              <div class="kpi-value" id="dash-kpi-approved-projects">0</div>
-              <div class="kpi-sub kpi-sub-success">
-                <span class="kpi-trend-green" id="dash-kpi-approved-rate">—</span>
-                <span class="kpi-desc">• Status APPROVED_FINAL</span>
-              </div>
-            </div>
-            <div class="card card-warning">
-              <div class="kpi-title">
-                <span>Dalam Persetujuan</span>
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color:var(--accent-yellow); opacity:0.8;"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              </div>
-              <div class="kpi-value" id="dash-kpi-pending-projects">0</div>
-              <div class="kpi-sub kpi-sub-warning">
-                <span class="kpi-trend-yellow" id="dash-kpi-pending-note">—</span>
-                <span class="kpi-desc">• Submitted / Review / L1</span>
-              </div>
-            </div>
-            <div class="card card-danger">
-              <div class="kpi-title">
-                <span>Tidak Layak / Ditolak</span>
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="color:var(--accent-red); opacity:0.8;"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              </div>
-              <div class="kpi-value" id="dash-kpi-rejected-projects">0</div>
-              <div class="kpi-sub kpi-sub-danger">
-                <span class="kpi-trend-red" id="dash-kpi-rejected-note">—</span>
-                <span class="kpi-desc">• Status REJECTED</span>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Visuals Dashboard Grid -->
-          <div class="dashboard-charts-grid">
-            <!-- Portfolio Risk Heatmap -->
-            <div class="chart-wrapper dashboard-chart-panel">
-              <p class="dashboard-section-label">Analisis Risiko</p>
-              <div class="chart-title">Matriks Risiko Portofolio</div>
-              <div class="dashboard-chart-body">
-                <div class="heatmap-container" id="heatmap-grid-container">
-                  <!-- Programmatically generated via render2DHeatmap() -->
-                </div>
-              </div>
-            </div>
-            
-            <!-- Cost & Revenue Chart -->
-            <div class="chart-wrapper dashboard-chart-panel">
-              <p class="dashboard-section-label">Analisis Finansial</p>
-              <div class="chart-header-row dashboard-chart-panel-header">
-                <div class="chart-title">Agregat CAPEX, OPEX &amp; Revenue</div>
-                <div class="chart-controls">
-                  <select id="cost-rev-metric" onchange="app.updateCostRevChart()" title="Metrik Visualisasi">
-                    <option value="portfolio_aggregate">Agregat Portofolio</option>
-                    <option value="project_comparison">Perbandingan Proyek</option>
-                  </select>
-                  <select id="cost-rev-type" onchange="app.updateCostRevChart()" title="Tipe Chart">
-                    <option value="bar">Bar Chart</option>
-                    <option value="doughnut">Pie Chart</option>
-                    <option value="line">Line Chart</option>
-                  </select>
-                </div>
-              </div>
-              <div class="dashboard-chart-body">
-                <div class="chart-canvas-container">
-                  <canvas id="cost-revenue-chart-canvas"></canvas>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Projects Pending Approval Queue -->
-          <div class="card card-approval-queue" id="dashboard-approval-card">
-            <div class="approval-queue-header">
-              <div class="flex align-center gap-2">
-                <span class="pulse-indicator" id="approval-queue-pulse" style="display:none;"></span>
-                <h3 class="approval-queue-title">Antrian Persetujuan</h3>
-                <span class="badge badge-rejected approval-queue-badge" id="approval-queue-badge-count" style="display:none;">0 Pending</span>
-              </div>
-              <span class="approval-queue-desc" id="approval-queue-instructions">Proyek yang menunggu tindakan persetujuan Anda di alur NAVPRO</span>
-            </div>
-            <div class="table-container approval-queue-scroll" style="margin-bottom:0;">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Kode Proyek</th>
-                    <th>Nama Proyek</th>
-                    <th>Pengusul</th>
-                    <th>Durasi</th>
-                    <th>Status</th>
-                    <th>SLA</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="dashboard-approval-queue">
-                  <!-- Dynamically loaded rows waiting for user's level -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-          
         </div>
-      </section>
-      
-      <!-- VIEW 2: PROJECT LIST -->
-      <section id="projects-panel" class="page-panel">
-        <div class="projects-page">
-          <div class="page-header-row">
-            <div>
-              <h1 class="page-title">Daftar Proyek</h1>
-              <p class="page-subtitle">Kelola usulan kajian kelayakan finansial (KKF) di NAVPRO</p>
-            </div>
-            <div>
-              <button class="btn btn-primary" onclick="app.openNewProjectWizard()" data-role-required="SUPER_ADMIN FINANCE_ADMIN SA">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
-                Proyek Baru
-              </button>
-            </div>
-          </div>
+      </header>
 
-          <!-- Search and Filters -->
-          <div class="projects-toolbar card">
-            <div class="projects-toolbar-search">
-              <label for="project-search-input">Cari Proyek</label>
-              <input type="search" id="project-search-input" placeholder="Kode atau nama proyek..." oninput="app.filterProjects()">
-            </div>
-            <div class="projects-toolbar-filters">
-              <div class="projects-filter-field">
-                <label for="project-filter-status">Status</label>
-                <select id="project-filter-status" onchange="app.filterProjects()">
-                  <option value="">Semua Status</option>
-                  <option value="DRAFT">Draf</option>
-                  <option value="COMPUTED">Dihitung</option>
-                  <option value="SUBMITTED">Diajukan</option>
-                  <option value="UNDER_REVIEW">Review</option>
-                  <option value="APPROVED_L1">L1</option>
-                  <option value="APPROVED_FINAL">Final</option>
-                  <option value="REJECTED">Ditolak</option>
-                  <option value="ARCHIVED">Arsip</option>
-                </select>
-              </div>
-              <div class="projects-filter-field">
-                <label for="project-filter-severity">Dampak Investasi</label>
-                <select id="project-filter-severity" onchange="app.filterProjects()">
-                  <option value="">Semua Dampak</option>
-                  <option value="LOW">Rendah (&lt; Rp 100 Jt)</option>
-                  <option value="MEDIUM">Sedang (Rp 100 Jt – 500 Jt)</option>
-                  <option value="HIGH">Tinggi (≥ Rp 500 Jt)</option>
-                </select>
-              </div>
-              <div class="projects-filter-field">
-                <label for="project-filter-likelihood">Kemungkinan Risiko</label>
-                <select id="project-filter-likelihood" onchange="app.filterProjects()">
-                  <option value="">Semua Kemungkinan</option>
-                  <option value="LOW">Rendah (Layak)</option>
-                  <option value="MEDIUM">Sedang (Marginal)</option>
-                  <option value="HIGH">Tinggi (Berisiko)</option>
-                </select>
-              </div>
-            </div>
-          </div>
+      <!-- Main Dashboard Area -->
+      <main class="app-main">
 
-          <!-- Projects Table -->
-          <div class="projects-table-card">
-            <div class="projects-table-meta">
-              <span id="projects-result-summary">Memuat data proyek...</span>
-            </div>
-            <div class="table-container projects-table-scroll">
-              <table class="data-table projects-table" id="projects-table">
-                <thead>
-                  <tr>
-                    <th class="col-code">Kode</th>
-                    <th class="col-name">Nama Proyek</th>
-                    <th class="col-date">Mulai Kontrak</th>
-                    <th class="col-duration">Durasi</th>
-                    <th class="col-risk col-impact">Dampak</th>
-                    <th class="col-risk col-likelihood">Kemungkinan</th>
-                    <th class="col-status">Status</th>
-                    <th class="col-metric">XIRR</th>
-                    <th class="col-metric">XNPV</th>
-                    <th class="col-metric">BCR</th>
-                    <th class="col-actions">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="projects-list-body">
-                  <!-- Dynamically populated rows -->
-                </tbody>
-              </table>
-            </div>
-            <div class="table-pagination" id="projects-pagination" aria-label="Navigasi halaman daftar proyek">
-              <!-- Pagination controls injected by JS -->
-            </div>
-          </div>
-        </div>
-      </section>
+        <!-- VIEW 1: EXECUTIVE DASHBOARD -->
+        <section id="dashboard-panel" class="page-panel active">
+          <div class="dashboard-container">
 
-      <!-- VIEW 2B: APPROVAL QUEUE PAGE -->
-      <section id="approvals-panel" class="page-panel">
-        <div class="projects-page">
-          <div class="page-header-row">
-            <div>
-              <h1 class="page-title">Approval Queue</h1>
-              <p class="page-subtitle">Daftar proyek yang menunggu persetujuan sesuai role Anda, diurutkan berdasarkan SLA Due.</p>
-            </div>
-          </div>
-
-          <div class="projects-toolbar card approvals-toolbar">
-            <div class="projects-toolbar-search">
-              <label for="approvals-search-input">Cari Proyek</label>
-              <input type="search" id="approvals-search-input" placeholder="Kode atau nama proyek..." oninput="app.filterApprovalsQueue()">
-            </div>
-            <div class="projects-toolbar-filters">
-              <div class="projects-filter-field">
-                <label for="approvals-filter-overdue">SLA</label>
-                <select id="approvals-filter-overdue" onchange="app.filterApprovalsQueue()">
-                  <option value="">Semua</option>
-                  <option value="DUE">Due</option>
-                  <option value="OVERDUE">Overdue</option>
-                </select>
+            <div class="page-header-row dashboard-header">
+              <div>
+                <p class="dashboard-eyebrow">Your Compass for Viable Project</p>
+                <h1 class="page-title">Dashboard Portofolio</h1>
+                <p class="page-subtitle">Ikhtisar kelayakan finansial, risiko investasi, dan status persetujuan seluruh
+                  proyek di NAVPRO</p>
               </div>
-              <div class="projects-filter-field">
-                <label for="approvals-filter-status">Status</label>
-                <select id="approvals-filter-status" onchange="app.filterApprovalsQueue()">
-                  <option value="">Semua</option>
-                  <option value="SUBMITTED">SUBMITTED</option>
-                  <option value="UNDER_REVIEW">UNDER_REVIEW</option>
-                  <option value="APPROVED_L1">APPROVED_L1</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="projects-table-card">
-            <div class="projects-table-meta">
-              <span id="approvals-result-summary">Memuat antrian approval...</span>
-            </div>
-            <div class="table-container approvals-table-scroll">
-              <table class="data-table projects-table" id="approvals-table">
-                <thead>
-                  <tr>
-                    <th class="col-code">Kode</th>
-                    <th class="col-name">Nama Proyek</th>
-                    <th class="col-date">Pengusul</th>
-                    <th class="col-duration">Durasi</th>
-                    <th class="col-status">Status</th>
-                    <th class="col-date">SLA Start</th>
-                    <th class="col-metric-wide">SLA</th>
-                    <th class="col-actions">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="approvals-list-body">
-                  <!-- Injected rows -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      <!-- VIEW 3: PROJECT DETAIL & INTERACTIVE CASHFLOW -->
-      <section id="project-detail-panel" class="page-panel">
-        <div class="page-header-row project-detail-header">
-          <div class="project-detail-header-main">
-            <button type="button" class="btn btn-secondary btn-sm project-back-btn" onclick="app.navigateTo('projects')">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 19l-7-7 7-7"/></svg>
-              Back
-            </button>
-            <div>
-            <div class="flex align-center gap-2">
-              <span class="badge badge-draft" id="detail-project-status">DRAFT</span>
-              <span class="badge badge-secondary hidden" id="detail-version-badge" title="Anda sedang melihat snapshot versi kalkulasi">Versi —</span>
-              <h1 class="page-title" id="detail-project-name">Nama Proyek</h1>
-            </div>
-            <p class="page-subtitle" id="detail-project-code-meta">Kode Proyek: - | Mulai Kontrak: -</p>
-            <p class="page-subtitle" id="detail-project-customer-meta" style="color:var(--text-secondary); font-size:0.78rem;"></p>
-            </div>
-          </div>
-          <div class="flex gap-2" id="detail-actions-bar">
-            <!-- Dynamically injected context-sensitive action buttons -->
-          </div>
-        </div>
-        
-        <!-- Project KPI cards -->
-        <div class="kpi-row project-detail-kpi-row">
-          <div class="card card-primary" id="kpi-xirr-card">
-            <div class="kpi-title">XIRR (p.a.)</div>
-            <div class="kpi-value" id="detail-kpi-xirr">-</div>
-            <div class="kpi-sub" id="detail-kpi-wacc-comparison">WACC default: -</div>
-          </div>
-          <div class="card card-primary" id="kpi-xnpv-card">
-            <div class="kpi-title">XNPV</div>
-            <div class="kpi-value" id="detail-kpi-xnpv">-</div>
-            <div class="kpi-sub">Discounted cashflow</div>
-          </div>
-          <div class="card card-primary" id="kpi-bcr-card">
-            <div class="kpi-title">BCR / PI (Profitability Index)</div>
-            <div class="kpi-value" id="detail-kpi-bcr">-</div>
-            <div class="kpi-sub" id="detail-kpi-bcr-comparison">Threshold: -</div>
-          </div>
-          <div class="card card-primary" id="kpi-roi-card">
-            <div class="kpi-title">Simple ROI</div>
-            <div class="kpi-value" id="detail-kpi-simple-roi">-</div>
-            <div class="kpi-sub">Net Inflow / CAPEX (undiscounted)</div>
-          </div>
-          <div class="card" id="kpi-conclusion-card">
-            <div class="kpi-title">Kesimpulan Analisis</div>
-            <div class="kpi-value" id="detail-kpi-conclusion">-</div>
-            <div class="kpi-sub" id="detail-kpi-payback">Payback: -</div>
-          </div>
-        </div>
-        
-        <!-- Grid: Cashflow grid + approval status sidebars -->
-        <div class="project-details-grid">
-          
-          <!-- Left: Cashflow Details -->
-          <div>
-            <!-- Visual Charts -->
-            <div class="project-detail-charts">
-              <div class="chart-wrapper project-detail-chart">
-                <div class="chart-title">Tren XNPV Proyek (Akumulatif)</div>
-                <div class="chart-canvas-container">
-                  <canvas id="xnpv-trend-chart-canvas"></canvas>
-                </div>
-              </div>
-              <div class="chart-wrapper project-detail-chart">
-                <div class="chart-title">Arus Kas Bersih Bulanan</div>
-                <div class="chart-canvas-container">
-                  <canvas id="cashflow-bar-chart-canvas"></canvas>
-                </div>
-              </div>
-            </div>
-            
-            <div class="flex justify-between align-center mb-4">
-              <h3 style="font-size:1.1rem;">Rincian Arus Kas Bulanan (Spreadsheet)</h3>
-              <div class="flex gap-2">
-                <button class="btn btn-primary btn-sm" onclick="app.exportToExcel()">
-                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                  Ekspor Excel (.xlsx)
-                </button>
-                <button class="btn btn-secondary btn-sm" onclick="app.exportToCSV()">
-                  Ekspor CSV (Backup)
-                </button>
-                <button class="btn btn-secondary btn-sm" onclick="app.exportToPDF()">
-                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                  Cetak Laporan PDF
+              <div>
+                <button class="btn btn-primary" onclick="app.openNewProjectWizard()"
+                  data-role-required="SUPER_ADMIN FINANCE_ADMIN SA">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 4v16m8-8H4" />
+                  </svg>
+                  Proyek Baru
                 </button>
               </div>
             </div>
-            
-            <!-- Dynamic Scrollable spreadsheet grid -->
-            <div class="cashflow-table-wrapper">
-              <table class="cashflow-table" id="project-cashflow-spreadsheet">
-                <!-- Dynamically generated rows -->
-              </table>
+
+            <!-- Executive Statistics Cards -->
+            <div class="kpi-row">
+              <div class="card card-primary">
+                <div class="kpi-title">
+                  <span>Total Proyek</span>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                    style="color:var(--primary); opacity:0.8;">
+                    <path
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <div class="kpi-value" id="dash-kpi-total-projects">0</div>
+                <div class="kpi-sub">
+                  <span class="kpi-trend" id="dash-kpi-total-trend">—</span>
+                  <span class="kpi-desc" id="dash-kpi-total-desc">• Terdaftar di NAVPRO</span>
+                </div>
+              </div>
+              <div class="card card-success">
+                <div class="kpi-title">
+                  <span>Disetujui Final</span>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                    style="color:var(--accent-green); opacity:0.8;">
+                    <path
+                      d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                </div>
+                <div class="kpi-value" id="dash-kpi-approved-projects">0</div>
+                <div class="kpi-sub kpi-sub-success">
+                  <span class="kpi-trend-green" id="dash-kpi-approved-rate">—</span>
+                  <span class="kpi-desc">• Status APPROVED_FINAL</span>
+                </div>
+              </div>
+              <div class="card card-warning">
+                <div class="kpi-title">
+                  <span>Dalam Persetujuan</span>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                    style="color:var(--accent-yellow); opacity:0.8;">
+                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div class="kpi-value" id="dash-kpi-pending-projects">0</div>
+                <div class="kpi-sub kpi-sub-warning">
+                  <span class="kpi-trend-yellow" id="dash-kpi-pending-note">—</span>
+                  <span class="kpi-desc">• Submitted / Review / L1</span>
+                </div>
+              </div>
+              <div class="card card-danger">
+                <div class="kpi-title">
+                  <span>Tidak Layak / Ditolak</span>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"
+                    style="color:var(--accent-red); opacity:0.8;">
+                    <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div class="kpi-value" id="dash-kpi-rejected-projects">0</div>
+                <div class="kpi-sub kpi-sub-danger">
+                  <span class="kpi-trend-red" id="dash-kpi-rejected-note">—</span>
+                  <span class="kpi-desc">• Status REJECTED</span>
+                </div>
+              </div>
             </div>
-            
-            <!-- Version calculations snaps -->
-            <div class="card mt-4">
-              <h3 class="mb-4" style="font-size:1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem;">Riwayat Versi Kalkulasi</h3>
-              <div class="table-container" style="margin-bottom:0;">
+
+            <!-- Visuals Dashboard Grid -->
+            <div class="dashboard-charts-grid">
+              <!-- Portfolio Risk Heatmap -->
+              <div class="chart-wrapper dashboard-chart-panel">
+                <p class="dashboard-section-label">Analisis Risiko</p>
+                <div class="chart-title">Matriks Risiko Portofolio</div>
+                <div class="dashboard-chart-body">
+                  <div class="heatmap-container" id="heatmap-grid-container">
+                    <!-- Programmatically generated via render2DHeatmap() -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cost & Revenue Chart -->
+              <div class="chart-wrapper dashboard-chart-panel">
+                <p class="dashboard-section-label">Analisis Finansial</p>
+                <div class="chart-header-row dashboard-chart-panel-header">
+                  <div class="chart-title">Agregat CAPEX, OPEX &amp; Revenue</div>
+                  <div class="chart-controls">
+                    <select id="cost-rev-metric" onchange="app.updateCostRevChart()" title="Metrik Visualisasi">
+                      <option value="portfolio_aggregate">Agregat Portofolio</option>
+                      <option value="project_comparison">Perbandingan Proyek</option>
+                    </select>
+                    <select id="cost-rev-type" onchange="app.updateCostRevChart()" title="Tipe Chart">
+                      <option value="bar">Bar Chart</option>
+                      <option value="doughnut">Pie Chart</option>
+                      <option value="line">Line Chart</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="dashboard-chart-body">
+                  <div class="chart-canvas-container">
+                    <canvas id="cost-revenue-chart-canvas"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Projects Pending Approval Queue -->
+            <div class="card card-approval-queue" id="dashboard-approval-card">
+              <div class="approval-queue-header">
+                <div class="flex align-center gap-2">
+                  <span class="pulse-indicator" id="approval-queue-pulse" style="display:none;"></span>
+                  <h3 class="approval-queue-title">Antrian Persetujuan</h3>
+                  <span class="badge badge-rejected approval-queue-badge" id="approval-queue-badge-count"
+                    style="display:none;">0 Pending</span>
+                </div>
+                <span class="approval-queue-desc" id="approval-queue-instructions">Proyek yang menunggu tindakan
+                  persetujuan Anda di alur NAVPRO</span>
+              </div>
+              <div class="table-container approval-queue-scroll" style="margin-bottom:0;">
                 <table class="data-table">
                   <thead>
                     <tr>
-                      <th>Versi</th>
-                      <th>Durasi (Bulan)</th>
-                      <th>Dibuat Tanggal</th>
-                      <th>XIRR</th>
-                      <th>XNPV</th>
-                      <th>BCR</th>
+                      <th>Kode Proyek</th>
+                      <th>Nama Proyek</th>
+                      <th>Pengusul</th>
+                      <th>Durasi</th>
+                      <th>Status</th>
+                      <th>SLA</th>
                       <th>Aksi</th>
                     </tr>
                   </thead>
-                  <tbody id="detail-versions-body">
-                    <!-- Dynamic versions history rows -->
+                  <tbody id="dashboard-approval-queue">
+                    <!-- Dynamically loaded rows waiting for user's level -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- VIEW 2: PROJECT LIST -->
+        <section id="projects-panel" class="page-panel">
+          <div class="projects-page">
+            <div class="page-header-row">
+              <div>
+                <h1 class="page-title">Daftar Proyek</h1>
+                <p class="page-subtitle">Kelola usulan kajian kelayakan finansial (KKF) di NAVPRO</p>
+              </div>
+              <div>
+                <button class="btn btn-primary" onclick="app.openNewProjectWizard()"
+                  data-role-required="SUPER_ADMIN FINANCE_ADMIN SA">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path d="M12 4v16m8-8H4" />
+                  </svg>
+                  Proyek Baru
+                </button>
+              </div>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="projects-toolbar card">
+              <div class="projects-toolbar-search">
+                <label for="project-search-input">Cari Proyek</label>
+                <input type="search" id="project-search-input" placeholder="Kode atau nama proyek..."
+                  oninput="app.filterProjects()">
+              </div>
+              <div class="projects-toolbar-filters">
+                <div class="projects-filter-field">
+                  <label for="project-filter-status">Status</label>
+                  <select id="project-filter-status" onchange="app.filterProjects()">
+                    <option value="">Semua Status</option>
+                    <option value="DRAFT">Draf</option>
+                    <option value="COMPUTED">Dihitung</option>
+                    <option value="SUBMITTED">Diajukan</option>
+                    <option value="UNDER_REVIEW">Review</option>
+                    <option value="APPROVED_L1">L1</option>
+                    <option value="APPROVED_FINAL">Final</option>
+                    <option value="REJECTED">Ditolak</option>
+                    <option value="ARCHIVED">Arsip</option>
+                  </select>
+                </div>
+                <div class="projects-filter-field">
+                  <label for="project-filter-severity">Dampak Investasi</label>
+                  <select id="project-filter-severity" onchange="app.filterProjects()">
+                    <option value="">Semua Dampak</option>
+                    <option value="LOW">Rendah (&lt; Rp 100 Jt)</option>
+                    <option value="MEDIUM">Sedang (Rp 100 Jt – 500 Jt)</option>
+                    <option value="HIGH">Tinggi (≥ Rp 500 Jt)</option>
+                  </select>
+                </div>
+                <div class="projects-filter-field">
+                  <label for="project-filter-likelihood">Kemungkinan Risiko</label>
+                  <select id="project-filter-likelihood" onchange="app.filterProjects()">
+                    <option value="">Semua Kemungkinan</option>
+                    <option value="LOW">Rendah (Layak)</option>
+                    <option value="MEDIUM">Sedang (Marginal)</option>
+                    <option value="HIGH">Tinggi (Berisiko)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Projects Table -->
+            <div class="projects-table-card">
+              <div class="projects-table-meta">
+                <span id="projects-result-summary">Memuat data proyek...</span>
+              </div>
+              <div class="table-container projects-table-scroll">
+                <table class="data-table projects-table" id="projects-table">
+                  <thead>
+                    <tr>
+                      <th class="col-code">Kode</th>
+                      <th class="col-name">Nama Proyek</th>
+                      <th class="col-date">Mulai Kontrak</th>
+                      <th class="col-duration">Durasi</th>
+                      <th class="col-risk col-impact">Dampak</th>
+                      <th class="col-risk col-likelihood">Kemungkinan</th>
+                      <th class="col-status">Status</th>
+                      <th class="col-metric">XIRR</th>
+                      <th class="col-metric">XNPV</th>
+                      <th class="col-metric">BCR</th>
+                      <th class="col-actions">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="projects-list-body">
+                    <!-- Dynamically populated rows -->
+                  </tbody>
+                </table>
+              </div>
+              <div class="table-pagination" id="projects-pagination" aria-label="Navigasi halaman daftar proyek">
+                <!-- Pagination controls injected by JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 2B: APPROVAL QUEUE PAGE -->
+        <section id="approvals-panel" class="page-panel">
+          <div class="projects-page">
+            <div class="page-header-row">
+              <div>
+                <h1 class="page-title">Approval Queue</h1>
+                <p class="page-subtitle">Daftar proyek yang menunggu persetujuan sesuai role Anda, diurutkan berdasarkan
+                  SLA Due.</p>
+              </div>
+            </div>
+
+            <div class="projects-toolbar card approvals-toolbar">
+              <div class="projects-toolbar-search">
+                <label for="approvals-search-input">Cari Proyek</label>
+                <input type="search" id="approvals-search-input" placeholder="Kode atau nama proyek..."
+                  oninput="app.filterApprovalsQueue()">
+              </div>
+              <div class="projects-toolbar-filters">
+                <div class="projects-filter-field">
+                  <label for="approvals-filter-overdue">SLA</label>
+                  <select id="approvals-filter-overdue" onchange="app.filterApprovalsQueue()">
+                    <option value="">Semua</option>
+                    <option value="DUE">Due</option>
+                    <option value="OVERDUE">Overdue</option>
+                  </select>
+                </div>
+                <div class="projects-filter-field">
+                  <label for="approvals-filter-status">Status</label>
+                  <select id="approvals-filter-status" onchange="app.filterApprovalsQueue()">
+                    <option value="">Semua</option>
+                    <option value="SUBMITTED">SUBMITTED</option>
+                    <option value="UNDER_REVIEW">UNDER_REVIEW</option>
+                    <option value="APPROVED_L1">APPROVED_L1</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="projects-table-card">
+              <div class="projects-table-meta">
+                <span id="approvals-result-summary">Memuat antrian approval...</span>
+              </div>
+              <div class="table-container approvals-table-scroll">
+                <table class="data-table projects-table" id="approvals-table">
+                  <thead>
+                    <tr>
+                      <th class="col-code">Kode</th>
+                      <th class="col-name">Nama Proyek</th>
+                      <th class="col-date">Pengusul</th>
+                      <th class="col-duration">Durasi</th>
+                      <th class="col-status">Status</th>
+                      <th class="col-date">SLA Start</th>
+                      <th class="col-metric-wide">SLA</th>
+                      <th class="col-actions">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="approvals-list-body">
+                    <!-- Injected rows -->
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
-          
-          <!-- Right Sidebar: Approval chain + meta logs -->
-          <div>
-            <div class="card">
-              <h3 style="font-size:1.1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem; margin-bottom:1rem;">Workflow Approval</h3>
-              
-              <div class="approval-card-timeline" id="detail-approval-timeline">
-                <!-- Injected approval chain nodes -->
+        </section>
+
+        <!-- VIEW 3: PROJECT DETAIL & INTERACTIVE CASHFLOW -->
+        <section id="project-detail-panel" class="page-panel">
+          <div class="page-header-row project-detail-header">
+            <div class="project-detail-header-main">
+              <button type="button" class="btn btn-secondary btn-sm project-back-btn"
+                onclick="app.navigateTo('projects')">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                  aria-hidden="true">
+                  <path d="M15 19l-7-7 7-7" />
+                </svg>
+                Back
+              </button>
+              <div>
+                <div class="flex align-center gap-2">
+                  <span class="badge badge-draft" id="detail-project-status">DRAFT</span>
+                  <span class="badge badge-secondary hidden" id="detail-version-badge"
+                    title="Anda sedang melihat snapshot versi kalkulasi">Versi —</span>
+                  <h1 class="page-title" id="detail-project-name">Nama Proyek</h1>
+                </div>
+                <p class="page-subtitle" id="detail-project-code-meta">Kode Proyek: - | Mulai Kontrak: -</p>
+                <p class="page-subtitle" id="detail-project-customer-meta"
+                  style="color:var(--text-secondary); font-size:0.78rem;"></p>
               </div>
-              
-              <!-- Action Block for Manager or GM/SRM -->
-              <div id="detail-approval-action-block" style="display:none; margin-top:1.5rem; border-top:1px solid var(--glass-border); padding-top:1.25rem;">
-                <label for="approval-comment-input">Catatan / Komentar (Wajib jika menolak):</label>
-                <textarea id="approval-comment-input" rows="3" placeholder="Masukkan catatan revisi atau instruksi persetujuan..." style="margin-bottom:1rem;"></textarea>
-                
+            </div>
+            <div class="flex gap-2" id="detail-actions-bar">
+              <!-- Dynamically injected context-sensitive action buttons -->
+            </div>
+          </div>
+
+          <!-- Project KPI cards -->
+          <div class="kpi-row project-detail-kpi-row">
+            <div class="card card-primary" id="kpi-xirr-card">
+              <div class="kpi-title">XIRR (p.a.)</div>
+              <div class="kpi-value" id="detail-kpi-xirr">-</div>
+              <div class="kpi-sub" id="detail-kpi-wacc-comparison">WACC default: -</div>
+            </div>
+            <div class="card card-primary" id="kpi-xnpv-card">
+              <div class="kpi-title">XNPV</div>
+              <div class="kpi-value" id="detail-kpi-xnpv">-</div>
+              <div class="kpi-sub">Discounted cashflow</div>
+            </div>
+            <div class="card card-primary" id="kpi-bcr-card">
+              <div class="kpi-title">BCR / PI (Profitability Index)</div>
+              <div class="kpi-value" id="detail-kpi-bcr">-</div>
+              <div class="kpi-sub" id="detail-kpi-bcr-comparison">Threshold: -</div>
+            </div>
+            <div class="card card-primary" id="kpi-roi-card">
+              <div class="kpi-title">Simple ROI</div>
+              <div class="kpi-value" id="detail-kpi-simple-roi">-</div>
+              <div class="kpi-sub">Net Inflow / CAPEX (undiscounted)</div>
+            </div>
+            <div class="card" id="kpi-conclusion-card">
+              <div class="kpi-title">Kesimpulan Analisis</div>
+              <div class="kpi-value" id="detail-kpi-conclusion">-</div>
+              <div class="kpi-sub" id="detail-kpi-payback">Payback: -</div>
+            </div>
+          </div>
+
+          <!-- Grid: Cashflow grid + approval status sidebars -->
+          <div class="project-details-grid">
+
+            <!-- Left: Cashflow Details -->
+            <div>
+              <!-- Visual Charts -->
+              <div class="project-detail-charts">
+                <div class="chart-wrapper project-detail-chart">
+                  <div class="chart-title">Tren XNPV Proyek (Akumulatif)</div>
+                  <div class="chart-canvas-container">
+                    <canvas id="xnpv-trend-chart-canvas"></canvas>
+                  </div>
+                </div>
+                <div class="chart-wrapper project-detail-chart">
+                  <div class="chart-title">Arus Kas Bersih Bulanan</div>
+                  <div class="chart-canvas-container">
+                    <canvas id="cashflow-bar-chart-canvas"></canvas>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex justify-between align-center mb-4">
+                <h3 style="font-size:1.1rem;">Rincian Arus Kas Bulanan (Spreadsheet)</h3>
                 <div class="flex gap-2">
-                  <button class="btn btn-danger btn-sm flex-1" onclick="app.handleApprovalAction(false)">Tolak (Reject)</button>
-                  <button class="btn btn-success btn-sm flex-1" onclick="app.handleApprovalAction(true)">Setujui (Approve)</button>
+                  <button class="btn btn-primary btn-sm" onclick="app.exportToExcel()">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Ekspor Excel (.xlsx)
+                  </button>
+                  <button class="btn btn-secondary btn-sm" onclick="app.exportToCSV()">
+                    Ekspor CSV (Backup)
+                  </button>
+                  <button class="btn btn-secondary btn-sm" onclick="app.exportToPDF()">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path
+                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Cetak Laporan PDF
+                  </button>
                 </div>
               </div>
-            </div>
-            
-            <!-- Project configuration overrides -->
-            <div class="card mt-4">
-              <h3 style="font-size:1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem; margin-bottom:1rem;">Parameter Konfigurasi</h3>
-              <div class="form-group">
-                <span style="font-size:0.75rem; color:var(--text-secondary);">WACC Proyek:</span>
-                <span style="font-weight:600;" id="detail-config-wacc">-</span>
+
+              <!-- Dynamic Scrollable spreadsheet grid -->
+              <div class="cashflow-table-wrapper">
+                <table class="cashflow-table" id="project-cashflow-spreadsheet">
+                  <!-- Dynamically generated rows -->
+                </table>
               </div>
-              <div class="form-group">
-                <span style="font-size:0.75rem; color:var(--text-secondary);">Inflasi Bulanan:</span>
-                <span style="font-weight:600;" id="detail-config-inflation">-</span>
-              </div>
-              <div class="form-group">
-                <span style="font-size:0.75rem; color:var(--text-secondary);">Ambang Batas BCR:</span>
-                <span style="font-weight:600;" id="detail-config-bcr">-</span>
-              </div>
-            </div>
-          </div>
-          
-        </div>
-      </section>
-      
-      <!-- VIEW 4: ADMIN CMS SYSTEM -->
-      <section id="admin-panel" class="page-panel">
-        <div class="page-header-row">
-          <div>
-            <h1 class="page-title">Panel Admin NAVPRO</h1>
-            <p class="page-subtitle">Konfigurasi asumsi finansial, pengguna, template, dan diagnostik sistem</p>
-          </div>
-        </div>
-        
-        <div class="admin-layout">
-          <!-- Left Sidebar Menu -->
-          <nav class="admin-sidebar" aria-label="Admin Navigation">
-            <button class="admin-nav-btn active" id="admin-nav-health" onclick="app.switchAdminTab('health')">Diagnostik System Health</button>
-            <button class="admin-nav-btn" id="admin-nav-assumptions" onclick="app.switchAdminTab('assumptions')">CMS-01: Assumption Master</button>
-            <button class="admin-nav-btn" id="admin-nav-presets" onclick="app.switchAdminTab('presets')">CMS-02: Duration Preset</button>
-            <button class="admin-nav-btn" id="admin-nav-sla" onclick="app.switchAdminTab('sla')">CMS-03: SLA Approval Config</button>
-            <button class="admin-nav-btn" id="admin-nav-categories" onclick="app.switchAdminTab('categories')">CMS-04/05: Kategori Item</button>
-            <button class="admin-nav-btn" id="admin-nav-params" onclick="app.switchAdminTab('params')">CMS-09: System Parameter</button>
-            <button class="admin-nav-btn" id="admin-nav-users" onclick="app.switchAdminTab('users')">CMS-10: User Management</button>
-            <button class="admin-nav-btn" id="admin-nav-audit" onclick="app.switchAdminTab('audit')">CMS-11: Audit Log Viewer</button>
-          </nav>
-          
-          <!-- Right Sub-panel Display -->
-          <div class="card admin-content">
-            
-            <!-- CMS TAB 1: SYSTEM HEALTH -->
-            <div id="admin-tab-health" class="admin-tab-content" style="display:block;">
-              <h2 class="mb-4" style="font-size:1.25rem;">Diagnostic System Health Dashboard</h2>
-              <div class="health-grid" id="admin-health-grid">
-                <!-- Mock container diagnostics -->
-              </div>
-              
-              <div style="border-top:1px solid var(--glass-border); padding-top:1.5rem; margin-top:1.5rem;">
-                <h3 class="mb-4" style="font-size:1rem;">Mode Pemeliharaan (Maintenance Mode)</h3>
-                <div class="flex justify-between align-center">
-                  <div>
-                    <p style="font-size:0.85rem; color:var(--text-secondary);">Jika diaktifkan, semua API non-health akan dinonaktifkan dengan kode HTTP 503.</p>
-                  </div>
-                  <div>
-                    <button class="btn btn-danger btn-sm" id="maintenance-toggle-btn" onclick="app.toggleMaintenanceMode()">Aktifkan Maintenance Mode</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- CMS TAB 2: ASSUMPTION MASTER -->
-            <div id="admin-tab-assumptions" class="admin-tab-content" style="display:none;">
-              <h2 class="mb-4" style="font-size:1.25rem;">CMS-01: Assumption Master (WACC & BCR)</h2>
-              <p class="mb-4" style="font-size:0.8rem; color:var(--text-secondary);">Variabel kelayakan finansial global yang digunakan sebagai default untuk semua perhitungan proyek baru.</p>
-              
-              <form id="admin-assumptions-form" onsubmit="app.saveAssumptionMaster(event)">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="ass-wacc">WACC Tahunan (Annual WACC %)<span class="required-star">*</span></label>
-                    <input type="number" id="ass-wacc" step="0.01" min="0" max="100" required placeholder="9.72">
-                    <small style="color:var(--text-secondary); font-size:0.72rem;">Sumber: Memo VP Keuangan April 2026</small>
-                  </div>
-                  <div class="form-group">
-                    <label for="ass-inflation-annual">Inflasi Tahunan (Annual Inflation %)<span class="required-star">*</span></label>
-                    <input type="number" id="ass-inflation-annual" step="0.01" min="0" max="100" required placeholder="3.0" oninput="app.updateMonthlyInflationDisplay()">
-                    <small style="color:var(--text-secondary); font-size:0.72rem;">Inflasi bulanan = (1+annual)^(1/12)-1. Auto-computed.</small>
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label>Inflasi Bulanan (Auto-computed)</label>
-                    <input type="text" id="ass-inflation-monthly-display" readonly style="opacity:0.7; background:var(--bg-primary);" placeholder="0.246617%">
-                    <small style="color:var(--text-secondary); font-size:0.72rem;">Digunakan oleh engine OPEX compounding</small>
-                  </div>
-                  <div class="form-group">
-                    <label for="ass-ppn">PPN Rate (%)<span class="required-star">*</span></label>
-                    <input type="number" id="ass-ppn" step="0.1" min="0" max="100" required placeholder="12.0">
-                    <small style="color:var(--text-secondary); font-size:0.72rem;">UU HPP 2022: 12% efektif 2025+</small>
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="ass-bcr-mandatory">BCR Mandatory Threshold (Kelayakan Tinggi)<span class="required-star">*</span></label>
-                    <input type="number" id="ass-bcr-mandatory" step="0.01" min="0" required placeholder="1.23">
-                    <small style="color:var(--text-secondary); font-size:0.72rem;">Memo DirKeu 16 Sep 2025</small>
-                  </div>
-                  <div class="form-group">
-                    <label for="ass-bcr-minimum">BCR Minimum Threshold (Batas Bawah)<span class="required-star">*</span></label>
-                    <input type="number" id="ass-bcr-minimum" step="0.01" min="0" required placeholder="1.08">
-                    <small style="color:var(--text-secondary); font-size:0.72rem;">Memo DirKeu 16 Sep 2025</small>
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="ass-kurs-usd">Kurs USD/IDR (Rp)<span class="required-star">*</span></label>
-                    <input type="number" id="ass-kurs-usd" step="1" min="0" required placeholder="16500">
-                    <small style="color:var(--text-secondary); font-size:0.72rem;">Digunakan untuk proyek dengan komponen USD</small>
-                  </div>
-                  <div class="form-group">
-                    <label for="ass-effective-date">Tanggal Efektif Berlaku Asumsi<span class="required-star">*</span></label>
-                    <input type="date" id="ass-effective-date" required>
-                  </div>
-                </div>
-                <button type="submit" class="btn btn-primary btn-sm mt-4">Simpan Asumsi & Catat Riwayat</button>
-              </form>
-              
-              <div class="mt-4" style="border-top:1px solid var(--glass-border); padding-top:1.5rem;">
-                <h3 class="mb-4" style="font-size:1rem;">Riwayat Perubahan Asumsi</h3>
-                <div class="table-container">
+
+              <!-- Version calculations snaps -->
+              <div class="card mt-4">
+                <h3 class="mb-4"
+                  style="font-size:1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem;">Riwayat
+                  Versi Kalkulasi</h3>
+                <div class="table-container" style="margin-bottom:0;">
                   <table class="data-table">
                     <thead>
                       <tr>
-                        <th>Tanggal Ubah</th>
-                        <th>WACC</th>
-                        <th>Inflasi</th>
-                        <th>BCR Mand.</th>
-                        <th>BCR Min.</th>
-                        <th>Tanggal Efektif</th>
+                        <th>Versi</th>
+                        <th>Durasi (Bulan)</th>
+                        <th>Dibuat Tanggal</th>
+                        <th>XIRR</th>
+                        <th>XNPV</th>
+                        <th>BCR</th>
+                        <th>Aksi</th>
                       </tr>
                     </thead>
-                    <tbody id="admin-assumptions-history-table">
-                      <!-- History log -->
+                    <tbody id="detail-versions-body">
+                      <!-- Dynamic versions history rows -->
                     </tbody>
                   </table>
                 </div>
               </div>
             </div>
-            
-            <!-- CMS TAB 3: DURATION PRESET -->
-            <div id="admin-tab-presets" class="admin-tab-content" style="display:none;">
-              <div class="flex justify-between align-center mb-4">
-                <h2 style="font-size:1.25rem;">CMS-02: Duration Preset Manager</h2>
-                <button class="btn btn-primary btn-sm" onclick="app.openAddPresetModal()">Tambah Preset Baru</button>
-              </div>
-              <div class="table-container">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Nama Preset</th>
-                      <th>Durasi (Bulan)</th>
-                      <th>Kategori</th>
-                      <th>BCR Mandatory</th>
-                      <th>BCR Minimum</th>
-                      <th>Status</th>
-                      <th>Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-presets-table-body">
-                    <!-- Dynamic presets items -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
-            <!-- CMS TAB 4: SLA CONFIG -->
-            <div id="admin-tab-sla" class="admin-tab-content" style="display:none;">
-              <h2 class="mb-4" style="font-size:1.25rem;">CMS-03: SLA Approval Config</h2>
-              <p class="mb-4" style="font-size:0.8rem; color:var(--text-secondary);">Batas waktu maksimal per-level approval sebelum eskalasi notifikasi dikirimkan ke atasan.</p>
-              
-              <div class="table-container">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Role Penerima</th>
-                      <th>Batas SLA (Hari Kerja)</th>
-                      <th>Reminder (Jam Sebelum)</th>
-                      <th>Eskalasi (Jam Setelah)</th>
-                      <th>Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-sla-table-body">
-                    <!-- SLA config table rows -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
-            <!-- CMS TAB 5: CATEGORIES -->
-            <div id="admin-tab-categories" class="admin-tab-content" style="display:none;">
-              <h2 class="mb-4" style="font-size:1.25rem;">CMS-04/05: Kategori CAPEX & OPEX</h2>
-              <p class="mb-4" style="font-size:0.8rem; color:var(--text-secondary);">Definisikan kategori belanja modal dan operasional untuk pelaporan keuangan terstandar.</p>
-              
-              <div class="form-row">
-                <!-- Capex categories list -->
-                <div>
-                  <h3 class="mb-4" style="font-size:1rem;">Kategori CAPEX (Modal)</h3>
-                  <div class="categories-grid" id="admin-capex-cats-list">
-                    <!-- Injected Capex pills -->
-                  </div>
-                  <div class="flex gap-2">
-                    <input type="text" id="admin-new-capex-cat" placeholder="Kategori Baru..." style="padding:0.4rem 0.6rem; font-size:0.85rem;">
-                    <button class="btn btn-primary btn-sm" onclick="app.addCategory('CAPEX')">Tambah</button>
-                  </div>
+
+            <!-- Right Sidebar: Approval chain + meta logs -->
+            <div>
+              <div class="card">
+                <h3
+                  style="font-size:1.1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem; margin-bottom:1rem;">
+                  Workflow Approval</h3>
+
+                <div class="approval-card-timeline" id="detail-approval-timeline">
+                  <!-- Injected approval chain nodes -->
                 </div>
-                
-                <!-- Opex categories list -->
-                <div>
-                  <h3 class="mb-4" style="font-size:1rem;">Kategori OPEX (Operasional)</h3>
-                  <div class="categories-grid" id="admin-opex-cats-list">
-                    <!-- Injected Opex pills -->
-                  </div>
+
+                <!-- Action Block for Manager or GM/SRM -->
+                <div id="detail-approval-action-block"
+                  style="display:none; margin-top:1.5rem; border-top:1px solid var(--glass-border); padding-top:1.25rem;">
+                  <label for="approval-comment-input">Catatan / Komentar (Wajib jika menolak):</label>
+                  <textarea id="approval-comment-input" rows="3"
+                    placeholder="Masukkan catatan revisi atau instruksi persetujuan..."
+                    style="margin-bottom:1rem;"></textarea>
+
                   <div class="flex gap-2">
-                    <input type="text" id="admin-new-opex-cat" placeholder="Kategori Baru..." style="padding:0.4rem 0.6rem; font-size:0.85rem;">
-                    <button class="btn btn-primary btn-sm" onclick="app.addCategory('OPEX')">Tambah</button>
+                    <button class="btn btn-danger btn-sm flex-1" onclick="app.handleApprovalAction(false)">Tolak
+                      (Reject)</button>
+                    <button class="btn btn-success btn-sm flex-1" onclick="app.handleApprovalAction(true)">Setujui
+                      (Approve)</button>
                   </div>
                 </div>
               </div>
-            </div>
-            
-            <!-- CMS TAB 6: SYSTEM PARAMETER -->
-            <div id="admin-tab-params" class="admin-tab-content" style="display:none;">
-              <h2 class="mb-4" style="font-size:1.25rem;">CMS-09: System Configurations Store</h2>
-              <p class="mb-4" style="font-size:0.8rem; color:var(--text-secondary);">Parameter keamanan, iterasi formula, dan UI format yang digunakan di seluruh aplikasi.</p>
-              
-              <div class="table-container" style="max-height:350px; overflow-y:auto;">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Kunci Parameter</th>
-                      <th>Kategori</th>
-                      <th>Nilai Konfigurasi</th>
-                      <th>Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-system-params-table">
-                    <!-- Params table -->
-                  </tbody>
-                </table>
+
+              <!-- Project configuration overrides -->
+              <div class="card mt-4">
+                <h3
+                  style="font-size:1rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.5rem; margin-bottom:1rem;">
+                  Parameter Konfigurasi</h3>
+                <div class="form-group">
+                  <span style="font-size:0.75rem; color:var(--text-secondary);">WACC Proyek:</span>
+                  <span style="font-weight:600;" id="detail-config-wacc">-</span>
+                </div>
+                <div class="form-group">
+                  <span style="font-size:0.75rem; color:var(--text-secondary);">Inflasi Bulanan:</span>
+                  <span style="font-weight:600;" id="detail-config-inflation">-</span>
+                </div>
+                <div class="form-group">
+                  <span style="font-size:0.75rem; color:var(--text-secondary);">Ambang Batas BCR:</span>
+                  <span style="font-weight:600;" id="detail-config-bcr">-</span>
+                </div>
               </div>
             </div>
-            
-            <!-- CMS TAB 7: USER MANAGEMENT -->
-            <div id="admin-tab-users" class="admin-tab-content" style="display:none;">
-              <div class="flex justify-between align-center mb-4">
-                <h2 style="font-size:1.25rem;">CMS-10: User & Role Administration</h2>
-                <button class="btn btn-primary btn-sm" onclick="app.openAddUserModal()">Tambah User Baru</button>
-              </div>
-              <div class="table-container">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Nama Lengkap</th>
-                      <th>Alamat Email</th>
-                      <th>Role Sistem</th>
-                      <th>Status Aktif</th>
-                      <th>Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-users-table-body">
-                    <!-- Injected users -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
-            <!-- CMS TAB 8: AUDIT LOGS -->
-            <div id="admin-tab-audit" class="admin-tab-content" style="display:none;">
-              <div class="flex justify-between align-center mb-4">
-                <h2 style="font-size:1.25rem;">CMS-11: Audit Trail Viewer</h2>
-                <button class="btn btn-secondary btn-sm" onclick="app.exportAuditLogsCSV()">Ekspor Log CSV</button>
-              </div>
-              <div class="table-container" style="max-height:350px; overflow-y:auto;">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Waktu Aksi</th>
-                      <th>Pengguna</th>
-                      <th>Aktivitas</th>
-                      <th>Nilai Lama</th>
-                      <th>Nilai Baru</th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-audit-logs-table-body">
-                    <!-- Injected audit log rows -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
+
           </div>
-        </div>
-      </section>
-      
-    </main>
-  </div>
-  
-  <!-- DIALOG 1: 6-STEP PROJECT CREATION WIZARD -->
-  <dialog id="project-wizard-dialog">
-    <div class="dialog-header">
-      <div class="wizard-dialog-title-row">
-        <h2 id="wizard-dialog-title">Proyek NAVPRO Baru</h2>
-        <span id="wizard-save-indicator" class="wizard-save-indicator" aria-live="polite">Belum disimpan</span>
-      </div>
-      <button class="btn-secondary btn-icon-only" onclick="app.closeProjectWizard()" style="padding:0.25rem 0.5rem; background:none; border:none; cursor:pointer; font-size:1.25rem; font-weight:700;">&times;</button>
+        </section>
+
+        <!-- VIEW 4: ADMIN CMS SYSTEM -->
+        <section id="admin-panel" class="page-panel">
+          <div class="page-header-row">
+            <div>
+              <h1 class="page-title">Panel Admin NAVPRO</h1>
+              <p class="page-subtitle">Konfigurasi asumsi finansial, pengguna, template, dan diagnostik sistem</p>
+            </div>
+          </div>
+
+          <div class="admin-layout">
+            <!-- Left Sidebar Menu -->
+            <nav class="admin-sidebar" aria-label="Admin Navigation">
+              <button class="admin-nav-btn active" id="admin-nav-health"
+                onclick="app.switchAdminTab('health')">Diagnostik System Health</button>
+              <button class="admin-nav-btn" id="admin-nav-assumptions"
+                onclick="app.switchAdminTab('assumptions')">CMS-01: Assumption Master</button>
+              <button class="admin-nav-btn" id="admin-nav-presets" onclick="app.switchAdminTab('presets')">CMS-02:
+                Duration Preset</button>
+              <button class="admin-nav-btn" id="admin-nav-sla" onclick="app.switchAdminTab('sla')">CMS-03: SLA Approval
+                Config</button>
+              <button class="admin-nav-btn" id="admin-nav-categories"
+                onclick="app.switchAdminTab('categories')">CMS-04/05: Kategori Item</button>
+              <button class="admin-nav-btn" id="admin-nav-params" onclick="app.switchAdminTab('params')">CMS-09: System
+                Parameter</button>
+              <button class="admin-nav-btn" id="admin-nav-users" onclick="app.switchAdminTab('users')">CMS-10: User
+                Management</button>
+              <button class="admin-nav-btn" id="admin-nav-audit" onclick="app.switchAdminTab('audit')">CMS-11: Audit Log
+                Viewer</button>
+            </nav>
+
+            <!-- Right Sub-panel Display -->
+            <div class="card admin-content">
+
+              <!-- CMS TAB 1: SYSTEM HEALTH -->
+              <div id="admin-tab-health" class="admin-tab-content" style="display:block;">
+                <h2 class="mb-4" style="font-size:1.25rem;">Diagnostic System Health Dashboard</h2>
+                <div class="health-grid" id="admin-health-grid">
+                  <!-- Mock container diagnostics -->
+                </div>
+
+                <div style="border-top:1px solid var(--glass-border); padding-top:1.5rem; margin-top:1.5rem;">
+                  <h3 class="mb-4" style="font-size:1rem;">Mode Pemeliharaan (Maintenance Mode)</h3>
+                  <div class="flex justify-between align-center">
+                    <div>
+                      <p style="font-size:0.85rem; color:var(--text-secondary);">Jika diaktifkan, semua API non-health
+                        akan dinonaktifkan dengan kode HTTP 503.</p>
+                    </div>
+                    <div>
+                      <button class="btn btn-danger btn-sm" id="maintenance-toggle-btn"
+                        onclick="app.toggleMaintenanceMode()">Aktifkan Maintenance Mode</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CMS TAB 2: ASSUMPTION MASTER -->
+              <div id="admin-tab-assumptions" class="admin-tab-content" style="display:none;">
+                <h2 class="mb-4" style="font-size:1.25rem;">CMS-01: Assumption Master (WACC & BCR)</h2>
+                <p class="mb-4" style="font-size:0.8rem; color:var(--text-secondary);">Variabel kelayakan finansial
+                  global yang digunakan sebagai default untuk semua perhitungan proyek baru.</p>
+
+                <form id="admin-assumptions-form" onsubmit="app.saveAssumptionMaster(event)">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="ass-wacc">WACC Tahunan (Annual WACC %)<span class="required-star">*</span></label>
+                      <input type="number" id="ass-wacc" step="0.01" min="0" max="100" required placeholder="9.72">
+                      <small style="color:var(--text-secondary); font-size:0.72rem;">Sumber: Memo VP Keuangan April
+                        2026</small>
+                    </div>
+                    <div class="form-group">
+                      <label for="ass-inflation-annual">Inflasi Tahunan (Annual Inflation %)<span
+                          class="required-star">*</span></label>
+                      <input type="number" id="ass-inflation-annual" step="0.01" min="0" max="100" required
+                        placeholder="3.0" oninput="app.updateMonthlyInflationDisplay()">
+                      <small style="color:var(--text-secondary); font-size:0.72rem;">Inflasi bulanan =
+                        (1+annual)^(1/12)-1. Auto-computed.</small>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Inflasi Bulanan (Auto-computed)</label>
+                      <input type="text" id="ass-inflation-monthly-display" readonly
+                        style="opacity:0.7; background:var(--bg-primary);" placeholder="0.246617%">
+                      <small style="color:var(--text-secondary); font-size:0.72rem;">Digunakan oleh engine OPEX
+                        compounding</small>
+                    </div>
+                    <div class="form-group">
+                      <label for="ass-ppn">PPN Rate (%)<span class="required-star">*</span></label>
+                      <input type="number" id="ass-ppn" step="0.1" min="0" max="100" required placeholder="12.0">
+                      <small style="color:var(--text-secondary); font-size:0.72rem;">UU HPP 2022: 12% efektif
+                        2025+</small>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="ass-bcr-mandatory">BCR Mandatory Threshold (Kelayakan Tinggi)<span
+                          class="required-star">*</span></label>
+                      <input type="number" id="ass-bcr-mandatory" step="0.01" min="0" required placeholder="1.23">
+                      <small style="color:var(--text-secondary); font-size:0.72rem;">Memo DirKeu 16 Sep 2025</small>
+                    </div>
+                    <div class="form-group">
+                      <label for="ass-bcr-minimum">BCR Minimum Threshold (Batas Bawah)<span
+                          class="required-star">*</span></label>
+                      <input type="number" id="ass-bcr-minimum" step="0.01" min="0" required placeholder="1.08">
+                      <small style="color:var(--text-secondary); font-size:0.72rem;">Memo DirKeu 16 Sep 2025</small>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="ass-kurs-usd">Kurs USD/IDR (Rp)<span class="required-star">*</span></label>
+                      <input type="number" id="ass-kurs-usd" step="1" min="0" required placeholder="16500">
+                      <small style="color:var(--text-secondary); font-size:0.72rem;">Digunakan untuk proyek dengan
+                        komponen USD</small>
+                    </div>
+                    <div class="form-group">
+                      <label for="ass-effective-date">Tanggal Efektif Berlaku Asumsi<span
+                          class="required-star">*</span></label>
+                      <input type="date" id="ass-effective-date" required>
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm mt-4">Simpan Asumsi & Catat Riwayat</button>
+                </form>
+
+                <div class="mt-4" style="border-top:1px solid var(--glass-border); padding-top:1.5rem;">
+                  <h3 class="mb-4" style="font-size:1rem;">Riwayat Perubahan Asumsi</h3>
+                  <div class="table-container">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th>Tanggal Ubah</th>
+                          <th>WACC</th>
+                          <th>Inflasi</th>
+                          <th>BCR Mand.</th>
+                          <th>BCR Min.</th>
+                          <th>Tanggal Efektif</th>
+                        </tr>
+                      </thead>
+                      <tbody id="admin-assumptions-history-table">
+                        <!-- History log -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CMS TAB 3: DURATION PRESET -->
+              <div id="admin-tab-presets" class="admin-tab-content" style="display:none;">
+                <div class="flex justify-between align-center mb-4">
+                  <h2 style="font-size:1.25rem;">CMS-02: Duration Preset Manager</h2>
+                  <button class="btn btn-primary btn-sm" onclick="app.openAddPresetModal()">Tambah Preset Baru</button>
+                </div>
+                <div class="table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Nama Preset</th>
+                        <th>Durasi (Bulan)</th>
+                        <th>Kategori</th>
+                        <th>BCR Mandatory</th>
+                        <th>BCR Minimum</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admin-presets-table-body">
+                      <!-- Dynamic presets items -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- CMS TAB 4: SLA CONFIG -->
+              <div id="admin-tab-sla" class="admin-tab-content" style="display:none;">
+                <h2 class="mb-4" style="font-size:1.25rem;">CMS-03: SLA Approval Config</h2>
+                <p class="mb-4" style="font-size:0.8rem; color:var(--text-secondary);">Batas waktu maksimal per-level
+                  approval sebelum eskalasi notifikasi dikirimkan ke atasan.</p>
+
+                <div class="table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Role Penerima</th>
+                        <th>Batas SLA (Hari Kerja)</th>
+                        <th>Reminder (Jam Sebelum)</th>
+                        <th>Eskalasi (Jam Setelah)</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admin-sla-table-body">
+                      <!-- SLA config table rows -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- CMS TAB 5: CATEGORIES -->
+              <div id="admin-tab-categories" class="admin-tab-content" style="display:none;">
+                <h2 class="mb-4" style="font-size:1.25rem;">CMS-04/05: Kategori CAPEX & OPEX</h2>
+                <p class="mb-4" style="font-size:0.8rem; color:var(--text-secondary);">Definisikan kategori belanja
+                  modal dan operasional untuk pelaporan keuangan terstandar.</p>
+
+                <div class="form-row">
+                  <!-- Capex categories list -->
+                  <div>
+                    <h3 class="mb-4" style="font-size:1rem;">Kategori CAPEX (Modal)</h3>
+                    <div class="categories-grid" id="admin-capex-cats-list">
+                      <!-- Injected Capex pills -->
+                    </div>
+                    <div class="flex gap-2">
+                      <input type="text" id="admin-new-capex-cat" placeholder="Kategori Baru..."
+                        style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+                      <button class="btn btn-primary btn-sm" onclick="app.addCategory('CAPEX')">Tambah</button>
+                    </div>
+                  </div>
+
+                  <!-- Opex categories list -->
+                  <div>
+                    <h3 class="mb-4" style="font-size:1rem;">Kategori OPEX (Operasional)</h3>
+                    <div class="categories-grid" id="admin-opex-cats-list">
+                      <!-- Injected Opex pills -->
+                    </div>
+                    <div class="flex gap-2">
+                      <input type="text" id="admin-new-opex-cat" placeholder="Kategori Baru..."
+                        style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+                      <button class="btn btn-primary btn-sm" onclick="app.addCategory('OPEX')">Tambah</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CMS TAB 6: SYSTEM PARAMETER -->
+              <div id="admin-tab-params" class="admin-tab-content" style="display:none;">
+                <h2 class="mb-4" style="font-size:1.25rem;">CMS-09: System Configurations Store</h2>
+                <p class="mb-4" style="font-size:0.8rem; color:var(--text-secondary);">Parameter keamanan, iterasi
+                  formula, dan UI format yang digunakan di seluruh aplikasi.</p>
+
+                <div class="table-container" style="max-height:350px; overflow-y:auto;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Kunci Parameter</th>
+                        <th>Kategori</th>
+                        <th>Nilai Konfigurasi</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admin-system-params-table">
+                      <!-- Params table -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- CMS TAB 7: USER MANAGEMENT -->
+              <div id="admin-tab-users" class="admin-tab-content" style="display:none;">
+                <div class="flex justify-between align-center mb-4">
+                  <h2 style="font-size:1.25rem;">CMS-10: User & Role Administration</h2>
+                  <button class="btn btn-primary btn-sm" onclick="app.openAddUserModal()">Tambah User Baru</button>
+                </div>
+                <div class="table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Nama Lengkap</th>
+                        <th>Alamat Email</th>
+                        <th>Role Sistem</th>
+                        <th>Status Aktif</th>
+                        <th>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admin-users-table-body">
+                      <!-- Injected users -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- CMS TAB 8: AUDIT LOGS -->
+              <div id="admin-tab-audit" class="admin-tab-content" style="display:none;">
+                <div class="flex justify-between align-center mb-4">
+                  <h2 style="font-size:1.25rem;">CMS-11: Audit Trail Viewer</h2>
+                  <button class="btn btn-secondary btn-sm" onclick="app.exportAuditLogsCSV()">Ekspor Log CSV</button>
+                </div>
+                <div class="table-container" style="max-height:350px; overflow-y:auto;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Waktu Aksi</th>
+                        <th>Pengguna</th>
+                        <th>Aktivitas</th>
+                        <th>Nilai Lama</th>
+                        <th>Nilai Baru</th>
+                      </tr>
+                    </thead>
+                    <tbody id="admin-audit-logs-table-body">
+                      <!-- Injected audit log rows -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+      </main>
     </div>
-    
-    <!-- Step Tracker Progress Indicator -->
-    <ul class="wizard-progress">
-      <li class="wizard-step active" id="wizard-step-node-1">
-        1
-        <span class="wizard-step-label">Info Dasar</span>
-      </li>
-      <li class="wizard-step" id="wizard-step-node-2">
-        2
-        <span class="wizard-step-label">Durasi</span>
-      </li>
-      <li class="wizard-step" id="wizard-step-node-3">
-        3
-        <span class="wizard-step-label">CAPEX</span>
-      </li>
-      <li class="wizard-step" id="wizard-step-node-4">
-        4
-        <span class="wizard-step-label">OPEX</span>
-      </li>
-      <li class="wizard-step" id="wizard-step-node-5">
-        5
-        <span class="wizard-step-label">Revenue</span>
-      </li>
-      <li class="wizard-step" id="wizard-step-node-6">
-        6
-        <span class="wizard-step-label">Hitung</span>
-      </li>
-    </ul>
-    
-    <!-- Wizard step views forms -->
-    <div style="margin: 2.5rem 0 1.5rem 0;">
-      
-      <!-- STEP 1: INFO DASAR -->
-      <div class="wizard-content-step active" id="wizard-step-1">
-        <h3 class="wizard-step-title">Langkah 1: Informasi Dasar Proyek</h3>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="wiz-proj-code">Kode Proyek NAVPRO (otomatis)<span class="required-star">*</span></label>
-            <input type="text" id="wiz-proj-code" readonly style="opacity:0.75; background:var(--bg-primary);">
-          </div>
-          <div class="form-group">
-            <label for="wiz-proj-name">Nama Proyek Investasi<span class="required-star">*</span></label>
-            <input type="text" id="wiz-proj-name" placeholder="Contoh: Pengadaan Jaringan Backbone Regional Sumatera" required>
-          </div>
+
+    <!-- DIALOG 1: 6-STEP PROJECT CREATION WIZARD -->
+    <dialog id="project-wizard-dialog">
+      <div class="dialog-header">
+        <div class="wizard-dialog-title-row">
+          <h2 id="wizard-dialog-title">Proyek NAVPRO Baru</h2>
+          <span id="wizard-save-indicator" class="wizard-save-indicator" aria-live="polite">Belum disimpan</span>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="wiz-customer-name">Nama Pelanggan / Customer</label>
-            <input type="text" id="wiz-customer-name" placeholder="Sama dengan NPWP / LKPP / iCRM">
-          </div>
-          <div class="form-group">
-            <label for="wiz-contract-number">Nomor Kontrak / BAKBB</label>
-            <input type="text" id="wiz-contract-number" placeholder="Jika sudah ada">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="wiz-contract-start">Tanggal Mulai Kontrak Proyek<span class="required-star">*</span></label>
-            <input type="date" id="wiz-contract-start" required>
-          </div>
-          <div class="form-group">
-            <label for="wiz-pic-sales">PIC Sales</label>
-            <input type="text" id="wiz-pic-sales" placeholder="Nama Sales / PIC Proyek">
-          </div>
-        </div>
+        <button class="btn-secondary btn-icon-only" onclick="app.closeProjectWizard()"
+          style="padding:0.25rem 0.5rem; background:none; border:none; cursor:pointer; font-size:1.25rem; font-weight:700;">&times;</button>
       </div>
-      
-      <!-- STEP 2: DURASI & ASUMSI OVERRIDES -->
-      <div class="wizard-content-step" id="wizard-step-2">
-        <h3 class="wizard-step-title">Langkah 2: Konfigurasi Durasi & Variabel Override</h3>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label for="wiz-duration-preset">Preset Durasi Proyek<span class="required-star">*</span></label>
-            <select id="wiz-duration-preset" onchange="app.handleWizardDurationPresetChange(this.value)">
-              <!-- Loaded dynamically from store duration presets -->
-            </select>
-          </div>
-          <div class="form-group" id="wiz-custom-duration-wrapper" style="display:none;">
-            <label for="wiz-custom-duration-months">Input Durasi Kustom (Bulan)<span class="required-star">*</span></label>
-            <input type="number" id="wiz-custom-duration-months" min="1" max="120" step="1">
-          </div>
-        </div>
-        
-        <div style="margin: 1rem 0; border: 1px solid var(--glass-border); padding: 1rem; border-radius: 8px; background-color: rgba(255,255,255,0.01);">
-          <h4 style="font-size:0.9rem; margin-bottom:0.75rem; color:var(--primary);">Override Parameter Keuangan (Opsional)</h4>
-          <p class="mb-4" style="font-size:0.75rem; color:var(--text-secondary);">Kosongkan jika ingin menggunakan asumsi global yang ditentukan oleh Finance Admin.</p>
-          
+
+      <!-- Step Tracker Progress Indicator -->
+      <ul class="wizard-progress">
+        <li class="wizard-step active" id="wizard-step-node-1">
+          1
+          <span class="wizard-step-label">Info Dasar</span>
+        </li>
+        <li class="wizard-step" id="wizard-step-node-2">
+          2
+          <span class="wizard-step-label">Durasi</span>
+        </li>
+        <li class="wizard-step" id="wizard-step-node-3">
+          3
+          <span class="wizard-step-label">CAPEX</span>
+        </li>
+        <li class="wizard-step" id="wizard-step-node-4">
+          4
+          <span class="wizard-step-label">OPEX</span>
+        </li>
+        <li class="wizard-step" id="wizard-step-node-5">
+          5
+          <span class="wizard-step-label">Revenue</span>
+        </li>
+        <li class="wizard-step" id="wizard-step-node-6">
+          6
+          <span class="wizard-step-label">Hitung</span>
+        </li>
+      </ul>
+
+      <!-- Wizard step views forms -->
+      <div style="margin: 2.5rem 0 1.5rem 0;">
+
+        <!-- STEP 1: INFO DASAR -->
+        <div class="wizard-content-step active" id="wizard-step-1">
+          <h3 class="wizard-step-title">Langkah 1: Informasi Dasar Proyek</h3>
           <div class="form-row">
             <div class="form-group">
-              <label for="wiz-wacc-override">Override WACC Tahunan (%)</label>
-              <input type="number" id="wiz-wacc-override" placeholder="Gunakan Global (9.72%)" step="0.01" min="0">
+              <label for="wiz-proj-code">Kode Proyek NAVPRO (otomatis)<span class="required-star">*</span></label>
+              <input type="text" id="wiz-proj-code" readonly style="opacity:0.75; background:var(--bg-primary);">
             </div>
             <div class="form-group">
-              <label for="wiz-inflation-override">Override Inflasi Bulanan (%)</label>
-              <input type="number" id="wiz-inflation-override" placeholder="Gunakan Global (0.30%)" step="0.01" min="0">
-            </div>
-            <div class="form-group">
-              <label for="wiz-kurs-usd-override">Override Kurs USD (Rp)</label>
-              <input type="number" id="wiz-kurs-usd-override" placeholder="Gunakan Global (Rp 16.500)" step="1" min="0">
+              <label for="wiz-proj-name">Nama Proyek Investasi<span class="required-star">*</span></label>
+              <input type="text" id="wiz-proj-name" placeholder="Contoh: Pengadaan Jaringan Backbone Regional Sumatera"
+                required>
             </div>
           </div>
-          
-          <div class="flex align-center gap-2 mt-2">
-            <input type="checkbox" id="wiz-bcr-override-toggle" onchange="document.getElementById('wiz-bcr-override-fields').style.display = this.checked ? 'grid' : 'none'" style="width:auto;">
-            <label for="wiz-bcr-override-toggle" style="user-select:none;">Override Batas Ambang Kelayakan BCR</label>
-          </div>
-          
-          <div class="form-row mt-4" id="wiz-bcr-override-fields" style="display:none;">
+          <div class="form-row">
             <div class="form-group">
-              <label for="wiz-bcr-mandatory-override">BCR Mandatory Threshold</label>
-              <input type="number" id="wiz-bcr-mandatory-override" placeholder="Gunakan Global (1.23)" step="0.01" min="0">
+              <label for="wiz-customer-name">Nama Pelanggan / Customer</label>
+              <input type="text" id="wiz-customer-name" placeholder="Sama dengan NPWP / LKPP / iCRM">
             </div>
             <div class="form-group">
-              <label for="wiz-bcr-minimum-override">BCR Minimum Threshold</label>
-              <input type="number" id="wiz-bcr-minimum-override" placeholder="Gunakan Global (1.08)" step="0.01" min="0">
+              <label for="wiz-contract-number">Nomor Kontrak / BAKBB</label>
+              <input type="text" id="wiz-contract-number" placeholder="Jika sudah ada">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="wiz-contract-start">Tanggal Mulai Kontrak Proyek<span class="required-star">*</span></label>
+              <input type="date" id="wiz-contract-start" required>
+            </div>
+            <div class="form-group">
+              <label for="wiz-pic-sales">PIC Sales</label>
+              <input type="text" id="wiz-pic-sales" placeholder="Nama Sales / PIC Proyek">
             </div>
           </div>
         </div>
-      </div>
-      
-      <!-- STEP 3: CAPEX (Modal) -->
-      <div class="wizard-content-step" id="wizard-step-3">
-        <h3 class="wizard-step-title">Langkah 3: Input Belanja Modal (CAPEX)</h3>
-        <div class="flex justify-between align-center mb-3" style="gap: 1rem;">
-          <p style="font-size:0.75rem; color:var(--text-secondary); margin:0;">Masukkan semua biaya investasi awal / capex beserta bulan terjadinya (contoh: Bulan 0/1).</p>
-          <button type="button" class="btn btn-secondary btn-xs" onclick="app.loadWizardStandardCapexTemplate()" style="font-size:0.7rem; padding:0.25rem 0.5rem; white-space:nowrap;">
-            🔄 Reset ke 8-Item RAB Standar
-          </button>
-        </div>
-        
-        <!-- Add Capex item form -->
-        <div style="background-color:rgba(255,255,255,0.02); border:1px solid var(--glass-border); padding:0.75rem; border-radius:6px; margin-bottom:1rem;" class="dynamic-row-item">
-          <input type="text" id="wiz-capex-name" placeholder="Nama Barang/Investasi..." style="padding:0.4rem 0.6rem; font-size:0.85rem; flex: 2;">
-          <select id="wiz-capex-cat" style="padding:0.4rem 0.6rem; font-size:0.85rem; flex: 1;">
-            <!-- Categories loaded dynamically -->
-          </select>
-          <div class="flex" style="gap: 0.25rem; flex: 1.5;">
-            <input type="number" id="wiz-capex-amount" placeholder="Nilai..." style="padding:0.4rem 0.6rem; font-size:0.85rem; width: 65%;" min="0">
-            <select id="wiz-capex-currency" style="padding:0.4rem 0.6rem; font-size:0.85rem; width: 35%;">
-              <option value="IDR">IDR</option>
-              <option value="USD">USD</option>
-            </select>
-          </div>
-          <input type="number" id="wiz-capex-period" placeholder="Bulan Ke-..." style="padding:0.4rem 0.6rem; font-size:0.85rem; flex: 0.5;" min="0" value="0">
-          <button type="button" class="btn btn-primary btn-sm" onclick="app.addWizardCapexRow()">Tambah</button>
-        </div>
-        
-        <!-- List of added Capex items -->
-        <div class="table-container" style="max-height:220px; overflow-y:auto; margin-bottom:0;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Item CAPEX</th>
-                <th>Kategori</th>
-                <th>Nilai Modal</th>
-                <th>Mata Uang</th>
-                <th>Bulan Ke</th>
-                <th style="width:50px;">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="wiz-capex-rows-list">
-              <!-- Capex rows -->
-            </tbody>
-          </table>
-        </div>
-        <div style="text-align:right; font-weight:700; margin-top:0.75rem; font-size:0.9rem;" id="wiz-capex-total-label">Total CAPEX: Rp 0</div>
-      </div>
-      
-      <!-- STEP 4: OPEX (Operasional) -->
-      <div class="wizard-content-step" id="wizard-step-4">
-        <h3 class="wizard-step-title">Langkah 4: Input Biaya Operasional (OPEX)</h3>
-        <div class="flex justify-between align-center mb-3" style="gap: 1rem;">
-          <p style="font-size:0.75rem; color:var(--text-secondary); margin:0;">Baseline biaya operasional bulanan beserta bulan mulai/akhir terjadinya. Inflasi bulanan akan menghitung bunga majemuk secara otomatis.</p>
-          <button type="button" class="btn btn-secondary btn-xs" onclick="app.loadWizardStandardOpexTemplate()" style="font-size:0.7rem; padding:0.25rem 0.5rem; white-space:nowrap;">
-            🔄 Reset ke OPEX Standar Excel
-          </button>
-        </div>
-        
-        <!-- Add Opex item form -->
-        <div style="background-color:rgba(255,255,255,0.02); border:1px solid var(--glass-border); padding:0.75rem; border-radius:6px; margin-bottom:1rem;" class="dynamic-row-item">
-          <input type="text" id="wiz-opex-name" placeholder="Nama Biaya..." style="padding:0.4rem 0.6rem; font-size:0.85rem; flex: 1.5;">
-          <select id="wiz-opex-cat" style="padding:0.4rem 0.6rem; font-size:0.85rem; flex: 1;">
-            <!-- Categories loaded dynamically -->
-          </select>
-          <select id="wiz-opex-type" onchange="app.handleWizardOpexTypeChange(this.value)" style="padding:0.4rem 0.6rem; font-size:0.85rem; flex: 1;">
-            <option value="NOMINAL">Nominal</option>
-            <option value="PERCENT">% Pendapatan</option>
-          </select>
-          <div class="flex" style="gap: 0.25rem; flex: 1.5;" id="wiz-opex-val-wrapper">
-            <input type="number" id="wiz-opex-amount" placeholder="Nilai..." style="padding:0.4rem 0.6rem; font-size:0.85rem; width: 65%;" min="0">
-            <select id="wiz-opex-currency" style="padding:0.4rem 0.6rem; font-size:0.85rem; width: 35%;">
-              <option value="IDR">IDR</option>
-              <option value="USD">USD</option>
-            </select>
-          </div>
-          <div class="flex" style="gap:0.25rem; flex: 1;">
-            <input type="number" id="wiz-opex-start" placeholder="Mulai" style="padding:0.4rem 0.3rem; font-size:0.85rem; width:50%;" min="1" value="1">
-            <input type="number" id="wiz-opex-end" placeholder="Akhir" style="padding:0.4rem 0.3rem; font-size:0.85rem; width:50%;" min="1">
-          </div>
-          <button type="button" class="btn btn-primary btn-sm" onclick="app.addWizardOpexRow()">Tambah</button>
-        </div>
-        
-        <!-- List of added Opex items -->
-        <div class="table-container" style="max-height:220px; overflow-y:auto; margin-bottom:0;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Item OPEX</th>
-                <th>Kategori</th>
-                <th>Cara Hitung</th>
-                <th>Nilai Baseline / Koef</th>
-                <th>Mata Uang</th>
-                <th>Rentang Periode</th>
-                <th style="width:50px;">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="wiz-opex-rows-list">
-              <!-- Opex rows -->
-            </tbody>
-          </table>
-        </div>
-        <div style="text-align:right; font-weight:700; margin-top:0.75rem; font-size:0.9rem;" id="wiz-opex-total-label">Total OPEX Baseline: Rp 0/bln</div>
-      </div>
-      
-      <!-- STEP 5: REVENUE -->
-      <div class="wizard-content-step" id="wizard-step-5">
-        <h3 class="wizard-step-title">Langkah 5: Input Aliran Pendapatan (Revenue Stream)</h3>
-        <p class="mb-4" style="font-size:0.75rem; color:var(--text-secondary);">Masukkan rincian item pendapatan berdasarkan layanan yang dijual. Nilai sewa bulanan dihitung dari Harga Satuan &times; Qty. OTC dibayarkan pada Bulan 1.</p>
-        
-        <!-- Add Recurring Revenue stream form -->
-        <div style="background-color:rgba(255,255,255,0.02); border:1px solid var(--glass-border); padding:0.75rem; border-radius:6px; margin-bottom:1rem;">
-          <div style="font-size:0.8rem; font-weight:600; color:var(--primary); margin-bottom:0.5rem;">Tambah Detail Layanan (Revenue Stream)</div>
-          
-          <div class="form-row mb-2">
+
+        <!-- STEP 2: DURASI & ASUMSI OVERRIDES -->
+        <div class="wizard-content-step" id="wizard-step-2">
+          <h3 class="wizard-step-title">Langkah 2: Konfigurasi Durasi & Variabel Override</h3>
+
+          <div class="form-row">
             <div class="form-group">
-              <label for="wiz-rev-name">Tipe Service / Layanan</label>
-              <input type="text" id="wiz-rev-name" placeholder="Contoh: IBBC CIR4-BW50 On-Net FTTH" style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+              <label for="wiz-duration-preset">Preset Durasi Proyek<span class="required-star">*</span></label>
+              <select id="wiz-duration-preset" onchange="app.handleWizardDurationPresetChange(this.value)">
+                <!-- Loaded dynamically from store duration presets -->
+              </select>
             </div>
-            <div class="form-group">
-              <label for="wiz-rev-cust">Nama Pelanggan (NPWP)</label>
-              <input type="text" id="wiz-rev-cust" placeholder="PT Contoh Pelanggan" style="padding:0.4rem 0.6rem; font-size:0.85rem;">
-            </div>
-            <div class="form-group">
-              <label for="wiz-rev-loc">Lokasi Pelanggan</label>
-              <input type="text" id="wiz-rev-loc" placeholder="Medan Pusat" style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+            <div class="form-group" id="wiz-custom-duration-wrapper" style="display:none;">
+              <label for="wiz-custom-duration-months">Input Durasi Kustom (Bulan)<span
+                  class="required-star">*</span></label>
+              <input type="number" id="wiz-custom-duration-months" min="1" max="120" step="1">
             </div>
           </div>
-          
-          <div class="form-row mb-2">
-            <div class="form-group">
-              <label for="wiz-rev-harsat">Harga Satuan (Sewa/Bulan)</label>
-              <div class="flex" style="gap: 0.25rem;">
-                <input type="number" id="wiz-rev-harsat" placeholder="Harsat..." style="padding:0.4rem 0.6rem; font-size:0.85rem; width: 65%;" min="0">
-                <select id="wiz-rev-currency" style="padding:0.4rem 0.6rem; font-size:0.85rem; width: 35%;">
-                  <option value="IDR">IDR</option>
-                  <option value="USD">USD</option>
-                </select>
+
+          <div
+            style="margin: 1rem 0; border: 1px solid var(--glass-border); padding: 1rem; border-radius: 8px; background-color: rgba(255,255,255,0.01);">
+            <h4 style="font-size:0.9rem; margin-bottom:0.75rem; color:var(--primary);">Override Parameter Keuangan
+              (Opsional)</h4>
+            <p class="mb-4" style="font-size:0.75rem; color:var(--text-secondary);">Kosongkan jika ingin menggunakan
+              asumsi global yang ditentukan oleh Finance Admin.</p>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="wiz-wacc-override">Override WACC Tahunan (%)</label>
+                <input type="number" id="wiz-wacc-override" placeholder="Gunakan Global (9.72%)" step="0.01" min="0">
+              </div>
+              <div class="form-group">
+                <label for="wiz-inflation-override">Override Inflasi Bulanan (%)</label>
+                <input type="number" id="wiz-inflation-override" placeholder="Gunakan Global (0.30%)" step="0.01"
+                  min="0">
+              </div>
+              <div class="form-group">
+                <label for="wiz-kurs-usd-override">Override Kurs USD (Rp)</label>
+                <input type="number" id="wiz-kurs-usd-override" placeholder="Gunakan Global (Rp 16.500)" step="1"
+                  min="0">
               </div>
             </div>
-            <div class="form-group" style="max-width: 80px;">
-              <label for="wiz-rev-qty">Qty</label>
-              <input type="number" id="wiz-rev-qty" placeholder="1" style="padding:0.4rem 0.6rem; font-size:0.85rem;" min="1" value="1">
+
+            <div class="flex align-center gap-2 mt-2">
+              <input type="checkbox" id="wiz-bcr-override-toggle"
+                onchange="document.getElementById('wiz-bcr-override-fields').style.display = this.checked ? 'grid' : 'none'"
+                style="width:auto;">
+              <label for="wiz-bcr-override-toggle" style="user-select:none;">Override Batas Ambang Kelayakan BCR</label>
             </div>
-            <div class="form-group" style="max-width: 80px;">
-              <label for="wiz-rev-satuan">Satuan</label>
-              <input type="text" id="wiz-rev-satuan" placeholder="unit" value="unit" style="padding:0.4rem 0.6rem; font-size:0.85rem;">
-            </div>
-            <div class="form-group">
-              <label for="wiz-rev-otc">OTC (One-Time Charge)</label>
-              <input type="number" id="wiz-rev-otc" placeholder="0" style="padding:0.4rem 0.6rem; font-size:0.85rem;" min="0" value="0">
-            </div>
-          </div>
-          
-          <div class="form-row mb-2">
-            <div class="form-group">
-              <label for="wiz-rev-escalation">Eskalasi Bulanan (%)</label>
-              <input type="number" id="wiz-rev-escalation" placeholder="0" style="padding:0.4rem 0.6rem; font-size:0.85rem;" min="0" step="0.01" value="0">
-            </div>
-            <div class="form-group">
-              <label>Rentang Periode (Bulan)</label>
-              <div class="flex" style="gap:0.25rem;">
-                <input type="number" id="wiz-rev-start" placeholder="Mulai" style="padding:0.4rem 0.3rem; font-size:0.85rem; width:50%;" min="1" value="1">
-                <input type="number" id="wiz-rev-end" placeholder="Akhir" style="padding:0.4rem 0.3rem; font-size:0.85rem; width:50%;" min="1">
+
+            <div class="form-row mt-4" id="wiz-bcr-override-fields" style="display:none;">
+              <div class="form-group">
+                <label for="wiz-bcr-mandatory-override">BCR Mandatory Threshold</label>
+                <input type="number" id="wiz-bcr-mandatory-override" placeholder="Gunakan Global (1.23)" step="0.01"
+                  min="0">
+              </div>
+              <div class="form-group">
+                <label for="wiz-bcr-minimum-override">BCR Minimum Threshold</label>
+                <input type="number" id="wiz-bcr-minimum-override" placeholder="Gunakan Global (1.08)" step="0.01"
+                  min="0">
               </div>
             </div>
-            <div class="form-group flex align-end" style="justify-content: flex-end;">
-              <button type="button" class="btn btn-primary btn-sm" onclick="app.addWizardRevenueRow()" style="width: 100%; height: 36px;">Tambah Layanan</button>
+          </div>
+        </div>
+
+        <!-- STEP 3: CAPEX (Modal) -->
+        <div class="wizard-content-step" id="wizard-step-3">
+          <h3 class="wizard-step-title">Langkah 3: Input Belanja Modal (CAPEX)</h3>
+          <div class="flex justify-between align-center mb-3" style="gap: 1rem;">
+            <p style="font-size:0.75rem; color:var(--text-secondary); margin:0;">Masukkan semua biaya investasi awal /
+              capex beserta bulan terjadinya (contoh: Bulan 0/1).</p>
+            <button type="button" class="btn btn-secondary btn-xs" onclick="app.loadWizardStandardCapexTemplate()"
+              style="font-size:0.7rem; padding:0.25rem 0.5rem; white-space:nowrap;">
+              🔄 Reset ke 8-Item RAB Standar
+            </button>
+          </div>
+
+          <!-- Add Capex item form -->
+          <div
+            style="background-color:rgba(255,255,255,0.02); border:1px solid var(--glass-border); padding:0.75rem; border-radius:6px; margin-bottom:1rem;"
+            class="dynamic-row-item">
+            <input type="text" id="wiz-capex-name" placeholder="Nama Barang/Investasi..."
+              style="padding:0.4rem 0.6rem; font-size:0.85rem; flex: 2;">
+            <select id="wiz-capex-cat" style="padding:0.4rem 0.6rem; font-size:0.85rem; flex: 1;">
+              <!-- Categories loaded dynamically -->
+            </select>
+            <div class="flex" style="gap: 0.25rem; flex: 1.5;">
+              <input type="number" id="wiz-capex-amount" placeholder="Nilai..."
+                style="padding:0.4rem 0.6rem; font-size:0.85rem; width: 65%;" min="0">
+              <select id="wiz-capex-currency" style="padding:0.4rem 0.6rem; font-size:0.85rem; width: 35%;">
+                <option value="IDR">IDR</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+            <input type="number" id="wiz-capex-period" placeholder="Bulan Ke-..."
+              style="padding:0.4rem 0.6rem; font-size:0.85rem; flex: 0.5;" min="0" value="0">
+            <button type="button" class="btn btn-primary btn-sm" onclick="app.addWizardCapexRow()">Tambah</button>
+          </div>
+
+          <!-- List of added Capex items -->
+          <div class="table-container" style="max-height:220px; overflow-y:auto; margin-bottom:0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Item CAPEX</th>
+                  <th>Kategori</th>
+                  <th>Nilai Modal</th>
+                  <th>Mata Uang</th>
+                  <th>Bulan Ke</th>
+                  <th style="width:50px;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="wiz-capex-rows-list">
+                <!-- Capex rows -->
+              </tbody>
+            </table>
+          </div>
+          <div style="text-align:right; font-weight:700; margin-top:0.75rem; font-size:0.9rem;"
+            id="wiz-capex-total-label">Total CAPEX: Rp 0</div>
+        </div>
+
+        <!-- STEP 4: OPEX (Operasional) -->
+        <div class="wizard-content-step" id="wizard-step-4">
+          <h3 class="wizard-step-title">Langkah 4: Input Biaya Operasional (OPEX)</h3>
+          <div class="flex justify-between align-center mb-3" style="gap: 1rem;">
+            <p style="font-size:0.75rem; color:var(--text-secondary); margin:0;">Baseline biaya operasional bulanan
+              beserta bulan mulai/akhir terjadinya. Inflasi bulanan akan menghitung bunga majemuk secara otomatis.</p>
+            <button type="button" class="btn btn-secondary btn-xs" onclick="app.loadWizardStandardOpexTemplate()"
+              style="font-size:0.7rem; padding:0.25rem 0.5rem; white-space:nowrap;">
+              🔄 Reset ke OPEX Standar Excel
+            </button>
+          </div>
+
+          <!-- Add Opex item form -->
+          <div
+            style="background-color:rgba(255,255,255,0.02); border:1px solid var(--glass-border); padding:0.75rem; border-radius:6px; margin-bottom:1rem;"
+            class="dynamic-row-item">
+            <input type="text" id="wiz-opex-name" placeholder="Nama Biaya..."
+              style="padding:0.4rem 0.6rem; font-size:0.85rem; flex: 1.5;">
+            <select id="wiz-opex-cat" style="padding:0.4rem 0.6rem; font-size:0.85rem; flex: 1;">
+              <!-- Categories loaded dynamically -->
+            </select>
+            <select id="wiz-opex-type" onchange="app.handleWizardOpexTypeChange(this.value)"
+              style="padding:0.4rem 0.6rem; font-size:0.85rem; flex: 1;">
+              <option value="NOMINAL">Nominal</option>
+              <option value="PERCENT">% Pendapatan</option>
+            </select>
+            <div class="flex" style="gap: 0.25rem; flex: 1.5;" id="wiz-opex-val-wrapper">
+              <input type="number" id="wiz-opex-amount" placeholder="Nilai..."
+                style="padding:0.4rem 0.6rem; font-size:0.85rem; width: 65%;" min="0">
+              <select id="wiz-opex-currency" style="padding:0.4rem 0.6rem; font-size:0.85rem; width: 35%;">
+                <option value="IDR">IDR</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+            <div class="flex" style="gap:0.25rem; flex: 1;">
+              <input type="number" id="wiz-opex-start" placeholder="Mulai"
+                style="padding:0.4rem 0.3rem; font-size:0.85rem; width:50%;" min="1" value="1">
+              <input type="number" id="wiz-opex-end" placeholder="Akhir"
+                style="padding:0.4rem 0.3rem; font-size:0.85rem; width:50%;" min="1">
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" onclick="app.addWizardOpexRow()">Tambah</button>
+          </div>
+
+          <!-- List of added Opex items -->
+          <div class="table-container" style="max-height:220px; overflow-y:auto; margin-bottom:0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Item OPEX</th>
+                  <th>Kategori</th>
+                  <th>Cara Hitung</th>
+                  <th>Nilai Baseline / Koef</th>
+                  <th>Mata Uang</th>
+                  <th>Rentang Periode</th>
+                  <th style="width:50px;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="wiz-opex-rows-list">
+                <!-- Opex rows -->
+              </tbody>
+            </table>
+          </div>
+          <div style="text-align:right; font-weight:700; margin-top:0.75rem; font-size:0.9rem;"
+            id="wiz-opex-total-label">Total OPEX Baseline: Rp 0/bln</div>
+        </div>
+
+        <!-- STEP 5: REVENUE -->
+        <div class="wizard-content-step" id="wizard-step-5">
+          <h3 class="wizard-step-title">Langkah 5: Input Aliran Pendapatan (Revenue Stream)</h3>
+          <p class="mb-4" style="font-size:0.75rem; color:var(--text-secondary);">Masukkan rincian item pendapatan
+            berdasarkan layanan yang dijual. Nilai sewa bulanan dihitung dari Harga Satuan &times; Qty. OTC dibayarkan
+            pada Bulan 1.</p>
+
+          <!-- Add Recurring Revenue stream form -->
+          <div
+            style="background-color:rgba(255,255,255,0.02); border:1px solid var(--glass-border); padding:0.75rem; border-radius:6px; margin-bottom:1rem;">
+            <div style="font-size:0.8rem; font-weight:600; color:var(--primary); margin-bottom:0.5rem;">Tambah Detail
+              Layanan (Revenue Stream)</div>
+
+            <div class="form-row mb-2">
+              <div class="form-group">
+                <label for="wiz-rev-name">Tipe Service / Layanan</label>
+                <input type="text" id="wiz-rev-name" placeholder="Contoh: IBBC CIR4-BW50 On-Net FTTH"
+                  style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+              </div>
+              <div class="form-group">
+                <label for="wiz-rev-cust">Nama Pelanggan (NPWP)</label>
+                <input type="text" id="wiz-rev-cust" placeholder="PT Contoh Pelanggan"
+                  style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+              </div>
+              <div class="form-group">
+                <label for="wiz-rev-loc">Lokasi Pelanggan</label>
+                <input type="text" id="wiz-rev-loc" placeholder="Medan Pusat"
+                  style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+              </div>
+            </div>
+
+            <div class="form-row mb-2">
+              <div class="form-group">
+                <label for="wiz-rev-harsat">Harga Satuan (Sewa/Bulan)</label>
+                <div class="flex" style="gap: 0.25rem;">
+                  <input type="number" id="wiz-rev-harsat" placeholder="Harsat..."
+                    style="padding:0.4rem 0.6rem; font-size:0.85rem; width: 65%;" min="0">
+                  <select id="wiz-rev-currency" style="padding:0.4rem 0.6rem; font-size:0.85rem; width: 35%;">
+                    <option value="IDR">IDR</option>
+                    <option value="USD">USD</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group" style="max-width: 80px;">
+                <label for="wiz-rev-qty">Qty</label>
+                <input type="number" id="wiz-rev-qty" placeholder="1" style="padding:0.4rem 0.6rem; font-size:0.85rem;"
+                  min="1" value="1">
+              </div>
+              <div class="form-group" style="max-width: 80px;">
+                <label for="wiz-rev-satuan">Satuan</label>
+                <input type="text" id="wiz-rev-satuan" placeholder="unit" value="unit"
+                  style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+              </div>
+              <div class="form-group">
+                <label for="wiz-rev-otc">OTC (One-Time Charge)</label>
+                <input type="number" id="wiz-rev-otc" placeholder="0" style="padding:0.4rem 0.6rem; font-size:0.85rem;"
+                  min="0" value="0">
+              </div>
+            </div>
+
+            <div class="form-row mb-2">
+              <div class="form-group">
+                <label for="wiz-rev-escalation">Eskalasi Bulanan (%)</label>
+                <input type="number" id="wiz-rev-escalation" placeholder="0"
+                  style="padding:0.4rem 0.6rem; font-size:0.85rem;" min="0" step="0.01" value="0">
+              </div>
+              <div class="form-group">
+                <label>Rentang Periode (Bulan)</label>
+                <div class="flex" style="gap:0.25rem;">
+                  <input type="number" id="wiz-rev-start" placeholder="Mulai"
+                    style="padding:0.4rem 0.3rem; font-size:0.85rem; width:50%;" min="1" value="1">
+                  <input type="number" id="wiz-rev-end" placeholder="Akhir"
+                    style="padding:0.4rem 0.3rem; font-size:0.85rem; width:50%;" min="1">
+                </div>
+              </div>
+              <div class="form-group flex align-end" style="justify-content: flex-end;">
+                <button type="button" class="btn btn-primary btn-sm" onclick="app.addWizardRevenueRow()"
+                  style="width: 100%; height: 36px;">Tambah Layanan</button>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <!-- List of added Revenue items -->
-        <div class="table-container" style="max-height:180px; overflow-y:auto; margin-bottom:0;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Layanan & Pelanggan</th>
-                <th>Lokasi</th>
-                <th>Detail Sewa (Harsat x Qty)</th>
-                <th>OTC</th>
-                <th>Mata Uang</th>
-                <th>Periode</th>
-                <th style="width:50px;">Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="wiz-rev-rows-list">
-              <!-- Revenue rows -->
-            </tbody>
-          </table>
-        </div>
-        <div style="text-align:right; font-weight:700; margin-top:0.75rem; font-size:0.9rem;" id="wiz-rev-total-label">Total OTC: Rp 0 | Total Sewa Baseline: Rp 0/bln</div>
-      </div>
-      
-      <!-- STEP 6: REVIEW & COMPUTE -->
-      <div class="wizard-content-step" id="wizard-step-6">
-        <h3 class="wizard-step-title">Langkah 6: Review & Trigger Kalkulasi Finansial</h3>
-        <p class="mb-4" style="font-size:0.85rem;">Harap tinjau ringkasan data proyek Anda sebelum memicu mesin kalkulasi (async engine).</p>
-        
-        <div class="cards-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-          <div class="card">
-            <h4 style="font-size:0.95rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.35rem; margin-bottom:0.5rem;">Ringkasan Profil Proyek</h4>
-            <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Kode Proyek:</span><strong id="wiz-rev-pcode">-</strong></div>
-            <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Nama Proyek:</span><strong id="wiz-rev-pname">-</strong></div>
-            <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Mulai Kontrak:</span><strong id="wiz-rev-pstart">-</strong></div>
-            <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Durasi Proyek:</span><strong id="wiz-rev-pduration">-</strong></div>
+
+          <!-- List of added Revenue items -->
+          <div class="table-container" style="max-height:180px; overflow-y:auto; margin-bottom:0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Layanan & Pelanggan</th>
+                  <th>Lokasi</th>
+                  <th>Detail Sewa (Harsat x Qty)</th>
+                  <th>OTC</th>
+                  <th>Mata Uang</th>
+                  <th>Periode</th>
+                  <th style="width:50px;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="wiz-rev-rows-list">
+                <!-- Revenue rows -->
+              </tbody>
+            </table>
           </div>
-          
-          <div class="card">
-            <h4 style="font-size:0.95rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.35rem; margin-bottom:0.5rem;">Variabel Parameter</h4>
-            <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>WACC Digunakan:</span><strong id="wiz-rev-pwacc">-</strong></div>
-            <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Inflasi Digunakan:</span><strong id="wiz-rev-pinflation">-</strong></div>
-            <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Total Item CAPEX:</span><strong id="wiz-rev-pcapex-cnt">0 item</strong></div>
-            <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Total Item OPEX:</span><strong id="wiz-rev-popex-cnt">0 item</strong></div>
+          <div style="text-align:right; font-weight:700; margin-top:0.75rem; font-size:0.9rem;"
+            id="wiz-rev-total-label">Total OTC: Rp 0 | Total Sewa Baseline: Rp 0/bln</div>
+        </div>
+
+        <!-- STEP 6: REVIEW & COMPUTE -->
+        <div class="wizard-content-step" id="wizard-step-6">
+          <h3 class="wizard-step-title">Langkah 6: Review & Trigger Kalkulasi Finansial</h3>
+          <p class="mb-4" style="font-size:0.85rem;">Harap tinjau ringkasan data proyek Anda sebelum memicu mesin
+            kalkulasi (async engine).</p>
+
+          <div class="cards-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="card">
+              <h4
+                style="font-size:0.95rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.35rem; margin-bottom:0.5rem;">
+                Ringkasan Profil Proyek</h4>
+              <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Kode Proyek:</span><strong
+                  id="wiz-rev-pcode">-</strong></div>
+              <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Nama Proyek:</span><strong
+                  id="wiz-rev-pname">-</strong></div>
+              <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Mulai Kontrak:</span><strong
+                  id="wiz-rev-pstart">-</strong></div>
+              <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Durasi Proyek:</span><strong
+                  id="wiz-rev-pduration">-</strong></div>
+            </div>
+
+            <div class="card">
+              <h4
+                style="font-size:0.95rem; border-bottom:1px solid var(--glass-border); padding-bottom:0.35rem; margin-bottom:0.5rem;">
+                Variabel Parameter</h4>
+              <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>WACC Digunakan:</span><strong
+                  id="wiz-rev-pwacc">-</strong></div>
+              <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Inflasi Digunakan:</span><strong
+                  id="wiz-rev-pinflation">-</strong></div>
+              <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Total Item CAPEX:</span><strong
+                  id="wiz-rev-pcapex-cnt">0 item</strong></div>
+              <div style="font-size:0.85rem;" class="flex justify-between mb-2"><span>Total Item OPEX:</span><strong
+                  id="wiz-rev-popex-cnt">0 item</strong></div>
+            </div>
           </div>
+
+          <!-- Job Queue Simulation screen -->
+          <div id="wiz-calculating-loader" style="display:none; text-align:center; padding:1.5rem 0;">
+            <div
+              style="width:2.5rem; height:2.5rem; border:3px solid var(--glass-border); border-top-color:var(--primary); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 1rem auto;">
+            </div>
+            <p style="font-weight:600; font-size:0.9rem;">Memicu Job Queue BullMQ...</p>
+            <p style="font-size:0.75rem; color:var(--text-secondary);" id="wiz-loader-status">Memproses 12 periode
+              cashflow & active flags...</p>
+          </div>
+
+          <style>
+            @keyframes spin {
+              to {
+                transform: rotate(360deg);
+              }
+            }
+          </style>
         </div>
-        
-        <!-- Job Queue Simulation screen -->
-        <div id="wiz-calculating-loader" style="display:none; text-align:center; padding:1.5rem 0;">
-          <div style="width:2.5rem; height:2.5rem; border:3px solid var(--glass-border); border-top-color:var(--primary); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 1rem auto;"></div>
-          <p style="font-weight:600; font-size:0.9rem;">Memicu Job Queue BullMQ...</p>
-          <p style="font-size:0.75rem; color:var(--text-secondary);" id="wiz-loader-status">Memproses 12 periode cashflow & active flags...</p>
-        </div>
-        
-        <style>
-          @keyframes spin { to { transform: rotate(360deg); } }
-        </style>
+
       </div>
-      
-    </div>
-    
-    <div class="dialog-footer">
-      <button type="button" class="btn btn-secondary" id="wizard-prev-btn" onclick="app.navigateWizard(-1)">Kembali</button>
-      <button type="button" class="btn btn-primary" id="wizard-next-btn" onclick="app.navigateWizard(1)">Lanjut</button>
-    </div>
-  </dialog>
-  
-  <!-- DIALOG 2: REJECT REASON MODAL -->
-  <dialog id="reject-reason-dialog">
-    <div class="dialog-header">
-      <h2>Konfirmasi Penolakan Proyek</h2>
-      <button class="btn-secondary btn-icon-only" onclick="document.getElementById('reject-reason-dialog').close()" style="padding:0.25rem 0.5rem; background:none; border:none; cursor:pointer; font-size:1.25rem; font-weight:700;">&times;</button>
-    </div>
-    <div class="form-group">
-      <label for="reject-reason-textarea">Alasan Penolakan / Catatan Revisi (Wajib):</label>
-      <textarea id="reject-reason-textarea" rows="4" placeholder="Tuliskan catatan mengapa proyek ini ditolak atau aspek apa yang perlu disesuaikan..." required></textarea>
-    </div>
-    <div class="dialog-footer">
-      <button class="btn btn-secondary" onclick="document.getElementById('reject-reason-dialog').close()">Batal</button>
-      <button class="btn btn-danger" onclick="app.submitRejection()">Tolak Proyek</button>
-    </div>
-  </dialog>
-  
-  <!-- DIALOG 3: ADD DURATION PRESET MODAL -->
-  <dialog id="add-preset-dialog">
-    <div class="dialog-header">
-      <h2>Tambah Preset Durasi Baru</h2>
-      <button class="btn-secondary btn-icon-only" onclick="document.getElementById('add-preset-dialog').close()" style="padding:0.25rem 0.5rem; background:none; border:none; cursor:pointer; font-size:1.25rem; font-weight:700;">&times;</button>
-    </div>
-    <form onsubmit="app.saveNewPreset(event)">
+
+      <div class="dialog-footer">
+        <button type="button" class="btn btn-secondary" id="wizard-prev-btn"
+          onclick="app.navigateWizard(-1)">Kembali</button>
+        <button type="button" class="btn btn-primary" id="wizard-next-btn"
+          onclick="app.navigateWizard(1)">Lanjut</button>
+      </div>
+    </dialog>
+
+    <!-- DIALOG 2: REJECT REASON MODAL -->
+    <dialog id="reject-reason-dialog">
+      <div class="dialog-header">
+        <h2>Konfirmasi Penolakan Proyek</h2>
+        <button class="btn-secondary btn-icon-only" onclick="document.getElementById('reject-reason-dialog').close()"
+          style="padding:0.25rem 0.5rem; background:none; border:none; cursor:pointer; font-size:1.25rem; font-weight:700;">&times;</button>
+      </div>
       <div class="form-group">
-        <label for="pre-name">Nama Preset (Contoh: "60 Bulan")<span class="required-star">*</span></label>
-        <input type="text" id="pre-name" required>
+        <label for="reject-reason-textarea">Alasan Penolakan / Catatan Revisi (Wajib):</label>
+        <textarea id="reject-reason-textarea" rows="4"
+          placeholder="Tuliskan catatan mengapa proyek ini ditolak atau aspek apa yang perlu disesuaikan..."
+          required></textarea>
       </div>
-      <div class="form-row">
+      <div class="dialog-footer">
+        <button class="btn btn-secondary"
+          onclick="document.getElementById('reject-reason-dialog').close()">Batal</button>
+        <button class="btn btn-danger" onclick="app.submitRejection()">Tolak Proyek</button>
+      </div>
+    </dialog>
+
+    <!-- DIALOG 3: ADD DURATION PRESET MODAL -->
+    <dialog id="add-preset-dialog">
+      <div class="dialog-header">
+        <h2>Tambah Preset Durasi Baru</h2>
+        <button class="btn-secondary btn-icon-only" onclick="document.getElementById('add-preset-dialog').close()"
+          style="padding:0.25rem 0.5rem; background:none; border:none; cursor:pointer; font-size:1.25rem; font-weight:700;">&times;</button>
+      </div>
+      <form onsubmit="app.saveNewPreset(event)">
         <div class="form-group">
-          <label for="pre-months">Durasi (Bulan)<span class="required-star">*</span></label>
-          <input type="number" id="pre-months" min="1" max="120" required>
+          <label for="pre-name">Nama Preset (Contoh: "60 Bulan")<span class="required-star">*</span></label>
+          <input type="text" id="pre-name" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pre-months">Durasi (Bulan)<span class="required-star">*</span></label>
+            <input type="number" id="pre-months" min="1" max="120" required>
+          </div>
+          <div class="form-group">
+            <label for="pre-category">Kategori Durasi (Auto-resolved)<span class="required-star">*</span></label>
+            <select id="pre-category" disabled style="background-color:rgba(255,255,255,0.02);">
+              <option value="SHORT_TERM">SHORT_TERM (1-12 bln)</option>
+              <option value="MID_TERM">MID_TERM (13-36 bln)</option>
+              <option value="LONG_TERM">LONG_TERM (37-60 bln)</option>
+              <option value="EXTENDED">EXTENDED (61-120 bln)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pre-bcr-mandatory">BCR Mandatory Threshold<span class="required-star">*</span></label>
+            <input type="number" id="pre-bcr-mandatory" step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label for="pre-bcr-minimum">BCR Minimum Threshold<span class="required-star">*</span></label>
+            <input type="number" id="pre-bcr-minimum" step="0.01" required>
+          </div>
+        </div>
+        <div class="dialog-footer">
+          <button type="button" class="btn btn-secondary"
+            onclick="document.getElementById('add-preset-dialog').close()">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Preset</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- DIALOG 4: ADD USER MODAL -->
+    <dialog id="add-user-dialog">
+      <div class="dialog-header">
+        <h2>Tambah User & Role Baru</h2>
+        <button class="btn-secondary btn-icon-only" onclick="document.getElementById('add-user-dialog').close()"
+          style="padding:0.25rem 0.5rem; background:none; border:none; cursor:pointer; font-size:1.25rem; font-weight:700;">&times;</button>
+      </div>
+      <form onsubmit="app.saveNewUser(event)">
+        <div class="form-group">
+          <label for="usr-fullname">Nama Lengkap User<span class="required-star">*</span></label>
+          <input type="text" id="usr-fullname" placeholder="Contoh: Budi Santoso" required>
         </div>
         <div class="form-group">
-          <label for="pre-category">Kategori Durasi (Auto-resolved)<span class="required-star">*</span></label>
-          <select id="pre-category" disabled style="background-color:rgba(255,255,255,0.02);">
-            <option value="SHORT_TERM">SHORT_TERM (1-12 bln)</option>
-            <option value="MID_TERM">MID_TERM (13-36 bln)</option>
-            <option value="LONG_TERM">LONG_TERM (37-60 bln)</option>
-            <option value="EXTENDED">EXTENDED (61-120 bln)</option>
+          <label for="usr-email">Alamat Email<span class="required-star">*</span></label>
+          <input type="email" id="usr-email" placeholder="nama@perusahaan.com" required>
+        </div>
+        <div class="form-group">
+          <label for="usr-role">Role Akses Sistem<span class="required-star">*</span></label>
+          <select id="usr-role" required>
+            <option value="SUPER_ADMIN">Super Admin</option>
+            <option value="FINANCE_ADMIN">Finance Admin</option>
+            <option value="SA">Solution Architect</option>
+            <option value="MANAGER">Manager</option>
+            <option value="GM_SRM">GM / SRM (Final Approver)</option>
+            <option value="VIEWER">Viewer</option>
           </select>
         </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="pre-bcr-mandatory">BCR Mandatory Threshold<span class="required-star">*</span></label>
-          <input type="number" id="pre-bcr-mandatory" step="0.01" required>
+        <div class="dialog-footer">
+          <button type="button" class="btn btn-secondary"
+            onclick="document.getElementById('add-user-dialog').close()">Batal</button>
+          <button type="submit" class="btn btn-primary">Tambah User</button>
         </div>
-        <div class="form-group">
-          <label for="pre-bcr-minimum">BCR Minimum Threshold<span class="required-star">*</span></label>
-          <input type="number" id="pre-bcr-minimum" step="0.01" required>
-        </div>
-      </div>
-      <div class="dialog-footer">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('add-preset-dialog').close()">Batal</button>
-        <button type="submit" class="btn btn-primary">Simpan Preset</button>
-      </div>
-    </form>
-  </dialog>
-  
-  <!-- DIALOG 4: ADD USER MODAL -->
-  <dialog id="add-user-dialog">
-    <div class="dialog-header">
-      <h2>Tambah User & Role Baru</h2>
-      <button class="btn-secondary btn-icon-only" onclick="document.getElementById('add-user-dialog').close()" style="padding:0.25rem 0.5rem; background:none; border:none; cursor:pointer; font-size:1.25rem; font-weight:700;">&times;</button>
-    </div>
-    <form onsubmit="app.saveNewUser(event)">
-      <div class="form-group">
-        <label for="usr-fullname">Nama Lengkap User<span class="required-star">*</span></label>
-        <input type="text" id="usr-fullname" placeholder="Contoh: Budi Santoso" required>
-      </div>
-      <div class="form-group">
-        <label for="usr-email">Alamat Email<span class="required-star">*</span></label>
-        <input type="email" id="usr-email" placeholder="nama@perusahaan.com" required>
-      </div>
-      <div class="form-group">
-        <label for="usr-role">Role Akses Sistem<span class="required-star">*</span></label>
-        <select id="usr-role" required>
-          <option value="SUPER_ADMIN">Super Admin</option>
-          <option value="FINANCE_ADMIN">Finance Admin</option>
-          <option value="SA">Solution Architect</option>
-          <option value="MANAGER">Manager</option>
-          <option value="GM_SRM">GM / SRM (Final Approver)</option>
-          <option value="VIEWER">Viewer</option>
-        </select>
-      </div>
-      <div class="dialog-footer">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('add-user-dialog').close()">Batal</button>
-        <button type="submit" class="btn btn-primary">Tambah User</button>
-      </div>
-    </form>
-  </dialog>
+      </form>
+    </dialog>
 
   </div><!-- #app-shell -->
-  
+
   <!-- Main Logic script -->
   <script>
     window.NAVPRO_API_URL = window.NAVPRO_API_URL || 'http://localhost:4000';
@@ -1381,5 +1549,5 @@
   <script src="api.js?v=1.0"></script>
   <script src="index.js?v=4.5"></script>
 </body>
+
 </html>
-< deployed Thu May 28 00:25:04 WIB 2026 -->
