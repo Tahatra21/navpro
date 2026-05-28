@@ -33,6 +33,24 @@ const NAVPRO = {
   offlineDemoPassword: 'Navpro@2026',
 };
 
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  const s = String(str);
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getSafeProperty(obj, key, fallback) {
+  if (obj && typeof obj === 'object' && Object.prototype.hasOwnProperty.call(obj, key)) {
+    return Reflect.get(obj, key);
+  }
+  return fallback !== undefined ? fallback : key;
+}
+
 class KKFApplication {
   constructor() {
     this.activePage = 'dashboard';
@@ -352,22 +370,22 @@ class KKFApplication {
   // Financial Computation Methods
   calculateXNPV(rate, cashflows, dates) {
     let npv = 0;
-    const t0 = dates[0].getTime();
+    const t0 = dates.at(0).getTime();
     for (let i = 0; i < cashflows.length; i++) {
-      const t_i = dates[i].getTime();
+      const t_i = dates.at(i).getTime();
       const t = (t_i - t0) / (365 * 24 * 60 * 60 * 1000);
-      npv += cashflows[i] / Math.pow(1 + rate, t);
+      npv += cashflows.at(i) / Math.pow(1 + rate, t);
     }
     return npv;
   }
 
   calculateDXNPV(rate, cashflows, dates) {
     let dnpv = 0;
-    const t0 = dates[0].getTime();
+    const t0 = dates.at(0).getTime();
     for (let i = 0; i < cashflows.length; i++) {
-      const t_i = dates[i].getTime();
+      const t_i = dates.at(i).getTime();
       const t = (t_i - t0) / (365 * 24 * 60 * 60 * 1000);
-      dnpv -= t * cashflows[i] / Math.pow(1 + rate, t + 1);
+      dnpv -= t * cashflows.at(i) / Math.pow(1 + rate, t + 1);
     }
     return dnpv;
   }
@@ -419,10 +437,10 @@ class KKFApplication {
 
   // Compute exact fractional Payback Period in months
   calculatePayback(cumulative_cashflow, net_cashflows) {
-    if (cumulative_cashflow[0] >= 0) return 0;
+    if (cumulative_cashflow.at(0) >= 0) return 0;
     for (let i = 0; i < cumulative_cashflow.length - 1; i++) {
-      if (cumulative_cashflow[i] < 0 && cumulative_cashflow[i+1] >= 0) {
-        const fraction = Math.abs(cumulative_cashflow[i]) / (net_cashflows[i+1] || 1);
+      if (cumulative_cashflow.at(i) < 0 && cumulative_cashflow.at(i + 1) >= 0) {
+        const fraction = Math.abs(cumulative_cashflow.at(i)) / (net_cashflows.at(i + 1) || 1);
         return i + fraction;
       }
     }
@@ -558,7 +576,7 @@ class KKFApplication {
       
       periods.push({
         period_number: m,
-        period_date: dates[m].toISOString().substring(0, 10),
+        period_date: dates.at(m).toISOString().substring(0, 10),
         revenue: Math.round(revenue),
         otc: m === 1 ? Math.round(otc) : 0, // track OTC separately for display
         opex: Math.round(opex),
@@ -572,9 +590,9 @@ class KKFApplication {
     let cum = 0;
     const net_cfs = [];
     for (let m = 0; m <= N; m++) {
-      cum += periods[m].net_cashflow;
-      periods[m].cumulative_cashflow = Math.round(cum);
-      net_cfs.push(periods[m].net_cashflow);
+      cum += periods.at(m).net_cashflow;
+      periods.at(m).cumulative_cashflow = Math.round(cum);
+      net_cfs.push(periods.at(m).net_cashflow);
     }
 
     // NPV, XIRR
@@ -582,12 +600,12 @@ class KKFApplication {
     const xirr_val = this.calculateXIRR(net_cfs, dates);
     
     // ─── BCR / Profitability Index ── ALIGNED WITH EXCEL TEMPLATE ───
-    const t0 = dates[0].getTime();
+    const t0 = dates.at(0).getTime();
     let pv_revenue_m1_mn = 0;
     for (let m = 1; m <= N; m++) {
-      const t = (dates[m].getTime() - t0) / (365 * 24 * 60 * 60 * 1000);
+      const t = (dates.at(m).getTime() - t0) / (365 * 24 * 60 * 60 * 1000);
       const discount = Math.pow(1 + wacc, t);
-      pv_revenue_m1_mn += periods[m].revenue / discount;
+      pv_revenue_m1_mn += periods.at(m).revenue / discount;
     }
     // Use total CAPEX across all periods as denominator if M0 capex is 0
     const capex_denom = total_capex_m0 > 0 ? total_capex_m0 :
@@ -600,7 +618,7 @@ class KKFApplication {
     // ─── Simple ROI ── Total Net Inflow / |CAPEX| (undiscounted) ───
     let total_net_inflow = 0;
     for (let m = 1; m <= N; m++) {
-      total_net_inflow += periods[m].net_cashflow;
+      total_net_inflow += periods.at(m).net_cashflow;
     }
     const simple_roi = capex_denom === 0 ? 0 : (total_net_inflow / capex_denom);
 
@@ -955,7 +973,7 @@ class KKFApplication {
   ];
 
   formatRoleLabel(role) {
-    return NAVPRO.roleLabels[role] || role.replace(/_/g, ' ');
+    return getSafeProperty(NAVPRO.roleLabels, role, role.replace(/_/g, ' '));
   }
 
   async probeApi() {
@@ -1000,10 +1018,10 @@ class KKFApplication {
     if (!grid) return;
     grid.innerHTML = KKFApplication.DEMO_ACCOUNTS.map(
       (acc) => `
-      <button type="button" class="login-demo-btn" data-email="${acc.email}"
-        onclick="app.fillDemoLogin('${acc.email}')">
-        <strong>${acc.full_name}</strong>
-        <span>${this.formatRoleLabel(acc.role)}</span>
+      <button type="button" class="login-demo-btn" data-email="${escapeHTML(acc.email)}"
+        onclick="app.fillDemoLogin('${escapeHTML(acc.email)}')">
+        <strong>${escapeHTML(acc.full_name)}</strong>
+        <span>${escapeHTML(this.formatRoleLabel(acc.role))}</span>
       </button>`
     ).join('');
   }
@@ -1478,7 +1496,7 @@ class KKFApplication {
       this.filterApprovalsQueue();
     } catch (err) {
       summaryEl.textContent = 'Gagal memuat antrian approval.';
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center">Gagal memuat data: ${err?.message || 'Unknown error'}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center">Gagal memuat data: ${escapeHTML(err?.message || 'Unknown error')}</td></tr>`;
     }
   }
 
@@ -1524,18 +1542,18 @@ class KKFApplication {
 
       return `
         <tr>
-          <td class="col-code"><span class="project-code">${it.project_code}</span></td>
-          <td class="col-name"><a href="#" class="project-name-link" onclick="event.preventDefault(); app.navigateTo('project-detail', '${it.project_id}')">${it.project_name}</a></td>
-          <td class="col-date">${it.created_by_name || '—'}</td>
+          <td class="col-code"><span class="project-code">${escapeHTML(it.project_code)}</span></td>
+          <td class="col-name"><a href="#" class="project-name-link" onclick="event.preventDefault(); app.navigateTo('project-detail', '${escapeHTML(it.project_id)}')">${escapeHTML(it.project_name)}</a></td>
+          <td class="col-date">${escapeHTML(it.created_by_name || '—')}</td>
           <td class="col-duration">${it.duration_months} bln</td>
           <td class="col-status"><span class="badge ${this.getBadgeClassForStatus(it.status)}">${this.formatStatusLabel(it.status)}</span></td>
           <td class="col-date">${slaStart}</td>
           <td class="col-metric-wide">${slaBadge}</td>
           <td class="col-actions">
             <div class="projects-actions">
-              <button type="button" class="btn btn-primary btn-xs" onclick="app.navigateTo('project-detail', '${it.project_id}')">Review</button>
-              ${canAct ? `<button type="button" class="btn btn-secondary btn-xs" onclick="app.quickApproveFromQueue('${it.project_id}')">Approve</button>` : ''}
-              ${canAct ? `<button type="button" class="btn btn-danger btn-xs" onclick="app.quickRejectFromQueue('${it.project_id}')">Reject</button>` : ''}
+              <button type="button" class="btn btn-primary btn-xs" onclick="app.navigateTo('project-detail', '${escapeHTML(it.project_id)}')">Review</button>
+              ${canAct ? `<button type="button" class="btn btn-secondary btn-xs" onclick="app.quickApproveFromQueue('${escapeHTML(it.project_id)}')">Approve</button>` : ''}
+              ${canAct ? `<button type="button" class="btn btn-danger btn-xs" onclick="app.quickRejectFromQueue('${escapeHTML(it.project_id)}')">Reject</button>` : ''}
             </div>
           </td>
         </tr>
@@ -1671,8 +1689,8 @@ class KKFApplication {
       return `
         <tr>
           <td style="color:var(--text-secondary); font-size:0.75rem;">${timeStr}</td>
-          <td><strong>${log.user}</strong></td>
-          <td>${getActionBadgeHtml(log.action)} <span style="font-size:0.8rem;">${log.new_val}</span></td>
+          <td><strong>${escapeHTML(log.user)}</strong></td>
+          <td>${getActionBadgeHtml(log.action)} <span style="font-size:0.8rem;">${escapeHTML(log.new_val)}</span></td>
         </tr>
       `;
     }).join('');
@@ -1737,9 +1755,9 @@ class KKFApplication {
     // Compute cell counts and matching projects
     const gridData = {};
     severityRows.forEach(row => {
-      gridData[row.key] = {};
+      Reflect.set(gridData, row.key, {});
       likelihoodCols.forEach(col => {
-        gridData[row.key][col.key] = [];
+        Reflect.set(Reflect.get(gridData, row.key), col.key, []);
       });
     });
 
@@ -1748,8 +1766,12 @@ class KKFApplication {
       const likelihood = this.getProjectLikelihood(p);
       
       // Safety checks
-      if (gridData[severity] && gridData[severity][likelihood]) {
-        gridData[severity][likelihood].push(p);
+      const sevObj = Reflect.get(gridData, severity);
+      if (sevObj) {
+        const list = Reflect.get(sevObj, likelihood);
+        if (list) {
+          list.push(p);
+        }
       }
     });
 
@@ -1804,9 +1826,9 @@ class KKFApplication {
       `;
 
       likelihoodCols.forEach(col => {
-        const matches = gridData[row.key][col.key];
+        const matches = Reflect.get(Reflect.get(gridData, row.key), col.key);
         const count = matches.length;
-        const riskClass = riskClasses[row.key][col.key];
+        const riskClass = Reflect.get(Reflect.get(riskClasses, row.key), col.key);
         
         let badgeHtml = `<span class="risk-count-badge empty-cell">0</span>`;
         if (count > 0) {
@@ -1818,7 +1840,7 @@ class KKFApplication {
         if (count > 0) {
           tooltipText += `\n\nDaftar Proyek:\n` + matches.map(p => {
             const capexVal = this.getProjectCapexTotal(p);
-            return `• ${p.project_code}: ${p.project_name} (${this.formatCurrency(capexVal)})`;
+            return `• ${escapeHTML(p.project_code)}: ${escapeHTML(p.project_name)} (${this.formatCurrency(capexVal)})`;
           }).join('\n');
         }
 
@@ -1995,13 +2017,13 @@ class KKFApplication {
       
       let datasets = [];
       if (chartType === 'doughnut') {
-        const totals = projects.map((p, idx) => capexData[idx] + opexData[idx]);
+        const totals = projects.map((p, idx) => capexData.at(idx) + opexData.at(idx));
         datasets = [{
           label: 'Total Biaya (CAPEX + OPEX)',
           data: totals,
           backgroundColor: projects.map((p, idx) => {
             const hues = [39, 140, 200, 280, 330];
-            return `hsla(${hues[idx % hues.length]}, 70%, 55%, 0.75)`;
+            return `hsla(${hues.at(idx % hues.length)}, 70%, 55%, 0.75)`;
           }),
           borderWidth: 1
         }];
@@ -2154,14 +2176,14 @@ class KKFApplication {
       const slaBadge = `<span class="badge ${isOverdue ? 'badge-rejected' : 'badge-review'}" title="Due date SLA">${isOverdue ? 'Overdue' : 'Due'}: ${slaLabel}</span>`;
       return `
         <tr>
-          <td><strong>${p.project_code}</strong></td>
-          <td><a href="#" onclick="event.preventDefault(); app.navigateTo('project-detail', '${p.id}')">${p.project_name}</a></td>
-          <td>${author}</td>
+          <td><strong>${escapeHTML(p.project_code)}</strong></td>
+          <td><a href="#" onclick="event.preventDefault(); app.navigateTo('project-detail', '${escapeHTML(p.id)}')">${escapeHTML(p.project_name)}</a></td>
+          <td>${escapeHTML(author)}</td>
           <td>${p.project_duration_months} Bulan</td>
-          <td><span class="badge ${this.getBadgeClassForStatus(p.status)}">${p.status}</span></td>
+          <td><span class="badge ${this.getBadgeClassForStatus(p.status)}">${escapeHTML(p.status)}</span></td>
           <td>${slaBadge}</td>
           <td>
-            <button class="btn btn-primary btn-sm btn-review-pulse" onclick="app.navigateTo('project-detail', '${p.id}')">Review Kelayakan</button>
+            <button class="btn btn-primary btn-sm btn-review-pulse" onclick="app.navigateTo('project-detail', '${escapeHTML(p.id)}')">Review Kelayakan</button>
           </td>
         </tr>
       `;
@@ -2201,11 +2223,11 @@ class KKFApplication {
   }
 
   formatStatusLabel(status) {
-    return NAVPRO.statusLabels[status] || status;
+    return getSafeProperty(NAVPRO.statusLabels, status, status);
   }
 
   formatRiskLabel(level) {
-    return NAVPRO.riskLabels[level] || level;
+    return getSafeProperty(NAVPRO.riskLabels, level, level);
   }
 
   getRiskBadgeClass(level) {
@@ -2334,9 +2356,9 @@ class KKFApplication {
 
       return `
         <tr>
-          <td class="col-code"><span class="project-code">${project.project_code}</span></td>
+          <td class="col-code"><span class="project-code">${escapeHTML(project.project_code)}</span></td>
           <td class="col-name">
-            <a href="#" class="project-name-link" onclick="event.preventDefault(); app.navigateTo('project-detail', '${project.id}')">${project.project_name}</a>
+            <a href="#" class="project-name-link" onclick="event.preventDefault(); app.navigateTo('project-detail', '${escapeHTML(project.id)}')">${escapeHTML(project.project_name)}</a>
           </td>
           <td class="col-date">${new Date(project.contract_start_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
           <td class="col-duration">${project.project_duration_months} bln</td>
@@ -2492,7 +2514,7 @@ class KKFApplication {
     // 2. Generate Date Row
     let dateHtml = `<tr><td class="sticky-col">Tanggal Cashflow</td>`;
     for (let m = 0; m < cf.length; m++) {
-      const d = new Date(cf[m].period_date);
+      const d = new Date(cf.at(m).period_date);
       dateHtml += `<td>${d.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' })}</td>`;
     }
     dateHtml += `</tr>`;
@@ -2500,28 +2522,28 @@ class KKFApplication {
     // 3. Generate Revenue Row
     let revHtml = `<tr><td class="sticky-col">Revenue (Pendapatan)</td>`;
     for (let m = 0; m < cf.length; m++) {
-      revHtml += `<td>${cf[m].revenue.toLocaleString('id-ID')}</td>`;
+      revHtml += `<td>${cf.at(m).revenue.toLocaleString('id-ID')}</td>`;
     }
     revHtml += `</tr>`;
 
     // 4. Generate CAPEX Row
     let capexHtml = `<tr><td class="sticky-col">CAPEX (Belanja Modal)</td>`;
     for (let m = 0; m < cf.length; m++) {
-      capexHtml += `<td>${cf[m].capex.toLocaleString('id-ID')}</td>`;
+      capexHtml += `<td>${cf.at(m).capex.toLocaleString('id-ID')}</td>`;
     }
     capexHtml += `</tr>`;
 
     // 5. Generate OPEX Row
     let opexHtml = `<tr><td class="sticky-col">OPEX (Operasional)</td>`;
     for (let m = 0; m < cf.length; m++) {
-      opexHtml += `<td>${cf[m].opex.toLocaleString('id-ID')}</td>`;
+      opexHtml += `<td>${cf.at(m).opex.toLocaleString('id-ID')}</td>`;
     }
     opexHtml += `</tr>`;
 
     // 6. Generate Net Cashflow Row
     let netHtml = `<tr class="net-cf-row"><td class="sticky-col">Net Cashflow</td>`;
     for (let m = 0; m < cf.length; m++) {
-      const val = cf[m].net_cashflow;
+      const val = cf.at(m).net_cashflow;
       netHtml += `<td class="${val < 0 ? 'text-danger' : 'text-success'}">${val.toLocaleString('id-ID')}</td>`;
     }
     netHtml += `</tr>`;
@@ -2529,7 +2551,7 @@ class KKFApplication {
     // 7. Generate Cumulative Cashflow Row
     let cumHtml = `<tr class="cum-cf-row"><td class="sticky-col">Cumulative Cashflow</td>`;
     for (let m = 0; m < cf.length; m++) {
-      const val = cf[m].cumulative_cashflow;
+      const val = cf.at(m).cumulative_cashflow;
       cumHtml += `<td class="${val < 0 ? 'text-danger' : 'text-success'}">${val.toLocaleString('id-ID')}</td>`;
     }
     cumHtml += `</tr>`;
@@ -2537,7 +2559,7 @@ class KKFApplication {
     // 8. Generate Active Flag Row
     let flagHtml = `<tr><td class="sticky-col">Active Flag</td>`;
     for (let m = 0; m < cf.length; m++) {
-      flagHtml += `<td>${cf[m].active_flag}</td>`;
+      flagHtml += `<td>${cf.at(m).active_flag}</td>`;
     }
     flagHtml += `</tr>`;
 
@@ -2566,8 +2588,8 @@ class KKFApplication {
           <span>Solution Architect (Draft & Hitung)</span>
           <span style="color:var(--accent-green); font-size:0.7rem;">SUBMITTED</span>
         </div>
-        <div class="approval-node-meta">Oleh: ${sub ? sub.user : 'Solution Architect'}</div>
-        ${sub?.comment ? `<div class="approval-node-comment">"${sub.comment}"</div>` : ''}
+        <div class="approval-node-meta">Oleh: ${sub ? escapeHTML(sub.user) : 'Solution Architect'}</div>
+        ${sub?.comment ? `<div class="approval-node-comment">"${escapeHTML(sub.comment)}"</div>` : ''}
       </div>
     `;
 
@@ -2600,7 +2622,7 @@ class KKFApplication {
           <span style="font-size:0.7rem;" class="${mgrStatusText.includes('APPROVED') ? 'text-success' : (mgrStatusText.includes('REJECTED') ? 'text-danger' : 'text-warning')}">${mgrStatusText}</span>
         </div>
         <div class="approval-node-meta">SLA: 2 Hari Kerja ${mgr ? ' | Diputuskan: ' + new Date(mgr.decided_at).toLocaleDateString('id-ID') : ''}</div>
-        ${mgr?.comment ? `<div class="approval-node-comment">"${mgr.comment}"</div>` : ''}
+        ${mgr?.comment ? `<div class="approval-node-comment">"${escapeHTML(mgr.comment)}"</div>` : ''}
       </div>
     `;
 
@@ -2631,7 +2653,7 @@ class KKFApplication {
           <span style="font-size:0.7rem;" class="${gmStatusText.includes('FINAL') ? 'text-success' : (gmStatusText.includes('REJECTED') ? 'text-danger' : 'text-warning')}">${gmStatusText}</span>
         </div>
         <div class="approval-node-meta">SLA: 1 Hari Kerja ${gm ? ' | Diputuskan: ' + new Date(gm.decided_at).toLocaleDateString('id-ID') : ''}</div>
-        ${gm?.comment ? `<div class="approval-node-comment">"${gm.comment}"</div>` : ''}
+        ${gm?.comment ? `<div class="approval-node-comment">"${escapeHTML(gm.comment)}"</div>` : ''}
       </div>
     `;
 
@@ -2667,17 +2689,17 @@ class KKFApplication {
       (proj.status === 'DRAFT' || proj.status === 'COMPUTED' || proj.status === 'REJECTED') &&
       (role === 'SA' || role === 'SUPER_ADMIN' || role === 'FINANCE_ADMIN')
     ) {
-      html += `<button class="btn btn-primary" onclick="app.submitProjectForApproval('${proj.id}')">Submit ke Manager (Approval)</button>`;
+      html += `<button class="btn btn-primary" onclick="app.submitProjectForApproval('${escapeHTML(proj.id)}')">Submit ke Manager (Approval)</button>`;
     }
 
     // 2. Edit cashflow parameters button (DRAFT / COMPUTED / REJECTED only)
     if ((proj.status === 'DRAFT' || proj.status === 'COMPUTED' || proj.status === 'REJECTED') && (role === 'SA' || role === 'SUPER_ADMIN' || role === 'FINANCE_ADMIN')) {
-      html += `<button class="btn btn-secondary" onclick="app.openEditProjectWizard('${proj.id}')">Edit Konfigurasi</button>`;
+      html += `<button class="btn btn-secondary" onclick="app.openEditProjectWizard('${escapeHTML(proj.id)}')">Edit Konfigurasi</button>`;
     }
 
     // 3. Recalculate button
     if ((proj.status === 'DRAFT' || proj.status === 'COMPUTED' || proj.status === 'REJECTED') && (role === 'SA' || role === 'SUPER_ADMIN' || role === 'FINANCE_ADMIN')) {
-      html += `<button class="btn btn-secondary" onclick="app.triggerProjectRecalculation('${proj.id}')">
+      html += `<button class="btn btn-secondary" onclick="app.triggerProjectRecalculation('${escapeHTML(proj.id)}')">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right:2px;"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M21 3v5h-5"/></svg>
         Hitung Ulang (Async)
       </button>`;
@@ -2685,7 +2707,7 @@ class KKFApplication {
 
     // 4. Archive button for approved/rejected projects
     if ((proj.status === 'APPROVED_FINAL' || proj.status === 'REJECTED') && (role === 'SUPER_ADMIN' || role === 'FINANCE_ADMIN')) {
-      html += `<button class="btn btn-secondary" onclick="app.archiveProject('${proj.id}')">Arsipkan Proyek</button>`;
+      html += `<button class="btn btn-secondary" onclick="app.archiveProject('${escapeHTML(proj.id)}')">Arsipkan Proyek</button>`;
     }
 
     container.innerHTML = html;
@@ -2708,7 +2730,7 @@ class KKFApplication {
           <td style="font-weight:600;">${this.formatCurrency(v.xnpv)}</td>
           <td style="font-weight:600;">${v.bcr.toFixed(2)}</td>
           <td>
-            <button class="btn btn-secondary btn-sm${disabledClass}" onclick="app.loadCalcVersionSnapshot('${proj.id}', ${v.version_number})" ${disabledAttr}>Load Snapshot</button>
+            <button class="btn btn-secondary btn-sm${disabledClass}" onclick="app.loadCalcVersionSnapshot('${escapeHTML(proj.id)}', ${v.version_number})" ${disabledAttr}>Load Snapshot</button>
           </td>
         </tr>
       `;
@@ -3148,7 +3170,7 @@ class KKFApplication {
     const select = document.getElementById('wiz-duration-preset');
     const presets = this._getPresetsList().filter(p => p.is_active);
     
-    let html = presets.map(p => `<option value="${p.duration_months}">${p.preset_name}</option>`).join('');
+    let html = presets.map(p => `<option value="${p.duration_months}">${escapeHTML(p.preset_name)}</option>`).join('');
     html += `<option value="CUSTOM">Custom (Input Bebas)</option>`;
     select.innerHTML = html;
 
@@ -3169,8 +3191,8 @@ class KKFApplication {
   populateWizardCategoriesSelects() {
     const cats = this._getCategoriesData();
     
-    document.getElementById('wiz-capex-cat').innerHTML = cats.capex.map(c => `<option value="${c}">${c}</option>`).join('');
-    document.getElementById('wiz-opex-cat').innerHTML = cats.opex.map(c => `<option value="${c}">${c}</option>`).join('');
+    document.getElementById('wiz-capex-cat').innerHTML = cats.capex.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+    document.getElementById('wiz-opex-cat').innerHTML = cats.opex.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
   }
 
   handleWizardDurationPresetChange(val) {
@@ -3229,8 +3251,8 @@ class KKFApplication {
       total += item.amount;
       return `
         <tr>
-          <td>${item.name}</td>
-          <td><span class="badge badge-draft" style="font-size:0.6rem;">${item.category}</span></td>
+          <td>${escapeHTML(item.name)}</td>
+          <td><span class="badge badge-draft" style="font-size:0.6rem;">${escapeHTML(item.category)}</span></td>
           <td class="text-right">${this.formatCurrency(item.amount)}</td>
           <td>Bulan ${item.period}</td>
           <td><button class="btn btn-danger btn-sm btn-icon-only" onclick="app.deleteWizardCapexRow(${idx})">&times;</button></td>
@@ -3290,8 +3312,8 @@ class KKFApplication {
       total += item.baseline_amount;
       return `
         <tr>
-          <td>${item.name}</td>
-          <td><span class="badge badge-draft" style="font-size:0.6rem;">${item.category}</span></td>
+          <td>${escapeHTML(item.name)}</td>
+          <td><span class="badge badge-draft" style="font-size:0.6rem;">${escapeHTML(item.category)}</span></td>
           <td class="text-right">${this.formatCurrency(item.baseline_amount)}/bln</td>
           <td>Bulan ${item.start_period} s/d ${item.end_period}</td>
           <td><button class="btn btn-danger btn-sm btn-icon-only" onclick="app.deleteWizardOpexRow(${idx})">&times;</button></td>
@@ -3353,7 +3375,7 @@ class KKFApplication {
       total += item.monthly_amount;
       return `
         <tr>
-          <td>${item.name}</td>
+          <td>${escapeHTML(item.name)}</td>
           <td class="text-right">${this.formatCurrency(item.monthly_amount)}/bln</td>
           <td>${(item.escalation_rate * 100).toFixed(2)}%</td>
           <td>Bulan ${item.start_period} s/d ${item.end_period}</td>
@@ -3628,9 +3650,9 @@ class KKFApplication {
         <div class="health-tile">
           <div class="health-indicator ${isOnline ? 'health-indicator-online' : (isMaint ? 'health-indicator-online' : 'health-indicator-offline')}" style="background-color:${isMaint ? 'var(--accent-yellow)' : ''};"></div>
           <div>
-            <div class="health-tile-title">${s.name}</div>
-            <div class="health-tile-sub">Port: ${s.port} | Status: <strong style="color:${isOnline ? 'var(--accent-green)' : (isMaint ? 'var(--accent-yellow)' : 'var(--accent-red)')}">${s.status}</strong></div>
-            <div style="font-size:0.65rem; color:var(--text-muted);">${s.desc}</div>
+            <div class="health-tile-title">${escapeHTML(s.name)}</div>
+            <div class="health-tile-sub">Port: ${escapeHTML(s.port)} | Status: <strong style="color:${isOnline ? 'var(--accent-green)' : (isMaint ? 'var(--accent-yellow)' : 'var(--accent-red)')}">${escapeHTML(s.status)}</strong></div>
+            <div style="font-size:0.65rem; color:var(--text-muted);">${escapeHTML(s.desc)}</div>
           </div>
         </div>
       `;
@@ -3784,14 +3806,14 @@ class KKFApplication {
     const html = list.map(p => {
       return `
         <tr>
-          <td><strong>${p.preset_name}</strong></td>
+          <td><strong>${escapeHTML(p.preset_name)}</strong></td>
           <td>${p.duration_months} Bulan</td>
-          <td><span class="badge badge-draft" style="font-size:0.6rem;">${p.category}</span></td>
+          <td><span class="badge badge-draft" style="font-size:0.6rem;">${escapeHTML(p.category)}</span></td>
           <td>≥ ${p.bcr_mandatory}</td>
           <td>≥ ${p.bcr_minimum}</td>
           <td><span class="badge ${p.is_active ? 'badge-approved' : 'badge-draft'}">${p.is_active ? 'AKTIF' : 'NON-AKTIF'}</span></td>
           <td>
-            <button class="btn btn-secondary btn-sm" onclick="app.togglePresetActive('${p.id}')">${p.is_active ? 'Nonaktifkan' : 'Aktifkan'}</button>
+            <button class="btn btn-secondary btn-sm" onclick="app.togglePresetActive('${escapeHTML(p.id)}')">${p.is_active ? 'Nonaktifkan' : 'Aktifkan'}</button>
           </td>
         </tr>
       `;
@@ -3878,12 +3900,12 @@ class KKFApplication {
     const html = list.map(s => {
       return `
         <tr>
-          <td><strong>${s.role_name}</strong></td>
+          <td><strong>${escapeHTML(s.role_name)}</strong></td>
           <td>${s.sla_working_days} Hari Kerja</td>
           <td>${s.reminder_hours} Jam</td>
-          <td>${s.escalation_hours} Jam (Eskalasi ke: ${s.escalate_to_role})</td>
+          <td>${s.escalation_hours} Jam (Eskalasi ke: ${escapeHTML(s.escalate_to_role)})</td>
           <td>
-            <button class="btn btn-secondary btn-sm" onclick="app.editSLALimit('${s.role_key}')">Edit SLA</button>
+            <button class="btn btn-secondary btn-sm" onclick="app.editSLALimit('${escapeHTML(s.role_key)}')">Edit SLA</button>
           </td>
         </tr>
       `;
@@ -3918,7 +3940,7 @@ class KKFApplication {
     const capList = document.getElementById('admin-capex-cats-list');
     capList.innerHTML = cats.capex.map((c, i) => `
       <div class="category-pill">
-        <span>${c}</span>
+        <span>${escapeHTML(c)}</span>
         <button onclick="app.deleteCategory('CAPEX', ${i})" style="background:none; border:none; color:var(--accent-red); cursor:pointer; font-weight:700;">&times;</button>
       </div>
     `).join('');
@@ -3926,7 +3948,7 @@ class KKFApplication {
     const opexList = document.getElementById('admin-opex-cats-list');
     opexList.innerHTML = cats.opex.map((c, i) => `
       <div class="category-pill">
-        <span>${c}</span>
+        <span>${escapeHTML(c)}</span>
         <button onclick="app.deleteCategory('OPEX', ${i})" style="background:none; border:none; color:var(--accent-red); cursor:pointer; font-weight:700;">&times;</button>
       </div>
     `).join('');
@@ -3971,9 +3993,9 @@ class KKFApplication {
     const html = list.map((p, i) => {
       return `
         <tr>
-          <td><code>${p.key}</code></td>
-          <td><span class="badge badge-draft" style="font-size:0.6rem;">${p.category}</span></td>
-          <td><strong>${p.val}</strong> <span style="font-size:0.75rem; color:var(--text-muted);">(${p.desc})</span></td>
+          <td><code>${escapeHTML(p.key)}</code></td>
+          <td><span class="badge badge-draft" style="font-size:0.6rem;">${escapeHTML(p.category)}</span></td>
+          <td><strong>${escapeHTML(p.val)}</strong> <span style="font-size:0.75rem; color:var(--text-muted);">(${escapeHTML(p.desc)})</span></td>
           <td>
             <button class="btn btn-secondary btn-sm" onclick="app.editParamValue(${i})">Ubah Nilai</button>
           </td>
@@ -3986,7 +4008,7 @@ class KKFApplication {
 
   async editParamValue(idx) {
     const list = this._getSystemParamsList();
-    const p = list[idx];
+    const p = list.at(idx);
 
     const nextVal = prompt(`Ubah parameter ${p.key}:`, p.val);
     if (nextVal !== null) {
@@ -4010,12 +4032,12 @@ class KKFApplication {
     const html = list.map(u => {
       return `
         <tr>
-          <td><strong>${u.full_name}</strong></td>
-          <td><code>${u.email}</code></td>
-          <td><span class="badge badge-draft">${u.role.replace('_', ' ')}</span></td>
+          <td><strong>${escapeHTML(u.full_name)}</strong></td>
+          <td><code>${escapeHTML(u.email)}</code></td>
+          <td><span class="badge badge-draft">${escapeHTML(u.role.replace('_', ' '))}</span></td>
           <td><span class="badge ${u.is_active ? 'badge-approved' : 'badge-rejected'}">${u.is_active ? 'AKTIF' : 'INAKTIF'}</span></td>
           <td>
-            <button class="btn btn-secondary btn-sm" onclick="app.toggleUserStatus('${u.id}')">${u.is_active ? 'Nonaktifkan' : 'Aktifkan'}</button>
+            <button class="btn btn-secondary btn-sm" onclick="app.toggleUserStatus('${escapeHTML(u.id)}')">${u.is_active ? 'Nonaktifkan' : 'Aktifkan'}</button>
           </td>
         </tr>
       `;
@@ -4081,10 +4103,10 @@ class KKFApplication {
       return `
         <tr>
           <td style="color:var(--text-secondary);">${timeStr}</td>
-          <td><strong>${log.user}</strong></td>
-          <td><span class="badge badge-draft" style="font-size:0.6rem; margin-right:0.25rem;">${log.action}</span></td>
-          <td style="color:var(--text-muted); font-size:0.75rem;">${log.old_val ? log.old_val.substring(0, 50) : '-'}</td>
-          <td style="color:var(--text-secondary); font-size:0.75rem;">${log.new_val ? log.new_val.substring(0, 80) : '-'}</td>
+          <td><strong>${escapeHTML(log.user)}</strong></td>
+          <td><span class="badge badge-draft" style="font-size:0.6rem; margin-right:0.25rem;">${escapeHTML(log.action)}</span></td>
+          <td style="color:var(--text-muted); font-size:0.75rem;">${log.old_val ? escapeHTML(log.old_val.substring(0, 50)) : '-'}</td>
+          <td style="color:var(--text-secondary); font-size:0.75rem;">${log.new_val ? escapeHTML(log.new_val.substring(0, 80)) : '-'}</td>
         </tr>
       `;
     }).join('');
@@ -4110,9 +4132,9 @@ class KKFApplication {
     const html = notifs.map(n => {
       const timeStr = new Date(n.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(n.timestamp).toLocaleDateString('id-ID', { day:'2-digit', month:'2-digit' });
       return `
-        <div class="inapp-notif-item ${n.is_read ? '' : 'unread'}" onclick="app.handleNotifClick('${n.project_id}', '${n.id}')">
-          <div class="inapp-notif-title">${n.title}</div>
-          <div class="inapp-notif-body">${n.body}</div>
+        <div class="inapp-notif-item ${n.is_read ? '' : 'unread'}" onclick="app.handleNotifClick('${escapeHTML(n.project_id)}', '${escapeHTML(n.id)}')">
+          <div class="inapp-notif-title">${escapeHTML(n.title)}</div>
+          <div class="inapp-notif-body">${escapeHTML(n.body)}</div>
           <div class="inapp-notif-time">${timeStr}</div>
         </div>
       `;
@@ -4294,31 +4316,31 @@ class KKFApplication {
     csv += `\n`;
 
     csv += `Tanggal;`;
-    for (let m = 0; m < cf.length; m++) csv += `${cf[m].period_date};`;
+    for (let m = 0; m < cf.length; m++) csv += `${cf.at(m).period_date};`;
     csv += `\n`;
 
     csv += `Revenue Inflows;`;
-    for (let m = 0; m < cf.length; m++) csv += `${cf[m].revenue};`;
+    for (let m = 0; m < cf.length; m++) csv += `${cf.at(m).revenue};`;
     csv += `\n`;
 
     csv += `CAPEX Outflows;`;
-    for (let m = 0; m < cf.length; m++) csv += `${cf[m].capex};`;
+    for (let m = 0; m < cf.length; m++) csv += `${cf.at(m).capex};`;
     csv += `\n`;
 
     csv += `OPEX Outflows;`;
-    for (let m = 0; m < cf.length; m++) csv += `${cf[m].opex};`;
+    for (let m = 0; m < cf.length; m++) csv += `${cf.at(m).opex};`;
     csv += `\n`;
 
     csv += `Net Cashflow;`;
-    for (let m = 0; m < cf.length; m++) csv += `${cf[m].net_cashflow};`;
+    for (let m = 0; m < cf.length; m++) csv += `${cf.at(m).net_cashflow};`;
     csv += `\n`;
 
     csv += `Cumulative Cashflow;`;
-    for (let m = 0; m < cf.length; m++) csv += `${cf[m].cumulative_cashflow};`;
+    for (let m = 0; m < cf.length; m++) csv += `${cf.at(m).cumulative_cashflow};`;
     csv += `\n`;
 
     csv += `Active Flag;`;
-    for (let m = 0; m < cf.length; m++) csv += `${cf[m].active_flag};`;
+    for (let m = 0; m < cf.length; m++) csv += `${cf.at(m).active_flag};`;
     csv += `\n`;
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
