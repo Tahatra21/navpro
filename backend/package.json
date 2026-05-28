@@ -10,18 +10,25 @@
     "dev:embedded": "node src/dev/dev-embedded.js",
     "seed": "node src/seed.js",
     "seed:demo": "node src/seed-demo-projects.js",
-    "test": "node --test"
+    "worker": "node src/worker.js",
+    "test": "node --test",
+    "smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.896.0",
+    "@aws-sdk/s3-request-presigner": "^3.896.0",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.58.5",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "embedded-postgres": "^18.3.0-beta.17",
     "express": "^4.21.0",
     "ioredis": "^5.6.2",
     "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^7.0.6",
     "pg": "^8.13.0",
+    "pdfkit": "^0.17.2",
     "uuid": "^10.0.0"
   }
 }

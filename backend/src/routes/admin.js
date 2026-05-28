@@ -202,10 +202,39 @@ router.post('/users', async (req, res) => {
 
 router.put('/users/:id', async (req, res) => {
   const b = req.body;
-  await query(
-    `UPDATE users SET full_name=$1, role=$2, is_active=$3, email=$4 WHERE id=$5`,
-    [b.full_name, b.role, b.is_active, b.email.toLowerCase(), req.params.id]
-  );
+  // Email change is restricted to SUPER_ADMIN only.
+  // FINANCE_ADMIN can still update name/role/active status for operational needs.
+  if (req.user.role === 'SUPER_ADMIN') {
+    await query(
+      `UPDATE users SET full_name=$1, role=$2, is_active=$3, email=$4 WHERE id=$5`,
+      [b.full_name, b.role, b.is_active, String(b.email || '').toLowerCase(), req.params.id]
+    );
+  } else {
+    await query(
+      `UPDATE users SET full_name=$1, role=$2, is_active=$3 WHERE id=$4`,
+      [b.full_name, b.role, b.is_active, req.params.id]
+    );
+  }
+  res.json({ ok: true });
+});
+
+// Reset password (SUPER_ADMIN only)
+router.post('/users/:id/reset-password', requireRoles('SUPER_ADMIN'), async (req, res) => {
+  const newPassword = String(req.body?.new_password || 'Navpro@2026');
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'Bad Request', message: 'Password minimal 8 karakter' });
+  }
+
+  const hash = await bcrypt.hash(newPassword, 10);
+  await query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hash, req.params.id]);
+  await addAuditLog({
+    userId: req.user.sub,
+    userName: req.user.name,
+    action: 'ADMIN_RESET_PASSWORD',
+    oldVal: req.params.id,
+    newVal: 'RESET',
+  });
+
   res.json({ ok: true });
 });
 

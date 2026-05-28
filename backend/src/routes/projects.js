@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import ExcelJS from 'exceljs';
+import PDFDocument from 'pdfkit';
 import { query, rowToProject, projectToDetail, durationCategory } from '../db.js';
 import { authRequired, requireRoles } from '../middleware/auth.js';
 import { runCalculationOnProject } from '../services/calculationEngine.js';
@@ -26,8 +28,28 @@ function canViewAll(role) {
   return ['SUPER_ADMIN', 'FINANCE_ADMIN', 'MANAGER', 'GM_SRM'].includes(role);
 }
 
+function formatIdr(n) {
+  const val = typeof n === 'number' && Number.isFinite(n) ? n : 0;
+  return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(val);
+}
+
+async function loadProjectOr403(req, res) {
+  const { rows } = await query(`SELECT * FROM projects WHERE id = $1`, [req.params.id]);
+  if (!rows[0]) {
+    res.status(404).json({ error: 'Not Found' });
+    return null;
+  }
+  const proj = rowToProject(rows[0]);
+  if (!canViewAll(req.user.role) && proj.created_by !== req.user.sub) {
+    res.status(403).json({ error: 'Forbidden' });
+    return null;
+  }
+  return proj;
+}
+
 router.get('/', async (req, res) => {
-  const { status, search, page = '1', limit = '100' } = req.query;
+  const { status, search, duration_category, duration_months, page = '1', limit = '100' } =
+    req.query;
   const params = [];
   let sql = `SELECT * FROM projects WHERE 1=1`;
 
@@ -38,6 +60,17 @@ router.get('/', async (req, res) => {
   if (status) {
     params.push(status);
     sql += ` AND status = $${params.length}`;
+  }
+  if (duration_category) {
+    params.push(duration_category);
+    sql += ` AND duration_category = $${params.length}`;
+  }
+  if (duration_months) {
+    const months = parseInt(duration_months, 10);
+    if (Number.isInteger(months) && months >= 1 && months <= 120) {
+      params.push(months);
+      sql += ` AND project_duration_months = $${params.length}`;
+    }
   }
   if (search) {
     params.push(`%${search}%`);
@@ -54,12 +87,8 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-  const { rows } = await query(`SELECT * FROM projects WHERE id = $1`, [req.params.id]);
-  if (!rows[0]) return res.status(404).json({ error: 'Not Found' });
-  const proj = rowToProject(rows[0]);
-  if (!canViewAll(req.user.role) && proj.created_by !== req.user.sub) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
+  const proj = await loadProjectOr403(req, res);
+  if (!proj) return;
   const { rows: vrows } = await query(
     `SELECT version_number, duration_months, created_at, created_by_name, result_snapshot
      FROM calculation_versions WHERE project_id = $1 ORDER BY version_number DESC`,
@@ -131,6 +160,169 @@ router.get('/:id/versions/:ver', async (req, res) => {
       result_snapshot: vrows[0].result_snapshot,
     },
   });
+});
+
+router.get('/:id/export.xlsx', async (req, res) => {
+  const proj = await loadProjectOr403(req, res);
+  if (!proj) return;
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'NAVPRO';
+  wb.created = new Date();
+
+  // Sheet 08 - Ringkasan (identitas + KPI)
+  const wsSummary = wb.addWorksheet('08_Ringkasan');
+  wsSummary.columns = [
+    { header: 'Field', key: 'field', width: 28 },
+    { header: 'Value', key: 'value', width: 48 },
+  ];
+  wsSummary.addRows([
+    { field: 'Project Code', value: proj.project_code },
+    { field: 'Project Name', value: proj.project_name },
+    { field: 'Customer', value: proj.customer_name || '' },
+    { field: 'Contract Number', value: proj.contract_number || '' },
+    { field: 'PIC Sales', value: proj.pic_sales || '' },
+    { field: 'Contract Start Date', value: proj.contract_start_date },
+    { field: 'Duration (months)', value: proj.project_duration_months },
+    { field: 'Status', value: proj.status },
+    { field: 'Conclusion', value: proj.kpi?.conclusion || '' },
+    { field: 'XIRR', value: proj.kpi?.xirr ?? null },
+    { field: 'XNPV', value: proj.kpi?.xnpv ?? null },
+    { field: 'BCR', value: proj.kpi?.bcr ?? null },
+    { field: 'Payback (months)', value: proj.kpi?.payback_months ?? null },
+    { field: 'WACC used', value: proj.kpi?.wacc_used ?? null },
+    { field: 'Inflation used', value: proj.kpi?.inflation_used ?? null },
+    { field: 'Kurs USD used', value: proj.kpi?.kurs_usd_used ?? null },
+  ]);
+  wsSummary.getColumn('field').font = { bold: true };
+  wsSummary.getRow(1).font = { bold: true };
+
+  // Sheet 07 - Cashflow bulanan
+  const wsCf = wb.addWorksheet('07_Cashflow');
+  wsCf.columns = [
+    { header: 'Period', key: 'period_number', width: 10 },
+    { header: 'Date', key: 'period_date', width: 14 },
+    { header: 'Revenue', key: 'revenue', width: 16 },
+    { header: 'OTC', key: 'otc', width: 16 },
+    { header: 'OPEX', key: 'opex', width: 16 },
+    { header: 'CAPEX', key: 'capex', width: 16 },
+    { header: 'Net Cashflow', key: 'net_cashflow', width: 16 },
+    { header: 'Cumulative', key: 'cumulative_cashflow', width: 16 },
+    { header: 'Active', key: 'active_flag', width: 10 },
+  ];
+  const rows = Array.isArray(proj.cashflow_monthly) ? proj.cashflow_monthly : [];
+  wsCf.addRows(rows);
+  wsCf.getRow(1).font = { bold: true };
+  for (const k of ['revenue', 'otc', 'opex', 'capex', 'net_cashflow', 'cumulative_cashflow']) {
+    wsCf.getColumn(k).numFmt = '#,##0';
+  }
+
+  const buf = await wb.xlsx.writeBuffer();
+  const filename = `NAVPRO_${proj.project_code}_Cashflow.xlsx`.replace(/[^\w.-]+/g, '_');
+
+  // Optional: store to MinIO/S3 and return a presigned URL
+  if (String(req.query.presign || '').toLowerCase() === 'true') {
+    try {
+      const { isObjectStoreEnabled, uploadBufferAndPresignGet } = await import(
+        '../services/objectStore.js'
+      );
+      if (!isObjectStoreEnabled()) {
+        return res.status(400).json({
+          error: 'OBJECT_STORE_NOT_CONFIGURED',
+          message:
+            'Object store belum dikonfigurasi. Set MINIO_ENDPOINT, MINIO_BUCKET, MINIO_ACCESS_KEY, MINIO_SECRET_KEY.',
+        });
+      }
+
+      const key = `exports/${proj.id}/${Date.now()}_${filename}`;
+      const out = await uploadBufferAndPresignGet({
+        key,
+        contentType:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        buffer: Buffer.from(buf),
+        expiresInSeconds: Math.min(
+          Math.max(Number(req.query.expires || 600), 60),
+          3600
+        ),
+      });
+      return res.json({ presigned: out });
+    } catch (e) {
+      console.error('presign export.xlsx failed', e);
+      return res.status(500).json({ error: 'PRESIGN_FAILED' });
+    }
+  }
+
+  res.setHeader(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  );
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(Buffer.from(buf));
+});
+
+router.get('/:id/export.pdf', async (req, res) => {
+  const proj = await loadProjectOr403(req, res);
+  if (!proj) return;
+
+  const filename = `NAVPRO_${proj.project_code}_ExecutiveSummary.pdf`.replace(/[^\w.-]+/g, '_');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+  const doc = new PDFDocument({ size: 'A4', margin: 48 });
+  doc.pipe(res);
+
+  doc.fontSize(18).text('Executive Summary — Kajian Kelayakan Finansial', { align: 'left' });
+  doc.moveDown(0.4);
+  doc.fontSize(11).fillColor('#333333').text(`Generated: ${new Date().toISOString()}`);
+  doc.moveDown(1.0);
+  doc.fillColor('#000000');
+
+  doc.fontSize(13).text('Identitas Proyek', { underline: true });
+  doc.moveDown(0.5);
+  doc.fontSize(11);
+  doc.text(`Project Code: ${proj.project_code}`);
+  doc.text(`Project Name: ${proj.project_name}`);
+  if (proj.customer_name) doc.text(`Customer: ${proj.customer_name}`);
+  if (proj.contract_number) doc.text(`Contract Number: ${proj.contract_number}`);
+  if (proj.pic_sales) doc.text(`PIC Sales: ${proj.pic_sales}`);
+  doc.text(`Start Date: ${proj.contract_start_date}`);
+  doc.text(`Durasi: ${proj.project_duration_months} bulan (${proj.duration_category})`);
+  doc.text(`Status: ${proj.status}`);
+
+  doc.moveDown(0.9);
+  doc.fontSize(13).text('Ringkasan KPI', { underline: true });
+  doc.moveDown(0.5);
+  const kpi = proj.kpi || {};
+  doc.fontSize(11);
+  doc.text(`Conclusion: ${kpi.conclusion || '-'}`);
+  doc.text(`XIRR: ${kpi.xirr != null ? (kpi.xirr * 100).toFixed(2) + '%' : '-'}`);
+  doc.text(`XNPV: ${kpi.xnpv != null ? 'Rp ' + formatIdr(kpi.xnpv) : '-'}`);
+  doc.text(`BCR: ${kpi.bcr != null ? Number(kpi.bcr).toFixed(3) : '-'}`);
+  doc.text(`Payback: ${kpi.payback_months != null ? `${kpi.payback_months} bulan` : '-'}`);
+
+  doc.moveDown(0.9);
+  doc.fontSize(13).text('Asumsi Digunakan', { underline: true });
+  doc.moveDown(0.5);
+  doc.fontSize(11);
+  doc.text(`WACC used: ${kpi.wacc_used != null ? (kpi.wacc_used * 100).toFixed(2) + '%' : '-'}`);
+  doc.text(
+    `Inflation used: ${
+      kpi.inflation_used != null ? (kpi.inflation_used * 100).toFixed(3) + '%/bulan' : '-'
+    }`
+  );
+  doc.text(`Kurs USD used: ${kpi.kurs_usd_used != null ? 'Rp ' + formatIdr(kpi.kurs_usd_used) : '-'}`);
+
+  doc.moveDown(0.9);
+  doc.fontSize(13).text('Catatan', { underline: true });
+  doc.moveDown(0.5);
+  doc.fontSize(11).fillColor('#333333');
+  doc.text(
+    'Dokumen ini dihasilkan otomatis oleh NAVPRO berdasarkan input proyek dan engine kalkulasi. ' +
+      'Untuk detail cashflow lengkap, gunakan export Excel (07_Cashflow).'
+  );
+  doc.fillColor('#000000');
+
+  doc.end();
 });
 
 router.post('/', requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN', 'SA'), async (req, res) => {
@@ -275,7 +467,7 @@ router.delete('/:id', requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN', 'SA'), async 
   res.json({ ok: true });
 });
 
-router.post('/:id/calculate', requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN', 'SA'), async (req, res) => {
+router.post('/:id/calculate', requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN', 'SA', 'MANAGER'), async (req, res) => {
   const { rows: existing } = await query(`SELECT * FROM projects WHERE id = $1`, [req.params.id]);
   if (!existing[0]) return res.status(404).json({ error: 'Not Found' });
 
@@ -361,8 +553,8 @@ router.post('/:id/calculate', requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN', 'SA')
   res.json({ project: proj, status: 'COMPUTED' });
 });
 
+router.post('/:id/calculate-async', requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN', 'SA', 'MANAGER'), async (req, res) => {
 // Async calculate via BullMQ (requires REDIS_URL)
-router.post('/:id/calculate-async', requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN', 'SA'), async (req, res) => {
   if (!isQueueEnabled()) {
     return res.status(400).json({
       error: 'Bad Request',
@@ -430,6 +622,15 @@ router.post('/:id/submit', requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN', 'SA'), a
     title: 'Proyek Submitted',
     body: `Proyek ${proj.project_name} diajukan untuk ditinjau oleh Manager.`,
     projectId: req.params.id,
+  });
+
+  const { notifyApprovalEvent } = await import('../services/email.js');
+  await notifyApprovalEvent({
+    to: process.env.APPROVAL_NOTIFY_EMAIL || 'manager@navpro.app',
+    projectName: proj.project_name,
+    projectCode: proj.project_code,
+    event: 'SUBMITTED',
+    comment: req.body?.comment,
   });
 
   res.json({ project: proj });
@@ -538,6 +739,82 @@ router.post('/:id/reject', async (req, res) => {
   });
 
   res.json({ project: proj });
+});
+
+router.get('/:id/audit-logs', async (req, res) => {
+  const { rows: existing } = await query(`SELECT created_by FROM projects WHERE id = $1`, [req.params.id]);
+  if (!existing[0]) return res.status(404).json({ error: 'Not Found' });
+  if (!canViewAll(req.user.role) && existing[0].created_by !== req.user.sub) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  const { rows } = await query(
+    `SELECT id, user_id, user_name, action, old_val, new_val, created_at
+     FROM audit_logs WHERE project_id = $1 ORDER BY created_at DESC LIMIT 20`,
+    [req.params.id]
+  );
+  res.json({ logs: rows });
+});
+
+router.post('/:id/duplicate', requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN', 'SA'), async (req, res) => {
+  const { rows: existing } = await query(`SELECT * FROM projects WHERE id = $1`, [req.params.id]);
+  if (!existing[0]) return res.status(404).json({ error: 'Not Found' });
+
+  const source = rowToProject(existing[0]);
+  const year = new Date().getFullYear();
+  const { rows: countRows } = await query(
+    `SELECT COUNT(*)::int AS c FROM projects WHERE project_code LIKE $1`,
+    [`NAVPRO-${year}-%`]
+  );
+  const seq = (countRows[0]?.c || 0) + 1;
+  const project_code = `NAVPRO-${year}-${String(seq).padStart(4, '0')}`;
+  const id = uuidv4();
+  const months = source.project_duration_months || 12;
+
+  const proj = {
+    ...source,
+    id,
+    project_code,
+    project_name: `${source.project_name} (Salinan)`,
+    status: 'DRAFT',
+    approval_chain: [],
+    versions: [],
+    duration_category: durationCategory(months),
+  };
+
+  const detail = projectToDetail(proj);
+  await query(
+    `INSERT INTO projects (
+      id, created_by, project_code, project_name, status,
+      project_duration_months, duration_category, contract_start_date,
+      wacc_override, inflation_rate_override, bcr_threshold_override, detail
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+    [
+      id,
+      req.user.sub,
+      project_code,
+      proj.project_name,
+      'DRAFT',
+      months,
+      proj.duration_category,
+      source.contract_start_date,
+      source.wacc_override ?? null,
+      source.inflation_rate_override ?? null,
+      source.bcr_threshold_override ? JSON.stringify(source.bcr_threshold_override) : null,
+      JSON.stringify(detail),
+    ]
+  );
+
+  await addAuditLog({
+    userId: req.user.sub,
+    userName: req.user.name,
+    projectId: id,
+    action: 'DUPLICATE_PROJECT',
+    oldVal: source.project_code,
+    newVal: project_code,
+  });
+
+  const { rows } = await query(`SELECT * FROM projects WHERE id = $1`, [id]);
+  res.status(201).json({ project: rowToProject(rows[0]) });
 });
 
 router.post('/:id/archive', requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN', 'SA'), async (req, res) => {

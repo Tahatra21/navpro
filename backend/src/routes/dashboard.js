@@ -35,6 +35,43 @@ function getStartTsForSla(p, roleKey) {
   return submit?.decided_at || p.updated_at || p.created_at;
 }
 
+function getKursUsd(p) {
+  const o = p?.kurs_usd_override;
+  if (o != null && Number.isFinite(Number(o))) return Number(o);
+  const k = p?.kpi?.kurs_usd_used;
+  if (k != null && Number.isFinite(Number(k))) return Number(k);
+  return 16500;
+}
+
+function sumCapexTotal(p) {
+  if (p?.kpi?.capex_total != null && Number.isFinite(Number(p.kpi.capex_total))) {
+    return Number(p.kpi.capex_total);
+  }
+  const kurs = getKursUsd(p);
+  return (p.capex || []).reduce((s, c) => {
+    const amt = parseFloat(String(c.amount || 0));
+    return s + (c.currency === 'USD' ? amt * kurs : amt);
+  }, 0);
+}
+
+function sumOpexBaseline(p) {
+  const kurs = getKursUsd(p);
+  return (p.opex || []).reduce((s, o) => {
+    if (o.is_percent) return s;
+    const amt = parseFloat(String(o.baseline_amount || 0));
+    return s + (o.currency === 'USD' ? amt * kurs : amt);
+  }, 0);
+}
+
+function sumRevenueBaseline(p) {
+  const kurs = getKursUsd(p);
+  return (p.revenue || []).reduce((s, r) => {
+    const h = parseFloat(String(r.harsat ?? r.monthly_amount ?? 0));
+    const q = parseFloat(String(r.qty ?? 1));
+    return s + (r.currency === 'USD' ? h * q * kurs : h * q);
+  }, 0);
+}
+
 router.get('/portfolio', async (req, res) => {
   const params = [];
   let sql = `SELECT * FROM projects`;
@@ -71,6 +108,32 @@ router.get('/portfolio', async (req, res) => {
     statusCounts[p.status] = (statusCounts[p.status] || 0) + 1;
   }
 
+  const compact = String(req.query.compact || '').toLowerCase() === 'true';
+  const payloadProjects = compact
+    ? active.map((p) => {
+        const capex_total = sumCapexTotal(p);
+        const opex_baseline_total = sumOpexBaseline(p);
+        const revenue_baseline_total = sumRevenueBaseline(p);
+        return {
+          id: p.id,
+          created_by: p.created_by,
+          project_code: p.project_code,
+          project_name: p.project_name,
+          status: p.status,
+          project_duration_months: p.project_duration_months,
+          duration_category: p.duration_category,
+          contract_start_date: p.contract_start_date,
+          kurs_usd_override: p.kurs_usd_override ?? null,
+          kpi: {
+            ...(p.kpi || {}),
+            capex_total,
+            opex_baseline_total,
+            revenue_baseline_total,
+          },
+        };
+      })
+    : active;
+
   res.json({
     kpi: {
       total_projects: active.length,
@@ -81,7 +144,7 @@ router.get('/portfolio', async (req, res) => {
     },
     risk_distribution: riskCounts,
     status_distribution: statusCounts,
-    projects: active,
+    projects: payloadProjects,
   });
 });
 

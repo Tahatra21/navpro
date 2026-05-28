@@ -189,7 +189,20 @@ Jika memakai Docker:
 docker compose up -d postgres
 ```
 
-Atau pastikan PostgreSQL lokal aktif dengan database `navpro_db`.
+Atau PostgreSQL lokal (Homebrew) — buat role & database jika belum ada:
+
+```bash
+psql -d postgres -c "CREATE ROLE navpro WITH LOGIN PASSWORD 'navpro_dev' CREATEDB;"
+psql -d postgres -c "CREATE DATABASE navpro_db OWNER navpro;"
+```
+
+`backend/.env` default: `DATABASE_URL=postgresql://navpro:navpro_dev@localhost:5432/navpro_db`
+
+Smoke test API (setelah `npm start`):
+
+```bash
+cd backend && npm run smoke
+```
 
 ### 2) Setup & jalankan Backend API
 
@@ -217,11 +230,11 @@ npm start
 Endpoint kalkulasi async:
 - `POST /api/v1/projects/:id/calculate-async` → enqueue job (HTTP 202)
 
-### 3) Jalankan Frontend
-
-Di root project:
+### 3) Jalankan Frontend (Next.js)
 
 ```bash
+cd frontend
+cp .env.example .env.local
 npm install
 npm run dev
 ```

@@ -1,0 +1,196 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer base {
+  :root {
+    /* ── NAVPRO Color Palette (from hjt/index.css) ── */
+
+    /* Backgrounds */
+    --background:          oklch(0.9818 0.0054 95.0986);   /* warm light bg */
+    --card:                oklch(0.9665 0.0067 97.3521);   /* card surface */
+    --popover:             oklch(0.9665 0.0067 97.3521);
+
+    /* Foregrounds */
+    --foreground:          oklch(0.1908 0.0020 106.5859);  /* dark text */
+    --card-foreground:     oklch(0.1908 0.0020 106.5859);
+    --popover-foreground:  oklch(0.1908 0.0020 106.5859);
+
+    /* NAVPRO Brand Blue — primary action */
+    --primary:             #2d5a9e;
+    --primary-foreground:  #ffffff;
+
+    /* Navy — secondary / buttons */
+    --secondary:           #1b2e58;
+    --secondary-foreground:#ffffff;
+
+    /* Muted */
+    --muted:               oklch(0.8847 0.0069 97.3627);
+    --muted-foreground:    oklch(0.5341 0.0078 97.4503);
+
+    /* Accent hover */
+    --accent:              oklch(0.9245 0.0138 92.9892);
+    --accent-foreground:   oklch(0.1908 0.0020 106.5859);
+
+    /* Destructive */
+    --destructive:         oklch(0.58 0.18 25.0);
+    --destructive-foreground: #ffffff;
+
+    /* Border & Input */
+    --border:              oklch(0.8847 0.0069 97.3627);
+    --input:               oklch(0.9245 0.0138 92.9892);
+    --ring:                #4c8bd1;
+
+    /* Charts */
+    --chart-1:             #2d5a9e;
+    --chart-2:             #4c8bd1;
+    --chart-3:             oklch(0.55 0.15 140.0);
+    --chart-4:             oklch(0.65 0.15 80.0);
+    --chart-5:             oklch(0.58 0.18 25.0);
+
+    /* Sidebar */
+    --sidebar:             oklch(0.9665 0.0067 97.3521);
+    --sidebar-foreground:  oklch(0.1908 0.0020 106.5859);
+    --sidebar-primary:     #2d5a9e;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent:      oklch(0.9245 0.0138 92.9892);
+    --sidebar-accent-foreground: oklch(0.4334 0.0177 98.6048);
+    --sidebar-border:      oklch(0.8847 0.0069 97.3627);
+    --sidebar-ring:        #4c8bd1;
+
+    /* Typography */
+    --font-sans:           'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-serif:          'Outfit', ui-serif, serif;
+    --font-mono:           ui-monospace, monospace;
+
+    /* Radius */
+    --radius:              0.5rem;
+
+    /* Shadows */
+    --shadow-2xs:          0px 1px 3px 0px rgba(0,0,0,0.04);
+    --shadow-xs:           0px 1px 3px 0px rgba(0,0,0,0.05);
+    --shadow-sm:           0 2px 8px 0 rgba(0,0,0,0.06);
+    --shadow:              0 4px 16px 0 rgba(0,0,0,0.08);
+    --shadow-md:           0 8px 32px 0 rgba(0,0,0,0.08);
+    --shadow-lg:           0 12px 48px 0 rgba(0,0,0,0.10);
+    --shadow-xl:           0 20px 64px 0 rgba(0,0,0,0.12);
+    --shadow-2xl:          0 32px 80px 0 rgba(0,0,0,0.16);
+
+    /* Letter spacing */
+    --tracking-normal:     -0.01em;
+
+    /* NAVPRO custom tokens (used in inline styles) */
+    --navpro-navy:         #1b2e58;
+    --navpro-blue:         #4c8bd1;
+    --primary-hover:       #1f4578;
+    --primary-glow:        rgba(45, 90, 158, 0.14);
+    --text-primary:        oklch(0.1908 0.0020 106.5859);
+    --text-secondary:      oklch(0.4334 0.0177 98.6048);
+    --text-muted:          oklch(0.5341 0.0078 97.4503);
+    --bg-primary:          oklch(0.9818 0.0054 95.0986);
+    --bg-secondary:        oklch(0.9665 0.0067 97.3521);
+    --bg-tertiary:         oklch(0.8847 0.0069 97.3627);
+    --bg-hover:            oklch(0.9245 0.0138 92.9892);
+    --glass-bg:            oklch(0.9665 0.0067 97.3521 / 0.92);
+    --glass-border:        oklch(0.1908 0.0020 106.5859 / 0.08);
+    --glass-shadow:        0 8px 32px 0 rgba(0,0,0,0.06);
+    --accent-green:        oklch(0.55 0.15 140.0);
+    --accent-green-glow:   oklch(0.55 0.15 140.0 / 0.12);
+    --accent-yellow:       oklch(0.65 0.15 80.0);
+    --accent-yellow-glow:  oklch(0.65 0.15 80.0 / 0.12);
+    --accent-red:          oklch(0.58 0.18 25.0);
+    --accent-red-glow:     oklch(0.58 0.18 25.0 / 0.12);
+  }
+
+  .dark {
+    --background:          oklch(0.17 0.010 260);
+    --foreground:          oklch(0.93 0.005 260);
+    --card:                oklch(0.20 0.012 260);
+    --card-foreground:     oklch(0.93 0.005 260);
+    --popover:             oklch(0.20 0.012 260);
+    --popover-foreground:  oklch(0.93 0.005 260);
+    --primary:             #4c8bd1;
+    --primary-foreground:  #ffffff;
+    --secondary:           #2d5a9e;
+    --secondary-foreground:#ffffff;
+    --muted:               oklch(0.26 0.008 260);
+    --muted-foreground:    oklch(0.60 0.010 260);
+    --accent:              oklch(0.28 0.015 260);
+    --accent-foreground:   oklch(0.88 0.057 254);
+    --destructive:         oklch(0.64 0.21 25);
+    --destructive-foreground: #ffffff;
+    --border:              oklch(0.30 0.008 260);
+    --input:               oklch(0.28 0.008 260);
+    --ring:                #4c8bd1;
+    --sidebar:             oklch(0.19 0.012 260);
+    --sidebar-foreground:  oklch(0.93 0.005 260);
+    --sidebar-primary:     #4c8bd1;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent:      oklch(0.28 0.015 260);
+    --sidebar-accent-foreground: oklch(0.88 0.057 254);
+    --sidebar-border:      oklch(0.30 0.008 260);
+    --sidebar-ring:        #4c8bd1;
+  }
+
+  * {
+    border-color: var(--border);
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    letter-spacing: var(--tracking-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  /* Custom scrollbars (from hjt) */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  /* Glassmorphism utility */
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* NAVPRO brand gradient button */
+  .btn-navpro {
+    background: radial-gradient(circle at 30% 30%, #7db6f2 0%, #2d5a9e 55%, #1f4578 100%);
+    color: #fff;
+    box-shadow: 0 14px 30px rgba(45, 90, 158, 0.32);
+  }
+  .btn-navpro:hover {
+    filter: brightness(1.06);
+  }
+}
