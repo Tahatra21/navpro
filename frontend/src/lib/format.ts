@@ -32,6 +32,24 @@ export function formatDate(iso?: string): string {
   });
 }
 
+export function formatPaybackMonths(months?: number | null): string {
+  if (months == null || !Number.isFinite(months)) return "—";
+  const rounded = Math.round(months * 10) / 10;
+  return `${rounded.toLocaleString("id-ID", { maximumFractionDigits: 1 })} bln`;
+}
+
+export function formatDurationCategory(code?: string | null): string {
+  const labels: Record<string, string> = {
+    SHORT_TERM: "Jangka pendek",
+    MID_TERM: "Jangka menengah",
+    LONG_TERM: "Jangka panjang",
+    EXTENDED: "Jangka sangat panjang",
+    CUSTOM: "Kustom",
+  };
+  if (!code) return "—";
+  return labels[code] || code.replace(/_/g, " ");
+}
+
 export function formatDateTime(iso?: string): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleString("id-ID", {

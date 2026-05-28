@@ -1,28 +1,67 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
+import { applyRlsContext, isRlsEnabled, rlsStorage } from './utils/rls.js';
 
 dotenv.config();
 
 const { Pool } = pg;
 
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error(
+    'DATABASE_URL is not set. Copy backend/.env.example to backend/.env and configure PostgreSQL.'
+  );
+}
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://navpro:navpro_dev@localhost:5432/navpro_db',
+  connectionString: databaseUrl,
 });
 
 export async function query(text, params) {
-  return pool.query(text, params);
+  const ctx = rlsStorage.getStore();
+  if (!isRlsEnabled() || !ctx?.userId) {
+    return pool.query(text, params);
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await applyRlsContext(client, ctx);
+    const result = await client.query(text, params);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 export async function initDb() {
   await query(`
     CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+    CREATE TABLE IF NOT EXISTS organization_units (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      code VARCHAR(30) UNIQUE NOT NULL,
+      name VARCHAR(200) NOT NULL,
+      type VARCHAR(20) NOT NULL CHECK (type IN ('PUSAT','SBU')),
+      segment VARCHAR(20) CHECK (segment IN ('ENT1','ENT2','PLN1','PLN2')),
+      parent_id UUID REFERENCES organization_units(id),
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       email VARCHAR(255) NOT NULL UNIQUE,
       password_hash VARCHAR(255) NOT NULL,
       full_name VARCHAR(255) NOT NULL,
+      employee_id VARCHAR(50),
       role VARCHAR(50) NOT NULL,
+      org_unit_id UUID REFERENCES organization_units(id),
+      org_level VARCHAR(5),
       is_active BOOLEAN NOT NULL DEFAULT true,
       last_login_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -79,6 +118,8 @@ export async function initDb() {
     CREATE TABLE IF NOT EXISTS projects (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+      org_unit_id UUID REFERENCES organization_units(id),
+      segment VARCHAR(20) CHECK (segment IN ('ENT1','ENT2','PLN1','PLN2')),
       project_code VARCHAR(50) NOT NULL UNIQUE,
       project_name VARCHAR(255) NOT NULL,
       status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
@@ -90,8 +131,35 @@ export async function initDb() {
       inflation_rate_override NUMERIC(8,6),
       bcr_threshold_override JSONB,
       detail JSONB NOT NULL DEFAULT '{}',
+      current_version INTEGER NOT NULL DEFAULT 0,
+      rejection_reason TEXT,
+      rejected_by UUID REFERENCES users(id),
+      rejected_at TIMESTAMPTZ,
+      submitted_at TIMESTAMPTZ,
+      approved_by UUID REFERENCES users(id),
+      approved_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS approval_steps (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      step_order INTEGER NOT NULL,
+      approver_level VARCHAR(20) NOT NULL CHECK (approver_level IN ('ASMAN','MANAGER')),
+      approver_role VARCHAR(30) NOT NULL,
+      assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
+      org_unit_id UUID REFERENCES organization_units(id),
+      status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+        CHECK (status IN ('PENDING','APPROVED','REJECTED','ESCALATED','DELEGATED','SKIPPED')),
+      comments TEXT,
+      due_at TIMESTAMPTZ,
+      acted_at TIMESTAMPTZ,
+      delegated_to UUID REFERENCES users(id),
+      is_escalated BOOLEAN NOT NULL DEFAULT false,
+      escalated_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (project_id, step_order)
     );
 
     CREATE TABLE IF NOT EXISTS calculation_versions (
@@ -131,16 +199,106 @@ export async function initDb() {
     CREATE TABLE IF NOT EXISTS sla_events (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      approval_step_id UUID REFERENCES approval_steps(id) ON DELETE CASCADE,
       role_key VARCHAR(50) NOT NULL,
       event_type VARCHAR(50) NOT NULL,
       due_at TIMESTAMPTZ,
+      is_sent BOOLEAN NOT NULL DEFAULT false,
+      sent_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      UNIQUE (project_id, role_key, event_type)
+      UNIQUE (project_id, approval_step_id, role_key, event_type)
     );
 
     CREATE TABLE IF NOT EXISTS app_meta (
       key VARCHAR(50) PRIMARY KEY,
       value TEXT NOT NULL
+    );
+  `);
+
+  // Non-breaking schema evolution for existing databases.
+  await query(`
+    ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS employee_id VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS org_unit_id UUID REFERENCES organization_units(id),
+      ADD COLUMN IF NOT EXISTS org_level VARCHAR(5);
+
+    ALTER TABLE projects
+      ADD COLUMN IF NOT EXISTS org_unit_id UUID REFERENCES organization_units(id),
+      ADD COLUMN IF NOT EXISTS segment VARCHAR(20),
+      ADD COLUMN IF NOT EXISTS current_version INTEGER,
+      ADD COLUMN IF NOT EXISTS rejection_reason TEXT,
+      ADD COLUMN IF NOT EXISTS rejected_by UUID REFERENCES users(id),
+      ADD COLUMN IF NOT EXISTS rejected_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS approved_by UUID REFERENCES users(id),
+      ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+
+    ALTER TABLE sla_events
+      ADD COLUMN IF NOT EXISTS approval_step_id UUID REFERENCES approval_steps(id) ON DELETE CASCADE,
+      ADD COLUMN IF NOT EXISTS is_sent BOOLEAN,
+      ADD COLUMN IF NOT EXISTS sent_at TIMESTAMPTZ;
+  `);
+
+  if (isRlsEnabled()) {
+    await ensureRlsPolicies();
+    await query(`ALTER TABLE projects ENABLE ROW LEVEL SECURITY`);
+    console.log('[navpro] RLS enabled on projects (NAVPRO_RLS_ENABLED=true)');
+  }
+}
+
+/** Idempotent RLS policy setup (mirrors backend/sql/rls-navpro.sql). */
+async function ensureRlsPolicies() {
+  await query(`
+    CREATE OR REPLACE VIEW navpro_rls_context AS
+    SELECT
+      nullif(current_setting('navpro.user_id', true), '')::uuid AS user_id,
+      nullif(current_setting('navpro.role', true), '') AS role,
+      nullif(current_setting('navpro.org_unit_id', true), '')::uuid AS org_unit_id,
+      nullif(current_setting('navpro.segment', true), '') AS segment;
+  `);
+
+  await query(`ALTER TABLE projects DISABLE ROW LEVEL SECURITY`);
+  await query(`DROP POLICY IF EXISTS projects_select_policy ON projects`);
+  await query(`DROP POLICY IF EXISTS projects_write_policy ON projects`);
+
+  await query(`
+    CREATE POLICY projects_select_policy ON projects
+    FOR SELECT
+    USING (
+      (current_setting('navpro.role', true) IN ('SUPER_ADMIN','FINANCE_ADMIN','VP_SA'))
+      OR (
+        current_setting('navpro.role', true) IN ('STAFF','SA')
+        AND created_by = nullif(current_setting('navpro.user_id', true), '')::uuid
+      )
+      OR (
+        current_setting('navpro.role', true) = 'ASMAN'
+        AND org_unit_id IS NOT NULL
+        AND org_unit_id = nullif(current_setting('navpro.org_unit_id', true), '')::uuid
+      )
+      OR (
+        current_setting('navpro.role', true) IN ('MANAGER','GM_SRM')
+        AND segment IS NOT NULL
+        AND segment = nullif(current_setting('navpro.segment', true), '')
+      )
+    );
+  `);
+
+  await query(`
+    CREATE POLICY projects_write_policy ON projects
+    FOR INSERT, UPDATE, DELETE
+    USING (
+      (current_setting('navpro.role', true) IN ('SUPER_ADMIN','FINANCE_ADMIN'))
+      OR (
+        current_setting('navpro.role', true) IN ('STAFF','SA')
+        AND created_by = nullif(current_setting('navpro.user_id', true), '')::uuid
+      )
+    )
+    WITH CHECK (
+      (current_setting('navpro.role', true) IN ('SUPER_ADMIN','FINANCE_ADMIN'))
+      OR (
+        current_setting('navpro.role', true) IN ('STAFF','SA')
+        AND created_by = nullif(current_setting('navpro.user_id', true), '')::uuid
+      )
     );
   `);
 }
@@ -160,6 +318,8 @@ export function rowToProject(row) {
     project_code: row.project_code,
     project_name: row.project_name,
     status: row.status,
+    org_unit_id: row.org_unit_id || null,
+    segment: row.segment || null,
     project_duration_months: row.project_duration_months,
     duration_category: row.duration_category,
     contract_start_date:

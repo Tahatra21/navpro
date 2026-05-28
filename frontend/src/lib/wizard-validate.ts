@@ -9,6 +9,7 @@ const numStr = z
 export const wizardStep1Schema = z.object({
   projectName: nonEmpty,
   contractDate: nonEmpty,
+  orgUnitId: z.string().trim().min(1, "Unit organisasi wajib dipilih"),
 });
 
 export const wizardStep2Schema = z.object({

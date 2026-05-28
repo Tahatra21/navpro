@@ -29,8 +29,7 @@ const NAVPRO = {
     MANAGER: 'Manager',
     GM_SRM: 'GM / SRM',
     VIEWER: 'Viewer',
-  },
-  offlineDemoPassword: 'Navpro@2026',
+  }
 };
 
 function escapeHTML(str) {
@@ -964,14 +963,6 @@ class KKFApplication {
     return users.find((u) => u.role === this.currentRole) || users[0];
   }
 
-  static DEMO_ACCOUNTS = [
-    { email: 'budi.santoso@navpro.app', full_name: 'Budi Santoso', role: 'SUPER_ADMIN' },
-    { email: 'ani.lestari@navpro.app', full_name: 'Ani Lestari', role: 'FINANCE_ADMIN' },
-    { email: 'rian.hidayat@navpro.app', full_name: 'Rian Hidayat', role: 'SA' },
-    { email: 'dewi.sartika@navpro.app', full_name: 'Dewi Sartika', role: 'MANAGER' },
-    { email: 'irwan.setiawan@navpro.app', full_name: 'Irwan Setiawan', role: 'GM_SRM' },
-  ];
-
   formatRoleLabel(role) {
     return getSafeProperty(NAVPRO.roleLabels, role, role.replace(/_/g, ' '));
   }
@@ -1013,28 +1004,6 @@ class KKFApplication {
     }
   }
 
-  renderLoginDemoAccounts() {
-    const grid = document.getElementById('login-demo-grid');
-    if (!grid) return;
-    grid.innerHTML = KKFApplication.DEMO_ACCOUNTS.map(
-      (acc) => `
-      <button type="button" class="login-demo-btn" data-email="${escapeHTML(acc.email)}"
-        onclick="app.fillDemoLogin('${escapeHTML(acc.email)}')">
-        <strong>${escapeHTML(acc.full_name)}</strong>
-        <span>${escapeHTML(this.formatRoleLabel(acc.role))}</span>
-      </button>`
-    ).join('');
-  }
-
-  fillDemoLogin(email) {
-    const emailEl = document.getElementById('login-email');
-    const passEl = document.getElementById('login-password');
-    if (emailEl) emailEl.value = email;
-    if (passEl) passEl.value = NAVPRO.offlineDemoPassword;
-    this._showLoginError('');
-    emailEl?.focus();
-  }
-
   bindLoginForm() {
     const form = document.getElementById('login-form');
     if (!form || form.dataset.bound === '1') return;
@@ -1057,7 +1026,6 @@ class KKFApplication {
       if (emailEl) emailEl.value = remembered;
     }
 
-    this.renderLoginDemoAccounts();
   }
 
   _setLoadingStatus(message) {
@@ -1215,29 +1183,15 @@ class KKFApplication {
     try {
       const apiUp = await this.probeApi();
 
-      if (apiUp) {
-        this._setLoadingStatus('Memuat data portofolio…');
-        const login = await navproApi.login(email, password);
-        await this.establishSession(login.user, { useBackend: true });
-        await this.hideLoadingScreen();
-        this.navigateTo('dashboard');
-        return;
+      if (!apiUp) {
+        throw new Error(
+          'Backend NAVPRO tidak tersedia. Jalankan API (port 4000) dan gunakan aplikasi Next.js di /frontend.'
+        );
       }
 
-      const users = JSON.parse(localStorage.getItem('kkf_users') || '[]');
-      const user = users.find((u) => u.email.toLowerCase() === email && u.is_active !== false);
-      if (!user) {
-        throw new Error('Email tidak terdaftar. Hubungkan API atau gunakan akun demo.');
-      }
-      if (password !== NAVPRO.offlineDemoPassword) {
-        throw new Error('Kata sandi salah. Mode offline: gunakan kata sandi demo.');
-      }
-
-      await this.establishSession(
-        { ...user, email: user.email },
-        { useBackend: false }
-      );
-      await this.switchRole(user.role);
+      this._setLoadingStatus('Memuat data portofolio…');
+      const login = await navproApi.login(email, password);
+      await this.establishSession(login.user, { useBackend: true });
       await this.hideLoadingScreen();
       this.navigateTo('dashboard');
     } catch (err) {

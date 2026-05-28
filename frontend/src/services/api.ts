@@ -1,10 +1,12 @@
 import type {
   ApprovalQueueItem,
+  ApprovalsQueueV2Item,
   NotificationItem,
   PortfolioResponse,
   Project,
   User,
 } from "@/types/navpro";
+import { getAuthToken, setAuthToken } from "@/stores/authStore";
 
 const NAVPRO_API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -17,17 +19,11 @@ export class NavproApi {
   }
 
   private getToken(): string | null {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("navpro_token");
-    }
-    return null;
+    return getAuthToken();
   }
 
   public setToken(token: string | null) {
-    if (typeof window !== "undefined") {
-      if (token) localStorage.setItem("navpro_token", token);
-      else localStorage.removeItem("navpro_token");
-    }
+    setAuthToken(token);
   }
 
   private async fetchJsonWithTimeout(url: string, init: RequestInit = {}, timeoutMs = this.defaultTimeoutMs) {
@@ -238,6 +234,48 @@ export class NavproApi {
     );
   }
 
+  /** BRD v2.0 — pending steps assigned to current approver */
+  getApprovalsQueue() {
+    return this.request<{ items: ApprovalsQueueV2Item[] }>("GET", "/api/v1/approvals/queue");
+  }
+
+  getApprovalsQueueSummary() {
+    return this.request<{
+      summary: { pending_count: number; asman_count: number; manager_count: number };
+    }>("GET", "/api/v1/approvals/queue/summary");
+  }
+
+  getMyApprovalStep(projectId: string) {
+    return this.request<{
+      step: {
+        id: string;
+        project_id: string;
+        step_order: number;
+        approver_level: string;
+        approver_role: string;
+        status: string;
+        due_at: string | null;
+        project_code: string;
+        project_name: string;
+        project_status: string;
+      } | null;
+    }>("GET", `/api/v1/approvals/projects/${projectId}/my-step`);
+  }
+
+  getDelegateCandidates(stepId: string) {
+    return this.request<{
+      candidates: Array<{ id: string; full_name: string; email: string; role: string }>;
+    }>("GET", `/api/v1/approvals/steps/${stepId}/delegate-candidates`);
+  }
+
+  delegateApprovalStep(stepId: string, body: { to_user_id: string; reason: string }) {
+    return this.request<{ ok: boolean; assigned_to: string }>(
+      "POST",
+      `/api/v1/approvals/steps/${stepId}/delegate`,
+      body
+    );
+  }
+
   getNotifications() {
     return this.request<{ notifications: NotificationItem[] }>("GET", "/api/v1/notifications");
   }
@@ -259,6 +297,18 @@ export class NavproApi {
       "GET",
       "/api/v1/config/presets"
     );
+  }
+
+  getOrgUnits() {
+    return this.request<{
+      org_units: Array<{
+        id: string;
+        code: string;
+        name: string;
+        type: string;
+        segment: string;
+      }>;
+    }>("GET", "/api/v1/config/org-units");
   }
 
   adminGetAssumptions() {
@@ -324,15 +374,104 @@ export class NavproApi {
     return this.request("POST", "/api/v1/admin/opex-categories", { code });
   }
 
+  adminGetOrgUnits() {
+    return this.request<{
+      org_units: Array<{
+        id: string;
+        code: string;
+        name: string;
+        type: string;
+        segment: string;
+        parent_id: string | null;
+        is_active: boolean;
+      }>;
+    }>("GET", "/api/v1/admin/org-units");
+  }
+
+  adminBackfillProjectsOrg() {
+    return this.request<{ updated: number; project_ids: string[] }>(
+      "POST",
+      "/api/v1/admin/projects/backfill-org"
+    );
+  }
+
+  adminCreateOrgUnit(body: {
+    code: string;
+    name: string;
+    type: string;
+    segment: string;
+    parent_id?: string | null;
+    is_active?: boolean;
+  }) {
+    return this.request<{ id: string; code: string }>("POST", "/api/v1/admin/org-units", body);
+  }
+
+  adminUpdateOrgUnit(
+    id: string,
+    body: {
+      code?: string;
+      name?: string;
+      type?: string;
+      segment?: string;
+      parent_id?: string | null;
+      is_active?: boolean;
+    }
+  ) {
+    return this.request("PUT", `/api/v1/admin/org-units/${id}`, body);
+  }
+
+  adminDeleteOrgUnit(id: string) {
+    return this.request<{ ok: boolean; soft_deleted?: boolean; message?: string }>(
+      "DELETE",
+      `/api/v1/admin/org-units/${id}`
+    );
+  }
+
+  adminPreviewSlaDue(roleKey: string, startAt?: string) {
+    const q = new URLSearchParams({ role_key: roleKey });
+    if (startAt) q.set("start_at", startAt);
+    return this.request<{
+      role_key: string;
+      start_at: string;
+      due_at: string;
+      sla_working_days: number;
+      business_hours: string;
+    }>("GET", `/api/v1/admin/sla-config/preview-due?${q}`);
+  }
+
+  adminDeleteSla(roleKey: string) {
+    return this.request("DELETE", `/api/v1/admin/sla-config/${encodeURIComponent(roleKey)}`);
+  }
+
   adminGetUsers() {
     return this.request("GET", "/api/v1/admin/users");
   }
 
-  adminCreateUser(body: { email: string; full_name: string; role: string; is_active: boolean; password?: string }) {
+  adminCreateUser(body: {
+    email: string;
+    full_name: string;
+    role: string;
+    is_active: boolean;
+    password?: string;
+    employee_id?: string | null;
+    org_unit_id?: string | null;
+    org_level?: string | null;
+  }) {
     return this.request<{ id: string }>("POST", "/api/v1/admin/users", body);
   }
 
-  adminUpdateUser(id: string, body: { email?: string; full_name: string; role: string; is_active: boolean }) {
+  adminUpdateUser(
+    id: string,
+    body: {
+      email?: string;
+      full_name: string;
+      role: string;
+      is_active: boolean;
+      employee_id?: string | null;
+      org_unit_id?: string | null;
+      org_level?: string | null;
+    }
+  ) {
     return this.request("PUT", `/api/v1/admin/users/${id}`, body);
   }
 

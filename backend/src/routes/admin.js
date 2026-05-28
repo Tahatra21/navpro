@@ -4,10 +4,184 @@ import bcrypt from 'bcryptjs';
 import { query } from '../db.js';
 import { authRequired, requireRoles } from '../middleware/auth.js';
 import { addAuditLog } from '../utils/audit.js';
+import { computeDueAtFromSlaRow, getSlaConfigMap } from '../utils/sla.js';
+import { validatePasswordPolicy } from '../config/security.js';
+
+const ORG_SEGMENTS = ['ENT1', 'ENT2', 'PLN1', 'PLN2'];
+const ORG_TYPES = ['PUSAT', 'SBU'];
+
+/** All valid user roles — FINANCE_ADMIN cannot escalate to SUPER_ADMIN */
+const VALID_ROLES = ['SUPER_ADMIN', 'FINANCE_ADMIN', 'MANAGER', 'GM_SRM', 'ASMAN', 'SA', 'STAFF'];
+/** Roles that only SUPER_ADMIN can assign */
+const ELEVATED_ROLES = ['SUPER_ADMIN'];
+
+/** Input field length limits */
+const MAX_NAME_LEN = 255;
+const MAX_EMAIL_LEN = 254;
+const MAX_CODE_LEN = 30;
+const MAX_ORG_NAME_LEN = 200;
+const MAX_EMPLOYEE_ID_LEN = 50;
+const MAX_ORG_LEVEL_LEN = 5;
 
 const router = Router();
 router.use(authRequired);
 router.use(requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN'));
+
+// Organization units (BRD KKF v2.0)
+router.get('/org-units', async (_req, res) => {
+  const { rows } = await query(
+    `SELECT id, code, name, type, segment, parent_id, is_active, created_at
+     FROM organization_units
+     ORDER BY type, code`
+  );
+  res.json({ org_units: rows });
+});
+
+router.post('/org-units', async (req, res) => {
+  const b = req.body || {};
+  const code = String(b.code || '')
+    .trim()
+    .toUpperCase();
+  const name = String(b.name || '').trim();
+  const type = String(b.type || '').toUpperCase();
+  const segment = String(b.segment || '').toUpperCase();
+
+  if (!code || !name) {
+    return res.status(400).json({ error: 'Bad Request', message: 'Kode dan nama wajib diisi.' });
+  }
+  if (!ORG_TYPES.includes(type)) {
+    return res.status(400).json({ error: 'Bad Request', message: 'Tipe harus PUSAT atau SBU.' });
+  }
+  if (!ORG_SEGMENTS.includes(segment)) {
+    return res.status(400).json({ error: 'Bad Request', message: 'Segment tidak valid.' });
+  }
+
+  const id = uuidv4();
+  try {
+    await query(
+      `INSERT INTO organization_units (id, code, name, type, segment, parent_id, is_active)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [id, code, name, type, segment, b.parent_id || null, b.is_active !== false]
+    );
+  } catch (e) {
+    if (e.code === '23505') {
+      return res.status(409).json({ error: 'Conflict', message: 'Kode unit sudah digunakan.' });
+    }
+    throw e;
+  }
+
+  await addAuditLog({
+    userId: req.user.sub,
+    userName: req.user.name,
+    action: 'ORG_UNIT_CREATE',
+    oldVal: null,
+    newVal: code,
+  });
+
+  res.status(201).json({ id, code });
+});
+
+router.put('/org-units/:id', async (req, res) => {
+  const b = req.body || {};
+  const { rows: existing } = await query(`SELECT * FROM organization_units WHERE id = $1`, [
+    req.params.id,
+  ]);
+  if (!existing[0]) return res.status(404).json({ error: 'Not Found' });
+
+  const code = b.code != null ? String(b.code).trim().toUpperCase() : existing[0].code;
+  const name = b.name != null ? String(b.name).trim() : existing[0].name;
+  const type = b.type != null ? String(b.type).toUpperCase() : existing[0].type;
+  const segment = b.segment != null ? String(b.segment).toUpperCase() : existing[0].segment;
+
+  if (!ORG_TYPES.includes(type) || !ORG_SEGMENTS.includes(segment)) {
+    return res.status(400).json({ error: 'Bad Request', message: 'Tipe atau segment tidak valid.' });
+  }
+
+  try {
+    await query(
+      `UPDATE organization_units SET
+         code = $1, name = $2, type = $3, segment = $4,
+         parent_id = $5, is_active = $6
+       WHERE id = $7`,
+      [
+        code,
+        name,
+        type,
+        segment,
+        b.parent_id !== undefined ? b.parent_id : existing[0].parent_id,
+        b.is_active !== undefined ? !!b.is_active : existing[0].is_active,
+        req.params.id,
+      ]
+    );
+  } catch (e) {
+    if (e.code === '23505') {
+      return res.status(409).json({ error: 'Conflict', message: 'Kode unit sudah digunakan.' });
+    }
+    throw e;
+  }
+
+  await addAuditLog({
+    userId: req.user.sub,
+    userName: req.user.name,
+    action: 'ORG_UNIT_UPDATE',
+    oldVal: existing[0].code,
+    newVal: code,
+  });
+
+  res.json({ ok: true });
+});
+
+router.delete('/org-units/:id', async (req, res) => {
+  const { rows: existing } = await query(`SELECT * FROM organization_units WHERE id = $1`, [
+    req.params.id,
+  ]);
+  if (!existing[0]) return res.status(404).json({ error: 'Not Found' });
+
+  const { rows: userCount } = await query(
+    `SELECT COUNT(*)::int AS c FROM users WHERE org_unit_id = $1`,
+    [req.params.id]
+  );
+  const { rows: projectCount } = await query(
+    `SELECT COUNT(*)::int AS c FROM projects WHERE org_unit_id = $1`,
+    [req.params.id]
+  );
+  if ((userCount[0]?.c || 0) > 0 || (projectCount[0]?.c || 0) > 0) {
+    await query(`UPDATE organization_units SET is_active = false WHERE id = $1`, [req.params.id]);
+    return res.json({
+      ok: true,
+      soft_deleted: true,
+      message: 'Unit dinonaktifkan karena masih dipakai user/proyek.',
+    });
+  }
+
+  await query(`DELETE FROM organization_units WHERE id = $1`, [req.params.id]);
+  await addAuditLog({
+    userId: req.user.sub,
+    userName: req.user.name,
+    action: 'ORG_UNIT_DELETE',
+    oldVal: existing[0].code,
+    newVal: null,
+  });
+  res.json({ ok: true, soft_deleted: false });
+});
+
+// Backfill project org_unit_id/segment from creator's assigned org unit.
+router.post('/projects/backfill-org', async (_req, res) => {
+  const { rows } = await query(
+    `UPDATE projects AS p
+     SET
+       org_unit_id = u.org_unit_id,
+       segment = ou.segment,
+       updated_at = NOW()
+     FROM users u
+     JOIN organization_units ou ON ou.id = u.org_unit_id
+     WHERE p.created_by = u.id
+       AND (p.org_unit_id IS NULL OR p.segment IS NULL)
+       AND u.org_unit_id IS NOT NULL
+     RETURNING p.id`
+  );
+  res.json({ updated: rows.length, project_ids: rows.map((r) => r.id) });
+});
 
 // Assumptions
 router.get('/assumptions', async (_req, res) => {
@@ -113,6 +287,29 @@ router.get('/sla-config', async (_req, res) => {
   res.json({ sla: rows });
 });
 
+router.get('/sla-config/preview-due', async (req, res) => {
+  const roleKey = String(req.query.role_key || '');
+  if (!roleKey) {
+    return res.status(400).json({ error: 'Bad Request', message: 'role_key wajib' });
+  }
+  const startAt = req.query.start_at ? new Date(String(req.query.start_at)) : new Date();
+  if (Number.isNaN(startAt.getTime())) {
+    return res.status(400).json({ error: 'Bad Request', message: 'start_at tidak valid' });
+  }
+  const map = await getSlaConfigMap();
+  const sla = map.get(roleKey);
+  if (!sla) return res.status(404).json({ error: 'Not Found', message: 'SLA role tidak ditemukan' });
+
+  const dueAt = computeDueAtFromSlaRow(sla, startAt);
+  res.json({
+    role_key: roleKey,
+    start_at: startAt.toISOString(),
+    due_at: dueAt.toISOString(),
+    sla_working_days: sla.sla_working_days,
+    business_hours: '08:00-17:00 Mon-Fri',
+  });
+});
+
 router.put('/sla-config/:role_key', async (req, res) => {
   const b = req.body;
   await query(
@@ -129,6 +326,20 @@ router.put('/sla-config/:role_key', async (req, res) => {
       b.escalate_to_role,
     ]
   );
+  res.json({ ok: true });
+});
+
+router.delete('/sla-config/:role_key', async (req, res) => {
+  const roleKey = req.params.role_key;
+  const result = await query(`DELETE FROM sla_config WHERE role_key = $1`, [roleKey]);
+  if (!result.rowCount) return res.status(404).json({ error: 'Not Found' });
+  await addAuditLog({
+    userId: req.user.sub,
+    userName: req.user.name,
+    action: 'SLA_CONFIG_DELETE',
+    oldVal: roleKey,
+    newVal: null,
+  });
   res.json({ ok: true });
 });
 
@@ -184,45 +395,184 @@ router.put('/system-config/:key', async (req, res) => {
 // Users
 router.get('/users', async (_req, res) => {
   const { rows } = await query(
-    `SELECT id, email, full_name, role, is_active, last_login_at, created_at FROM users ORDER BY full_name`
+    `SELECT
+       u.id, u.email, u.full_name, u.role, u.is_active, u.last_login_at, u.created_at,
+       u.employee_id, u.org_unit_id, u.org_level,
+       ou.code AS org_unit_code, ou.name AS org_unit_name, ou.type AS org_unit_type, ou.segment AS org_unit_segment
+     FROM users u
+     LEFT JOIN organization_units ou ON ou.id = u.org_unit_id
+     ORDER BY u.full_name`
   );
   res.json({ users: rows });
 });
 
 router.post('/users', async (req, res) => {
   const b = req.body;
-  const hash = await bcrypt.hash(b.password || 'Navpro@2026', 10);
+
+  // Validate required fields with length limits
+  const email = String(b.email || '').toLowerCase().trim();
+  const fullName = String(b.full_name || '').trim();
+  const role = String(b.role || '');
+
+  if (!email || email.length > MAX_EMAIL_LEN) {
+    return res.status(400).json({ error: 'Bad Request', message: 'Email tidak valid (max 254 karakter)' });
+  }
+  if (!fullName || fullName.length > MAX_NAME_LEN) {
+    return res.status(400).json({ error: 'Bad Request', message: 'Nama lengkap wajib diisi (max 255 karakter)' });
+  }
+  if (!VALID_ROLES.includes(role)) {
+    return res.status(400).json({ error: 'Bad Request', message: 'Role tidak valid' });
+  }
+
+  // Only SUPER_ADMIN can create users with elevated roles
+  if (ELEVATED_ROLES.includes(role) && req.user.role !== 'SUPER_ADMIN') {
+    return res.status(403).json({ error: 'Forbidden', message: 'Hanya SUPER_ADMIN yang dapat membuat user dengan role ini' });
+  }
+
+  if (!b.password) {
+    return res.status(400).json({ error: 'Bad Request', message: 'Password wajib diisi' });
+  }
+  const policy = validatePasswordPolicy(b.password);
+  if (!policy.ok) {
+    return res.status(400).json({ error: 'Bad Request', message: policy.message });
+  }
+
+  const hash = await bcrypt.hash(String(b.password), 12); // bcrypt cost 12 for enterprise
   const id = uuidv4();
-  await query(
-    `INSERT INTO users (id, email, password_hash, full_name, role, is_active) VALUES ($1,$2,$3,$4,$5,$6)`,
-    [id, b.email.toLowerCase(), hash, b.full_name, b.role, b.is_active !== false]
-  );
+
+  try {
+    await query(
+      `INSERT INTO users (
+         id, email, password_hash, full_name, role, is_active,
+         employee_id, org_unit_id, org_level
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [
+        id,
+        email,
+        hash,
+        fullName,
+        role,
+        b.is_active !== false,
+        b.employee_id ? String(b.employee_id).slice(0, MAX_EMPLOYEE_ID_LEN) : null,
+        b.org_unit_id || null,
+        b.org_level ? String(b.org_level).slice(0, MAX_ORG_LEVEL_LEN) : null,
+      ]
+    );
+  } catch (e) {
+    if (e.code === '23505') {
+      return res.status(409).json({ error: 'Conflict', message: 'Email sudah digunakan.' });
+    }
+    throw e;
+  }
+
+  await addAuditLog({
+    userId: req.user.sub,
+    userName: req.user.name,
+    action: 'USER_CREATE',
+    oldVal: null,
+    newVal: `${email} (${role})`,
+  });
+
   res.status(201).json({ id });
 });
 
 router.put('/users/:id', async (req, res) => {
   const b = req.body;
-  // Email change is restricted to SUPER_ADMIN only.
-  // FINANCE_ADMIN can still update name/role/active status for operational needs.
-  if (req.user.role === 'SUPER_ADMIN') {
+  const isSuperAdmin = req.user.role === 'SUPER_ADMIN';
+
+  // Validate role
+  const role = String(b.role || '');
+  if (!VALID_ROLES.includes(role)) {
+    return res.status(400).json({ error: 'Bad Request', message: 'Role tidak valid' });
+  }
+
+  // Only SUPER_ADMIN can assign elevated roles or change roles at all
+  if (ELEVATED_ROLES.includes(role) && !isSuperAdmin) {
+    return res.status(403).json({ error: 'Forbidden', message: 'Hanya SUPER_ADMIN yang dapat menetapkan role ini' });
+  }
+
+  // Fetch existing user to detect role change for audit
+  const { rows: existing } = await query(`SELECT role, email FROM users WHERE id = $1`, [req.params.id]);
+  if (!existing[0]) return res.status(404).json({ error: 'Not Found' });
+  const oldRole = existing[0].role;
+
+  // Validate name & email
+  const fullName = String(b.full_name || '').trim();
+  if (!fullName || fullName.length > MAX_NAME_LEN) {
+    return res.status(400).json({ error: 'Bad Request', message: 'Nama tidak valid' });
+  }
+
+  if (isSuperAdmin) {
+    const email = String(b.email || '').toLowerCase().trim();
+    if (!email || email.length > MAX_EMAIL_LEN) {
+      return res.status(400).json({ error: 'Bad Request', message: 'Email tidak valid' });
+    }
+    // SUPER_ADMIN: can update all fields including email and role
     await query(
-      `UPDATE users SET full_name=$1, role=$2, is_active=$3, email=$4 WHERE id=$5`,
-      [b.full_name, b.role, b.is_active, String(b.email || '').toLowerCase(), req.params.id]
+      `UPDATE users SET
+         full_name=$1, role=$2, is_active=$3, email=$4,
+         employee_id=$5, org_unit_id=$6, org_level=$7
+       WHERE id=$8`,
+      [
+        fullName,
+        role,
+        !!b.is_active,
+        email,
+        b.employee_id ? String(b.employee_id).slice(0, MAX_EMPLOYEE_ID_LEN) : null,
+        b.org_unit_id || null,
+        b.org_level ? String(b.org_level).slice(0, MAX_ORG_LEVEL_LEN) : null,
+        req.params.id,
+      ]
     );
   } else {
+    // FINANCE_ADMIN: cannot change role (prevent privilege escalation)
     await query(
-      `UPDATE users SET full_name=$1, role=$2, is_active=$3 WHERE id=$4`,
-      [b.full_name, b.role, b.is_active, req.params.id]
+      `UPDATE users SET
+         full_name=$1, is_active=$2,
+         employee_id=$3, org_unit_id=$4, org_level=$5
+       WHERE id=$6`,
+      [
+        fullName,
+        !!b.is_active,
+        b.employee_id ? String(b.employee_id).slice(0, MAX_EMPLOYEE_ID_LEN) : null,
+        b.org_unit_id || null,
+        b.org_level ? String(b.org_level).slice(0, MAX_ORG_LEVEL_LEN) : null,
+        req.params.id,
+      ]
     );
   }
+
+  // Audit role changes specifically
+  if (isSuperAdmin && oldRole !== role) {
+    await addAuditLog({
+      userId: req.user.sub,
+      userName: req.user.name,
+      action: 'USER_ROLE_CHANGE',
+      oldVal: oldRole,
+      newVal: `${role} (user: ${req.params.id})`,
+    });
+  } else {
+    await addAuditLog({
+      userId: req.user.sub,
+      userName: req.user.name,
+      action: 'USER_UPDATE',
+      oldVal: null,
+      newVal: req.params.id,
+    });
+  }
+
   res.json({ ok: true });
 });
 
 // Reset password (SUPER_ADMIN only)
 router.post('/users/:id/reset-password', requireRoles('SUPER_ADMIN'), async (req, res) => {
-  const newPassword = String(req.body?.new_password || 'Navpro@2026');
-  if (newPassword.length < 8) {
-    return res.status(400).json({ error: 'Bad Request', message: 'Password minimal 8 karakter' });
+  const newPassword = req.body?.new_password;
+  if (!newPassword) {
+    return res.status(400).json({ error: 'Bad Request', message: 'new_password wajib diisi' });
+  }
+  const policy = validatePasswordPolicy(newPassword);
+  if (!policy.ok) {
+    return res.status(400).json({ error: 'Bad Request', message: policy.message });
   }
 
   const hash = await bcrypt.hash(newPassword, 10);

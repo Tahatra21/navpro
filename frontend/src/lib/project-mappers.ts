@@ -61,6 +61,7 @@ export function buildProjectPayload(input: {
   project_name: string;
   contract_start_date: string;
   project_duration_months: number;
+  org_unit_id?: string;
   customer_name?: string;
   contract_number?: string;
   pic_sales?: string;
@@ -120,6 +121,7 @@ export function buildProjectPayload(input: {
     project_name: input.project_name.trim(),
     contract_start_date: input.contract_start_date,
     project_duration_months: input.project_duration_months,
+    org_unit_id: input.org_unit_id || undefined,
     customer_name: input.customer_name?.trim() || undefined,
     contract_number: input.contract_number?.trim() || undefined,
     pic_sales: input.pic_sales?.trim() || undefined,
@@ -154,6 +156,7 @@ const uid = () => Math.random().toString(36).slice(2, 11);
 
 export function projectToWizardState(project: Project) {
   return {
+    orgUnitId: project.org_unit_id || "",
     projectCode: project.project_code,
     projectName: project.project_name,
     customer: project.customer_name || "",

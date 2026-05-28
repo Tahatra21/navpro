@@ -1,19 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { navproApi } from "@/services/api";
 import { Eye, EyeOff, ChevronRight } from "lucide-react";
 import type { User } from "@/types/navpro";
 
+// Progressive delay after failed attempts to slow down brute-force
+const RETRY_DELAY_MS = [0, 1000, 2000, 4000, 8000];
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("Navpro@2026");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const failCount = useRef(0);
   const setUser = useAuthStore((state: { setUser: (u: User | null) => void }) => state.setUser);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -21,13 +25,19 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+    // Progressive delay after failures
+    const delay = RETRY_DELAY_MS[Math.min(failCount.current, RETRY_DELAY_MS.length - 1)];
+    if (delay > 0) await new Promise((r) => setTimeout(r, delay));
+
     try {
-      const { user } = await navproApi.login(email, password);
+      const { user } = await navproApi.login(email.trim(), password);
+      failCount.current = 0;
       setUser(user);
       router.push("/dashboard");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Gagal masuk";
-      setError(message);
+    } catch {
+      failCount.current += 1;
+      // Generic error — do not reveal whether email exists or not
+      setError("Email atau password tidak valid.");
       setLoading(false);
     }
   };
@@ -65,9 +75,12 @@ export default function LoginPage() {
               )}
 
               <input
+                id="email"
                 type="email"
                 placeholder="email"
                 required
+                autoComplete="username"
+                maxLength={254}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full h-12 px-5 bg-slate-900/40 border border-slate-600/50 text-white placeholder:text-slate-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/50"
@@ -76,9 +89,12 @@ export default function LoginPage() {
               <div className="flex gap-3">
                 <div className="relative flex-1">
                   <input
+                    id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="password"
                     required
+                    autoComplete="current-password"
+                    maxLength={128}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full h-12 px-5 bg-slate-900/40 border border-slate-600/50 text-white placeholder:text-slate-400 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/50"
@@ -107,14 +123,14 @@ export default function LoginPage() {
 
             <div className="absolute bottom-4 right-8 z-20 hidden md:block" aria-label="Internal badge">
               <span className="text-[11px] text-slate-200/80 uppercase tracking-[0.16em] bg-slate-900/35 border border-white/10 px-4 py-2 rounded-full backdrop-blur">
-                INTERNAL USE ONLY — SOLAR v2.0
+                INTERNAL USE ONLY
               </span>
             </div>
 
             {/* Mobile: keep it visible but not intrusive */}
             <div className="mt-10 md:hidden flex justify-end">
               <span className="text-[11px] text-slate-200/80 uppercase tracking-[0.16em] bg-slate-900/35 border border-white/10 px-4 py-2 rounded-full">
-                INTERNAL USE ONLY — SOLAR v2.0
+                INTERNAL USE ONLY
               </span>
             </div>
           </div>

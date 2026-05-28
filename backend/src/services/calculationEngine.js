@@ -239,6 +239,13 @@ export function computeProjectKpi({ dates, periods, net_cfs, wacc, kurs_usd, tot
     conclusion = 'MARGINAL';
   }
 
+  let lifetime_revenue_total = 0;
+  let lifetime_opex_total = 0;
+  for (let m = 1; m <= N; m++) {
+    lifetime_revenue_total += periods[m].revenue;
+    lifetime_opex_total += periods[m].opex;
+  }
+
   return {
     xirr: Number.isNaN(xirr_val) ? 0 : xirr_val,
     xnpv: xnpv_val,
@@ -250,6 +257,8 @@ export function computeProjectKpi({ dates, periods, net_cfs, wacc, kurs_usd, tot
     inflation_used: (proj.inflation_rate_override != null ? proj.inflation_rate_override / 100 : (globalAss.inflation_annual !== undefined ? (Math.pow(1 + globalAss.inflation_annual / 100, 1 / 12) - 1) : globalAss.inflation_monthly / 100)),
     kurs_usd_used: kurs_usd,
     capex_total: capex_denom,
+    lifetime_revenue_total,
+    lifetime_opex_total,
     calculated_at: new Date().toISOString(),
   };
 }

@@ -1,0 +1,162 @@
+/* Sliding pill — lebar item mengikuti teks (posisi indikator via JS) */
+
+.wrapper {
+  --magic-icon: var(--muted-foreground);
+  --magic-icon-active: var(--primary);
+  --magic-label: var(--muted-foreground);
+  --magic-label-active: var(--primary);
+  --magic-pad: 0.22rem;
+
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.navigation {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  height: 2.5rem;
+  padding: var(--magic-pad);
+  background: color-mix(in oklch, var(--muted) 38%, transparent);
+  border: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+  border-radius: 9999px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  isolation: isolate;
+  scrollbar-width: none;
+}
+
+.navigation::-webkit-scrollbar {
+  display: none;
+}
+
+.list {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  z-index: 1;
+}
+
+.item {
+  position: relative;
+  flex: 0 0 auto;
+  height: 100%;
+  z-index: 1;
+}
+
+.link {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 100%;
+  padding: 0 0.85rem;
+  text-decoration: none;
+  user-select: none;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.iconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--magic-icon);
+  transition:
+    color 0.28s ease,
+    transform 0.32s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+
+.itemActive .iconWrap {
+  color: var(--magic-icon-active);
+  transform: scale(1.05);
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--magic-label);
+  transition: color 0.28s ease;
+  white-space: nowrap;
+}
+
+.itemActive .label {
+  color: var(--magic-label-active);
+  font-weight: 600;
+}
+
+.indicator {
+  position: absolute;
+  top: var(--magic-pad);
+  bottom: var(--magic-pad);
+  border-radius: 9999px;
+  background: var(--card);
+  box-shadow:
+    0 1px 2px color-mix(in oklch, var(--foreground) 6%, transparent),
+    0 0 0 1px color-mix(in oklch, var(--primary) 12%, transparent);
+  transition:
+    left 0.38s cubic-bezier(0.4, 0, 0.15, 1),
+    width 0.38s cubic-bezier(0.4, 0, 0.15, 1),
+    opacity 0.2s ease;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.headerVariant .navigation {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  height: 2.375rem;
+}
+
+.headerVariant .link {
+  padding: 0 1rem;
+}
+
+.headerVariant .indicator {
+  background: color-mix(in oklch, var(--primary) 10%, var(--card));
+  box-shadow: none;
+  border: 1px solid color-mix(in oklch, var(--primary) 14%, transparent);
+}
+
+.bottomVariant {
+  padding-bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
+}
+
+.bottomVariant .navigation {
+  max-width: min(calc(100vw - 1.25rem), 28rem);
+  height: 3.25rem;
+  --magic-pad: 0.28rem;
+  background: color-mix(in oklch, var(--card) 94%, var(--background));
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.bottomVariant .list {
+  gap: 0.15rem;
+}
+
+.bottomVariant .link {
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.15rem 0.65rem 0.2rem;
+}
+
+.bottomVariant .label {
+  font-size: 0.625rem;
+}
+
+.bottomVariant .itemActive .iconWrap {
+  transform: scale(1.08);
+}

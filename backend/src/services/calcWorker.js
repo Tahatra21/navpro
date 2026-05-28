@@ -1,6 +1,7 @@
 import { query, rowToProject, projectToDetail } from '../db.js';
 import { runCalculationOnProject } from './calculationEngine.js';
 import { addAuditLog, addNotification } from '../utils/audit.js';
+import { createCalculationSnapshot } from '../utils/calculationSnapshot.js';
 
 async function getAssumptions() {
   const { rows } = await query(`SELECT data FROM assumptions_master ORDER BY id DESC LIMIT 1`);
@@ -26,46 +27,13 @@ export async function processCalcJob(job) {
   proj = runCalculationOnProject(proj, assumptions);
   proj.status = 'COMPUTED';
 
-  const { rows: lastVer } = await query(
-    `SELECT COALESCE(MAX(version_number), 0)::int AS v FROM calculation_versions WHERE project_id = $1`,
-    [projectId]
-  );
-  const verNum = (lastVer[0]?.v || 0) + 1;
-
-  const inputSnapshot = {
-    project_code: proj.project_code,
-    project_name: proj.project_name,
-    customer_name: proj.customer_name,
-    contract_number: proj.contract_number,
-    pic_sales: proj.pic_sales,
-    contract_start_date: proj.contract_start_date,
-    project_duration_months: proj.project_duration_months,
-    duration_category: proj.duration_category,
-    wacc_override: proj.wacc_override,
-    inflation_rate_override: proj.inflation_rate_override,
-    kurs_usd_override: proj.kurs_usd_override,
-    bcr_threshold_override: proj.bcr_threshold_override,
-    otc_amount: proj.otc_amount,
-    capex: proj.capex || [],
-    opex: proj.opex || [],
-    revenue: proj.revenue || [],
-  };
-  const resultSnapshot = { kpi: proj.kpi, cashflow_monthly: proj.cashflow_monthly };
-
-  await query(
-    `INSERT INTO calculation_versions
-      (project_id, version_number, duration_months, input_snapshot, result_snapshot, created_by, created_by_name)
-     VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-    [
-      projectId,
-      verNum,
-      proj.project_duration_months,
-      JSON.stringify(inputSnapshot),
-      JSON.stringify(resultSnapshot),
-      actor?.userId || null,
-      actor?.userName || 'Async Worker',
-    ]
-  );
+  const verNum = await createCalculationSnapshot({
+    projectId,
+    proj,
+    userId: actor?.userId || null,
+    userName: actor?.userName || 'Async Worker',
+    snapshotType: 'CALC',
+  });
 
   proj.versions = proj.versions || [];
   proj.versions.push({

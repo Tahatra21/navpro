@@ -1,12 +1,16 @@
+# NAVPRO Production Docker Compose
+# Copy .env.docker.example → .env (repo root) before compose up.
+# Generate SSL cert: ./scripts/gen-ssl-cert.sh
 services:
   postgres:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: navpro
-      POSTGRES_PASSWORD: navpro_dev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: navpro_db
-    ports:
-      - "5432:5432"
+    # SECURITY: Do NOT expose PostgreSQL port externally in production
+    # ports:
+    #   - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -14,26 +18,39 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env} --appendonly yes
+    # SECURITY: Do NOT expose Redis port externally in production
+    # ports:
+    #   - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 20
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128m
 
   minio:
     image: minio/minio:RELEASE.2025-01-20T14-49-07Z
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: navpro
-      MINIO_ROOT_PASSWORD: navpro_minio_dev
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-navpro}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
+    # SECURITY: Do NOT expose MinIO ports externally in production
+    # ports:
+    #   - "9000:9000"
+    #   - "9001:9001"
     volumes:
       - minio_data:/data
     healthcheck:
@@ -41,34 +58,45 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
 
-  # Create bucket 'navpro' at startup (idempotent)
+  # Create bucket 'navpro' at startup (idempotent) — PRIVATE bucket
   minio-init:
     image: minio/mc:RELEASE.2025-01-17T23-25-50Z
     depends_on:
       minio:
         condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-navpro}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://minio:9000 navpro navpro_minio_dev &&
+      mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD &&
       mc mb -p local/navpro || true &&
-      mc anonymous set download local/navpro || true &&
-      echo 'minio-init done'
+      echo 'minio-init done: bucket is PRIVATE (no anonymous access)'
       "
+    # SECURITY: 'mc anonymous set download' removed — exports require authentication
 
   backend:
     build: ./backend
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       PORT: 4000
-      DATABASE_URL: postgresql://navpro:navpro_dev@postgres:5432/navpro_db
-      JWT_SECRET: navpro-dev-jwt-secret-change-in-production
-      CORS_ORIGIN: http://localhost,http://localhost:80,http://127.0.0.1
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://navpro:${POSTGRES_PASSWORD}@postgres:5432/navpro_db
+      JWT_SECRET: "${JWT_SECRET:?Set JWT_SECRET in .env (min 64 chars: openssl rand -base64 64)}"
+      SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-}
+      CORS_ORIGIN: "${CORS_ORIGIN:?Set CORS_ORIGIN in .env (HTTPS origins, e.g. https://navpro.company.com)}"
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       MINIO_ENDPOINT: http://minio:9000
       MINIO_BUCKET: navpro
-      MINIO_ACCESS_KEY: navpro
-      MINIO_SECRET_KEY: navpro_minio_dev
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-navpro}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      # SECURITY: Enable PostgreSQL Row Level Security
+      NAVPRO_RLS_ENABLED: "true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -79,44 +107,66 @@ services:
       minio-init:
         condition: service_completed_successfully
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
 
   worker:
     build: ./backend
-    command: ["npm","run","worker"]
+    command: ["npm", "run", "worker"]
     environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://navpro:navpro_dev@postgres:5432/navpro_db
-      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+      DATABASE_URL: postgresql://navpro:${POSTGRES_PASSWORD}@postgres:5432/navpro_db
+      JWT_SECRET: ${JWT_SECRET}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      NAVPRO_RLS_ENABLED: "true"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
 
   frontend:
     build: ./frontend
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: http://localhost
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://localhost}
     depends_on:
       backend:
         condition: service_started
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
 
   nginx:
     image: nginx:alpine
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # SSL certificates — generate with: ./scripts/gen-ssl-cert.sh
+      - ./nginx/certs:/etc/nginx/certs:ro
     depends_on:
       frontend:
         condition: service_started
       backend:
         condition: service_started
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64m
 
 volumes:
   pgdata:
   minio_data:
+

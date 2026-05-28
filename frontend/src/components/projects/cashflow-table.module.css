@@ -1,0 +1,88 @@
+.wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  max-width: 100%;
+}
+
+.table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.75rem;
+  table-layout: auto;
+  width: max-content;
+  min-width: 100%;
+}
+
+.table th,
+.table td {
+  padding: 0.5rem 0.75rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  min-width: 6.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.stickyCol {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  background: var(--card);
+  border-right: 2px solid var(--border);
+  text-align: left !important;
+  min-width: 11rem;
+  max-width: 11rem;
+  font-weight: 600;
+  box-shadow: 4px 0 8px -4px color-mix(in oklch, var(--foreground) 12%, transparent);
+}
+
+.headerRow th {
+  background: color-mix(in oklch, var(--muted) 55%, var(--card));
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+}
+
+.headerRow th.stickyCol {
+  z-index: 6;
+  background: color-mix(in oklch, var(--muted) 70%, var(--card));
+}
+
+.periodCol {
+  background: var(--card);
+}
+
+.periodColInactive {
+  opacity: 0.45;
+}
+
+.netRow td:not(.stickyCol) {
+  font-weight: 700;
+  background: color-mix(in oklch, var(--primary) 6%, var(--card));
+}
+
+.netRow td.stickyCol {
+  background: color-mix(in oklch, var(--primary) 8%, var(--card));
+}
+
+.cumRow td:not(.stickyCol) {
+  font-weight: 700;
+  background: color-mix(in oklch, #16a34a 6%, var(--card));
+}
+
+.cumRow td.stickyCol {
+  background: color-mix(in oklch, #16a34a 8%, var(--card));
+}
+
+.positive {
+  color: #15803d;
+}
+
+.negative {
+  color: var(--destructive);
+}

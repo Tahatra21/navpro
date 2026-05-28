@@ -1,27 +1,13 @@
 import { query } from '../db.js';
-import { addAuditLog, addNotification } from '../utils/audit.js';
-
-function addWorkingDays(startDate, days) {
-  const d = new Date(startDate);
-  let remaining = Math.max(0, Number(days) || 0);
-  while (remaining > 0) {
-    d.setDate(d.getDate() + 1);
-    const day = d.getDay(); // 0 Sun, 6 Sat
-    if (day !== 0 && day !== 6) remaining -= 1;
-  }
-  return d;
-}
-
-async function notifyRole(role, { title, body, projectId }) {
-  const { rows } = await query(`SELECT id FROM users WHERE role = $1 AND is_active = true`, [role]);
-  for (const u of rows) {
-    await addNotification({ userId: u.id, title, body, projectId });
-  }
-}
+import { addAuditLog } from '../utils/audit.js';
+import { computeDueAtFromSlaRow, getSlaConfigMap } from '../utils/sla.js';
+import { notifyMatrix } from '../utils/notifyMatrix.js';
 
 function getQueueRoleForProjectStatus(status) {
   if (status === 'SUBMITTED' || status === 'UNDER_REVIEW') return 'MANAGER';
   if (status === 'APPROVED_L1') return 'GM_SRM';
+  if (status === 'IN_REVIEW_ASMAN') return 'ASMAN';
+  if (status === 'IN_REVIEW_MANAGER') return 'MANAGER';
   return null;
 }
 
@@ -33,34 +19,142 @@ function getSlaStartTs(proj, roleKey) {
   return submit?.decided_at || proj.updated_at || proj.created_at;
 }
 
-async function hasEvent(projectId, roleKey, eventType) {
+async function hasStepEvent(approvalStepId, eventType) {
   const { rows } = await query(
-    `SELECT 1 FROM sla_events WHERE project_id = $1 AND role_key = $2 AND event_type = $3 LIMIT 1`,
+    `SELECT 1 FROM sla_events WHERE approval_step_id = $1 AND event_type = $2 LIMIT 1`,
+    [approvalStepId, eventType]
+  );
+  return rows.length > 0;
+}
+
+async function hasLegacyEvent(projectId, roleKey, eventType) {
+  const { rows } = await query(
+    `SELECT 1 FROM sla_events
+     WHERE project_id = $1 AND role_key = $2 AND event_type = $3 AND approval_step_id IS NULL
+     LIMIT 1`,
     [projectId, roleKey, eventType]
   );
   return rows.length > 0;
 }
 
-async function markEvent(projectId, roleKey, eventType, dueAt) {
+async function markStepEvent(projectId, approvalStepId, roleKey, eventType, dueAt) {
   await query(
-    `INSERT INTO sla_events (project_id, role_key, event_type, due_at)
-     VALUES ($1,$2,$3,$4)
-     ON CONFLICT (project_id, role_key, event_type) DO NOTHING`,
+    `INSERT INTO sla_events (project_id, approval_step_id, role_key, event_type, due_at, is_sent, sent_at)
+     VALUES ($1,$2,$3,$4,$5,true,NOW())
+     ON CONFLICT (project_id, approval_step_id, role_key, event_type) DO NOTHING`,
+    [projectId, approvalStepId, roleKey, eventType, dueAt ? new Date(dueAt).toISOString() : null]
+  );
+}
+
+async function markLegacyEvent(projectId, roleKey, eventType, dueAt) {
+  await query(
+    `INSERT INTO sla_events (project_id, role_key, event_type, due_at, is_sent, sent_at)
+     VALUES ($1,$2,$3,$4,true,NOW())`,
     [projectId, roleKey, eventType, dueAt ? new Date(dueAt).toISOString() : null]
   );
 }
 
-export async function runSlaTick({ now = new Date() } = {}) {
-  const { rows: slaRows } = await query(`SELECT * FROM sla_config ORDER BY role_key`);
-  const slaByRole = new Map(slaRows.map((r) => [r.role_key, r]));
+async function processApprovalStepSla(step, proj, slaByRole, now) {
+  const queueRole = step.approver_role;
+  const sla = slaByRole.get(queueRole);
+  if (!sla) return;
 
-  // pending approvals only
+  let dueAt = step.due_at ? new Date(step.due_at) : null;
+  if (!dueAt) {
+    dueAt = computeDueAtFromSlaRow(sla, new Date(step.created_at || now));
+    await query(`UPDATE approval_steps SET due_at = $1 WHERE id = $2`, [dueAt.toISOString(), step.id]);
+  }
+
+  const hoursToDue = (dueAt.getTime() - now.getTime()) / (60 * 60 * 1000);
+  const hoursOverdue = (now.getTime() - dueAt.getTime()) / (60 * 60 * 1000);
+
+  const label = `${proj.project_code} — ${proj.project_name}`;
+
+  if (hoursToDue <= (sla.reminder_hours ?? 24) && hoursToDue > 0) {
+    const eventType = 'REMINDER';
+    if (!(await hasStepEvent(step.id, eventType))) {
+      await notifyMatrix({
+        event: 'REMINDER',
+        projectId: proj.id,
+        projectCode: proj.project_code,
+        projectName: proj.project_name,
+        userIds: [step.assigned_to],
+        comment: `Due: ${dueAt.toLocaleString('id-ID')}`,
+      });
+      await addAuditLog({
+        userId: null,
+        userName: 'System',
+        projectId: proj.id,
+        action: 'SLA_REMINDER',
+        oldVal: null,
+        newVal: `${queueRole} step:${step.id} due ${dueAt.toISOString()}`,
+      });
+      await markStepEvent(proj.id, step.id, queueRole, eventType, dueAt);
+    }
+  }
+
+  if (hoursOverdue >= (sla.escalation_hours ?? 48)) {
+    const eventType = 'ESCALATION';
+    if (!(await hasStepEvent(step.id, eventType))) {
+      await query(
+        `UPDATE approval_steps SET status = 'ESCALATED' WHERE id = $1 AND status = 'PENDING'`,
+        [step.id]
+      );
+      const escalateTo = sla.escalate_to_role;
+      await notifyMatrix({
+        event: 'ESCALATION',
+        projectId: proj.id,
+        projectCode: proj.project_code,
+        projectName: proj.project_name,
+        userIds: [step.assigned_to],
+        roles: escalateTo ? [escalateTo] : [],
+        comment: `Level ${queueRole} terlewat. Due: ${dueAt.toLocaleString('id-ID')}`,
+      });
+      await addAuditLog({
+        userId: null,
+        userName: 'System',
+        projectId: proj.id,
+        action: 'SLA_ESCALATION',
+        oldVal: null,
+        newVal: `${queueRole} -> ${sla.escalate_to_role || 'ALL'} step:${step.id}`,
+      });
+      await markStepEvent(proj.id, step.id, queueRole, eventType, dueAt);
+    }
+  }
+}
+
+export async function runSlaTick({ now = new Date() } = {}) {
+  const slaByRole = await getSlaConfigMap();
+
+  const { rows: stepRows } = await query(
+    `SELECT ast.*, p.project_code, p.project_name, p.status
+     FROM approval_steps ast
+     JOIN projects p ON p.id = ast.project_id
+     WHERE ast.status = 'PENDING'
+       AND p.status IN ('IN_REVIEW_ASMAN', 'IN_REVIEW_MANAGER', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED_L1')`
+  );
+
+  for (const step of stepRows) {
+    const proj = {
+      id: step.project_id,
+      project_code: step.project_code,
+      project_name: step.project_name,
+      status: step.status,
+    };
+    await processApprovalStepSla(step, proj, slaByRole, now);
+  }
+
+  // Legacy projects without approval_steps rows
   const { rows: projRows } = await query(
-    `SELECT * FROM projects WHERE status IN ('SUBMITTED', 'UNDER_REVIEW', 'APPROVED_L1')`
+    `SELECT p.* FROM projects p
+     WHERE p.status IN ('SUBMITTED', 'UNDER_REVIEW', 'APPROVED_L1')
+       AND NOT EXISTS (
+         SELECT 1 FROM approval_steps ast
+         WHERE ast.project_id = p.id AND ast.status = 'PENDING'
+       )`
   );
 
   for (const row of projRows) {
-    // row.detail contains approval_chain etc; we only need small bits
     const detail = row.detail || {};
     const proj = {
       id: row.id,
@@ -80,62 +174,37 @@ export async function runSlaTick({ now = new Date() } = {}) {
 
     const startTs = getSlaStartTs(proj, queueRole);
     const startDate = startTs ? new Date(startTs) : new Date(proj.updated_at || proj.created_at || now);
-    const dueAt = addWorkingDays(startDate, sla.sla_working_days || 2);
+    const dueAt = computeDueAtFromSlaRow(sla, startDate);
 
     const hoursToDue = (dueAt.getTime() - now.getTime()) / (60 * 60 * 1000);
     const hoursOverdue = (now.getTime() - dueAt.getTime()) / (60 * 60 * 1000);
 
-    // Reminder: once per project/role
     if (hoursToDue <= (sla.reminder_hours ?? 24) && hoursToDue > 0) {
       const eventType = 'REMINDER';
-      if (!(await hasEvent(proj.id, queueRole, eventType))) {
-        await notifyRole(queueRole, {
-          title: 'Pengingat SLA Approval',
-          body: `SLA hampir jatuh tempo untuk proyek ${proj.project_code} — ${proj.project_name}. Due: ${dueAt.toLocaleDateString('id-ID')}.`,
+      if (!(await hasLegacyEvent(proj.id, queueRole, eventType))) {
+        await notifyMatrix({
+          event: 'REMINDER',
           projectId: proj.id,
+          projectCode: proj.project_code,
+          projectName: proj.project_name,
+          roles: [queueRole],
         });
-        await addAuditLog({
-          userId: null,
-          userName: 'System',
-          projectId: proj.id,
-          action: 'SLA_REMINDER',
-          oldVal: null,
-          newVal: `${queueRole} due ${dueAt.toISOString()}`,
-        });
-        await markEvent(proj.id, queueRole, eventType, dueAt);
+        await markLegacyEvent(proj.id, queueRole, eventType, dueAt);
       }
     }
 
-    // Escalation: once per project/role
     if (hoursOverdue >= (sla.escalation_hours ?? 48)) {
       const eventType = 'ESCALATION';
-      if (!(await hasEvent(proj.id, queueRole, eventType))) {
+      if (!(await hasLegacyEvent(proj.id, queueRole, eventType))) {
         const escalateTo = sla.escalate_to_role;
-        if (escalateTo) {
-          await notifyRole(escalateTo, {
-            title: 'Escalation SLA Approval',
-            body: `SLA terlewat untuk proyek ${proj.project_code} — ${proj.project_name}. Level saat ini: ${queueRole}. Due: ${dueAt.toLocaleDateString('id-ID')}.`,
-            projectId: proj.id,
-          });
-        } else {
-          // fallback: notify all actives (rare)
-          await addNotification({
-            userId: null,
-            title: 'Escalation SLA Approval',
-            body: `SLA terlewat untuk proyek ${proj.project_code} — ${proj.project_name}. Level saat ini: ${queueRole}.`,
-            projectId: proj.id,
-          });
-        }
-
-        await addAuditLog({
-          userId: null,
-          userName: 'System',
+        await notifyMatrix({
+          event: 'ESCALATION',
           projectId: proj.id,
-          action: 'SLA_ESCALATION',
-          oldVal: null,
-          newVal: `${queueRole} -> ${sla.escalate_to_role || 'ALL'} due ${dueAt.toISOString()}`,
+          projectCode: proj.project_code,
+          projectName: proj.project_name,
+          roles: escalateTo ? [queueRole, escalateTo] : [queueRole],
         });
-        await markEvent(proj.id, queueRole, eventType, dueAt);
+        await markLegacyEvent(proj.id, queueRole, eventType, dueAt);
       }
     }
   }
@@ -148,11 +217,9 @@ export function startSlaScheduler({
     runSlaTick().catch((err) => console.error('SLA tick failed:', err));
   }, intervalMs);
 
-  // first tick quickly after startup
   setTimeout(() => {
     runSlaTick().catch((err) => console.error('SLA initial tick failed:', err));
   }, 2500);
 
   return () => clearInterval(timer);
 }
-

@@ -1,8 +1,11 @@
 export type UserRole =
   | "SUPER_ADMIN"
   | "FINANCE_ADMIN"
-  | "SA"
+  | "VP_SA"
   | "MANAGER"
+  | "ASMAN"
+  | "STAFF"
+  | "SA"
   | "GM_SRM"
   | "VIEWER";
 
@@ -11,6 +14,9 @@ export type ProjectStatus =
   | "COMPUTED"
   | "SUBMITTED"
   | "UNDER_REVIEW"
+  | "IN_REVIEW_ASMAN"
+  | "IN_REVIEW_MANAGER"
+  | "APPROVED"
   | "APPROVED_L1"
   | "APPROVED_FINAL"
   | "REJECTED"
@@ -24,6 +30,13 @@ export interface User {
   email: string;
   full_name: string;
   role: UserRole;
+  employee_id?: string | null;
+  org_unit_id?: string | null;
+  org_level?: string | null;
+  org_unit_code?: string | null;
+  org_unit_name?: string | null;
+  org_unit_type?: string | null;
+  org_unit_segment?: string | null;
 }
 
 export interface ProjectKpi {
@@ -38,6 +51,8 @@ export interface ProjectKpi {
   kurs_usd_used?: number;
   capex_total?: number;
   opex_baseline_total?: number;
+  lifetime_revenue_total?: number;
+  lifetime_opex_total?: number;
   revenue_baseline_total?: number;
   bcr_threshold_used?: { mandatory: number; minimum: number };
 }
@@ -75,6 +90,8 @@ export interface Project {
   kurs_usd_override?: number | null;
   bcr_threshold_override?: { mandatory: number; minimum: number } | null;
   created_by?: string;
+  org_unit_id?: string | null;
+  segment?: string | null;
   created_at?: string;
   updated_at?: string;
   customer_name?: string;
@@ -134,28 +151,93 @@ export interface CalculationVersionSummary {
   conclusion?: Conclusion;
 }
 
+export interface PortfolioTopProject {
+  id: string;
+  project_code: string;
+  project_name: string;
+  status: string;
+  xirr?: number | null;
+  xnpv?: number | null;
+  bcr?: number | null;
+  conclusion?: Conclusion | null;
+}
+
 export interface PortfolioResponse {
   kpi: {
     total_projects: number;
     approved_count: number;
     pending_approval: number;
+    draft_count: number;
+    computed_count: number;
+    rejected_count: number;
+    with_kpi_count: number;
+    needs_calculation_count: number;
     avg_xirr: number;
     total_xnpv: number;
+    total_capex: number;
+    total_revenue: number;
+    total_opex: number;
+    conclusion_counts: {
+      LAYAK: number;
+      BERSYARAT: number;
+      TIDAK_LAYAK: number;
+      NONE: number;
+    };
   };
+  top_by_xirr?: PortfolioTopProject[];
   risk_distribution: Record<string, number>;
   status_distribution: Record<string, number>;
+  org_financial?: {
+    pusat: PortfolioOrgFinancialUnit[];
+    sbu: PortfolioOrgFinancialUnit[];
+  };
   projects: Project[];
+}
+
+export interface PortfolioOrgFinancialUnit {
+  id: string;
+  code: string;
+  name: string;
+  type: string;
+  project_count: number;
+  capex: number;
+  opex: number;
+  revenue: number;
+  cost: number;
 }
 
 export interface ApprovalQueueItem {
   project_id: string;
   project_code: string;
   project_name: string;
-  status: ProjectStatus;
-  duration_months: number;
+  status: ProjectStatus | string;
+  duration_months?: number;
   created_by_name?: string;
   sla_due_at?: string | null;
   sla_overdue?: boolean;
+  /** V2 workflow fields (optional) */
+  step_id?: string;
+  step_order?: number;
+  approver_level?: "ASMAN" | "MANAGER";
+  step_status?: string;
+  segment?: string | null;
+}
+
+/** Raw item from GET /api/v1/approvals/queue */
+export interface ApprovalsQueueV2Item {
+  step_id: string;
+  project_id: string;
+  step_order: number;
+  approver_level: "ASMAN" | "MANAGER";
+  step_status: string;
+  due_at?: string | null;
+  project_code: string;
+  project_name: string;
+  project_status: string;
+  segment?: string | null;
+  org_unit_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface NotificationItem {

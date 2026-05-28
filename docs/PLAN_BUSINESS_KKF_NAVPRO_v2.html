@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NAVPRO — PLAN (BRD KKF v2.0)</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: rgba(255, 255, 255, 0.06);
+        --panel2: rgba(255, 255, 255, 0.08);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.70);
+        --border: rgba(255, 255, 255, 0.12);
+        --link: #7dd3fc;
+        --code: rgba(255, 255, 255, 0.08);
+        --shadow: 0 16px 50px rgba(0, 0, 0, 0.35);
+        --ok: #22c55e;
+        --warn: #f59e0b;
+        --bad: #ef4444;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        color: var(--text);
+        background: radial-gradient(1200px 800px at 20% 10%, rgba(56, 189, 248, 0.10), transparent 55%),
+          radial-gradient(900px 650px at 80% 0%, rgba(167, 139, 250, 0.10), transparent 50%),
+          radial-gradient(900px 650px at 80% 100%, rgba(34, 211, 238, 0.06), transparent 55%),
+          var(--bg);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+          "Apple Color Emoji", "Segoe UI Emoji";
+        line-height: 1.55;
+      }
+
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        backdrop-filter: blur(10px);
+        background: linear-gradient(to bottom, rgba(11, 18, 32, 0.85), rgba(11, 18, 32, 0.65));
+        border-bottom: 1px solid var(--border);
+      }
+
+      .bar {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 14px 16px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .title {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .title strong {
+        font-size: 14px;
+        letter-spacing: 0.2px;
+      }
+
+      .title span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .actions input {
+        width: min(520px, 52vw);
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        outline: none;
+      }
+
+      .actions input::placeholder {
+        color: rgba(255, 255, 255, 0.45);
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 18px 16px 60px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        padding: 16px;
+      }
+
+      a {
+        color: var(--link);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      h2,
+      h3 {
+        margin: 10px 0 8px;
+        letter-spacing: 0.2px;
+      }
+
+      h2 {
+        font-size: 18px;
+      }
+
+      h3 {
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      p,
+      li {
+        color: rgba(255, 255, 255, 0.84);
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      code {
+        background: var(--code);
+        padding: 2px 6px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+        font-size: 0.92em;
+      }
+
+      .grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .grid.cols2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      @media (max-width: 920px) {
+        .grid.cols2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      th,
+      td {
+        padding: 10px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        vertical-align: top;
+        font-size: 13px;
+      }
+
+      th {
+        text-align: left;
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.92);
+        position: sticky;
+        top: 62px;
+        z-index: 1;
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.86);
+      }
+
+      .kpi {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      @media (max-width: 920px) {
+        .kpi {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .kpi .card {
+        padding: 14px;
+      }
+
+      .kpi strong {
+        display: block;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.70);
+        margin-bottom: 6px;
+      }
+
+      .kpi b {
+        font-size: 18px;
+        letter-spacing: 0.2px;
+      }
+
+      .status {
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        white-space: nowrap;
+      }
+      .s-todo {
+        color: rgba(255, 255, 255, 0.78);
+      }
+      .s-partial {
+        color: var(--warn);
+      }
+      .s-done {
+        color: var(--ok);
+      }
+
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .toc a {
+        display: inline-flex;
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 12px;
+      }
+
+      .diagram-wrap {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        margin: 12px 0;
+        overflow-x: auto;
+      }
+
+      .diagram-wrap pre {
+        margin: 0;
+        font-size: 11px;
+        line-height: 1.45;
+        color: rgba(255, 255, 255, 0.82);
+        white-space: pre;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      .mermaid {
+        font-size: 13px;
+      }
+
+      .brd-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(56, 189, 248, 0.12);
+        margin-top: 8px;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  </head>
+
+  <body>
+    <header>
+      <div class="bar">
+        <div class="title">
+          <strong>NAVPRO — Plan &amp; BRD KKF v2.0</strong>
+          <span>
+            Acuan: <code>docs/BRD_KKF_ProyekInvestasi_v1.docx</code> (v1.0) + <code>brd/BUSINESS_KKF_NAVPRO_v2.md</code> (v2.1) • 28 Mei 2026
+          </span>
+        </div>
+        <div class="actions">
+          <input id="q" placeholder="Cari: org_unit, approval_steps, SLA, delegate, IN_REVIEW_ASMAN..." />
+          <span class="badge">Legenda: <span class="status s-todo">[ ]</span> belum • <span class="status s-partial">[~]</span> parsial • <span class="status s-done">[x]</span> selesai</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="grid cols2">
+        <section class="card">
+          <h2 id="ringkasan">1. Ringkasan</h2>
+          <p>
+            Plan penyesuaian & development NAVPRO berdasarkan <b>BRD KKF Proyek Investasi v1.0</b>
+            (<code>docs/BRD_KKF_ProyekInvestasi_v1.docx</code>) dan revisi <b>organisasi + approval v2.0</b>
+            (Asman → Manager, Pusat/SBU, SLA, RLS).
+          </p>
+          <p class="muted">
+            <b>Update 28 Mei 2026:</b> BRD v1 terintegrasi di §9; grafik dashboard memakai lifetime cashflow KKF;
+            V2-C/D selesai. Sisa: E2E, MFA/LDAP (Phase 2), scheduled reports (F-12).
+          </p>
+          <div class="toc" style="margin-top: 10px">
+            <a href="#kpi">KPI target</a>
+            <a href="#delta">Delta vs sistem saat ini</a>
+            <a href="#prinsip">Prinsip mandatory</a>
+            <a href="#roadmap">Roadmap</a>
+            <a href="#tasklist">Tasklist</a>
+            <a href="#acceptance">Acceptance</a>
+            <a href="#risiko">Risiko</a>
+            <a href="#brd">BRD</a>
+            <a href="#brd-v1">BRD v1.0</a>
+            <a href="#trace">Traceability</a>
+            <a href="#excel-map">Excel→NAVPRO</a>
+            <a href="#erd">ERD</a>
+            <a href="#dfd">DFD</a>
+            <a href="#relasi-db">Relasi DB</a>
+            <a href="#workflow-bp">Workflow BP</a>
+            <a href="#verifikasi">Verifikasi</a>
+            <a href="#progress">Progress</a>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 id="kpi">2. KPI target (dari BRD v2.0)</h2>
+          <div class="kpi">
+            <div class="card" style="background: var(--panel2)">
+              <strong>Waktu proses KKF</strong>
+              <b>~90%</b>
+              <div class="muted" style="margin-top: 6px">3–5 hari kerja → &lt; 4 jam</div>
+            </div>
+            <div class="card" style="background: var(--panel2)">
+              <strong>Waktu approval</strong>
+              <b>~80%</b>
+              <div class="muted" style="margin-top: 6px">2–5 hari (kertas) → &lt; 1 hari</div>
+            </div>
+            <div class="card" style="background: var(--panel2)">
+              <strong>Konsistensi asumsi</strong>
+              <b>+40%</b>
+              <div class="muted" style="margin-top: 6px">~60% → 100%</div>
+            </div>
+            <div class="card" style="background: var(--panel2)">
+              <strong>Audit trail</strong>
+              <b>100%</b>
+              <div class="muted" style="margin-top: 6px">0% → 100% coverage</div>
+            </div>
+          </div>
+          <p class="muted" style="margin-top: 10px">
+            KPI di atas adalah target bisnis; implementasi teknis yang membuat KPI tercapai adalah penyesuaian workflow, SLA, routing, dan governance.
+          </p>
+        </section>
+      </div>
+
+      <section class="card" style="margin-top: 12px" id="progress">
+        <h2>2b. Progress implementasi (snapshot)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 120px">Phase</th>
+              <th style="width: 100px">Status</th>
+              <th>Delivered (file / endpoint utama)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>V2-A</b></td>
+              <td class="status s-done">[x]</td>
+              <td>
+                <code>organization_units</code>, scoping di <code>projects.js</code>/<code>dashboard.js</code>,
+                RLS runtime (<code>NAVPRO_RLS_ENABLED=true</code>), <code>utils/rls.js</code>, <code>RLS_NAVPRO.md</code>.
+              </td>
+            </tr>
+            <tr>
+              <td><b>V2-B</b></td>
+              <td class="status s-done">[x]</td>
+              <td>
+                Submit snapshot, PDF audit, delegation API+UI,
+                <code>GET /api/v1/approvals/queue</code>, FE approvals + project detail.
+              </td>
+            </tr>
+            <tr>
+              <td><b>V2-C</b></td>
+              <td class="status s-done">[x]</td>
+              <td>
+                <code>utils/sla.js</code> (hari kerja 08–17), <code>due_at</code> per step,
+                <code>slaScheduler.js</code> + <code>ESCALATED</code>, <code>notifyMatrix.js</code> (in-app + email).
+              </td>
+            </tr>
+            <tr>
+              <td><b>V2-D</b></td>
+              <td class="status s-done">[x]</td>
+              <td>
+                Wizard org picker; admin CRUD org unit; SLA panel + preview due;
+                approvals queue &amp; project detail v2.
+              </td>
+            </tr>
+            <tr>
+              <td><b>V2-E</b></td>
+              <td class="status s-partial">[~]</td>
+              <td>
+                <code>backend/scripts/smoke-test.mjs</code> diperluas; seed idempotent org/SLA/demo user.
+                Belum: E2E Playwright, refresh token / rate limit.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" style="margin-top: 12px">
+        <h2 id="delta">3. Delta vs NAVPRO saat ini (high-signal)</h2>
+        <div class="grid cols2">
+          <div class="card" style="background: var(--panel2)">
+            <h3>Sudah ada (selaras + baru)</h3>
+            <ul>
+              <li>Wizard data entry + kalkulasi otomatis + conclusion.</li>
+              <li>Wizard step 1: picker <code>org_unit</code> → <code>GET /api/v1/config/org-units</code>.</li>
+              <li>Org units (13 seed), user/project mapping, query scoping per role.</li>
+              <li>Workflow v2: submit → Asman → Manager + <code>approval_steps</code> + antrian approval.</li>
+              <li>SLA <code>due_at</code> jam kerja 08–17 + scheduler + status <code>ESCALATED</code> + <code>notifyMatrix</code>.</li>
+              <li>Admin CRUD org unit + SLA preview/delete.</li>
+              <li>Assumption master & CMS admin (termasuk tab Organisasi & Pengguna).</li>
+              <li>Notifikasi in-app & email (SMTP opsional).</li>
+              <li>Export PDF/XLSX + opsional presign object store.</li>
+            </ul>
+          </div>
+          <div class="card" style="background: var(--panel2)">
+            <h3>Masih terbuka</h3>
+            <ul>
+              <li>Delegation approver + RLS (opt-in env) — selesai (V2-A05, V2-B07).</li>
+              <li><b>Security enterprise</b>: refresh token, idle timeout, rate limit (V2-E03).</li>
+              <li><b>E2E otomatis</b> alur submit → approve (Playwright).</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top: 12px">
+        <h2 id="prinsip">4. Prinsip mandatory (yang tidak boleh dilanggar)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 120px">Area</th>
+              <th>Mandatory rule</th>
+              <th style="width: 240px">Dampak ke sistem</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Approval</b></td>
+              <td>3 level: Staff submit → Asman review → Manager approve final.</td>
+              <td>Perlu routing approver berbasis unit/segment + state machine baru.</td>
+            </tr>
+            <tr>
+              <td><b>SLA</b></td>
+              <td>Asman 2 hari kerja, Manager 1 hari kerja; reminder T-1; eskalasi T+0.</td>
+              <td>Job scheduler + event table yang terhubung ke approval step.</td>
+            </tr>
+            <tr>
+              <td><b>Locking</b></td>
+              <td>Setelah submit, data terkunci (DRAFT only yang editable).</td>
+              <td>Guard di API update, UI edit/read-only by status.</td>
+            </tr>
+            <tr>
+              <td><b>Audit</b></td>
+              <td>Semua perubahan penting tercatat (approval action, update asumsi, status changes).</td>
+              <td>Tambah field audit (module, ip) bila perlu; konsisten di seluruh endpoint.</td>
+            </tr>
+            <tr>
+              <td><b>Scoping</b></td>
+              <td>STAFF hanya lihat own; ASMAN lihat unit; MANAGER lihat segment; VP_SA lihat all.</td>
+              <td>Butuh org_unit & segment di DB + filter query + (opsional) RLS PG.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" style="margin-top: 12px">
+        <h2 id="roadmap">5. Roadmap delivery</h2>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 120px">Phase</th>
+              <th>Outcome</th>
+              <th style="width: 260px">Gate (harus lulus)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>V2-A</b><div class="muted">Org & RBAC</div></td>
+              <td>Org units + mapping user/project + aturan visibility sesuai matrix.</td>
+              <td class="status s-done">Selesai</td>
+            </tr>
+            <tr>
+              <td><b>V2-B</b><div class="muted">Workflow</div></td>
+              <td>State machine BRD v2 + approval_steps + submit routing ke Asman + approve Manager.</td>
+              <td class="status s-done">Selesai</td>
+            </tr>
+            <tr>
+              <td><b>V2-C</b><div class="muted">SLA</div></td>
+              <td>SLA per step, reminder, eskalasi + notifikasi matrix.</td>
+              <td class="status s-done">Selesai</td>
+            </tr>
+            <tr>
+              <td><b>V2-D</b><div class="muted">UX + Admin</div></td>
+              <td>UI approval queue by role scope + admin pengelolaan org unit & SLA.</td>
+              <td class="status s-done">Selesai</td>
+            </tr>
+            <tr>
+              <td><b>V2-E</b><div class="muted">Hardening</div></td>
+              <td>Migration script, seed mapping, regression checks, smoke/e2e minimal.</td>
+              <td class="status s-partial">Smoke API OK</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" style="margin-top: 12px">
+        <h2 id="tasklist">6. Tasklist (traceable ke BRD)</h2>
+        <p class="muted">
+          Kolom “Ref BRD” mengarah ke bab/aturan pada <code>BUSINESS_KKF_NAVPRO_v2.md</code>.
+        </p>
+
+        <h3 id="v2-a">V2-A — Org & RBAC</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 90px">ID</th>
+              <th style="width: 70px">Status</th>
+              <th>Task</th>
+              <th style="width: 120px">Owner</th>
+              <th style="width: 170px">Ref BRD</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>V2-A01</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Tambah tabel <code>organization_units</code> + seed 4 Pusat + 9 SBU regional. <span class="muted">→ <code>db.js</code>, <code>seed.js</code></span></td>
+              <td>BE</td>
+              <td>§3.2, §9.1</td>
+            </tr>
+            <tr>
+              <td><b>V2-A02</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Tambahkan kolom <code>users.org_unit_id</code>, <code>users.org_level</code>, <code>users.employee_id</code> + admin assign (tab Pengguna). <span class="muted">→ <code>admin.js</code>, FE admin</span></td>
+              <td>BE+FE</td>
+              <td>§9.1 Users</td>
+            </tr>
+            <tr>
+              <td><b>V2-A03</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Tambahkan kolom <code>projects.org_unit_id</code> & <code>projects.segment</code> + create via wizard/API. <span class="muted">→ <code>resolveProjectOrgUnit</code></span></td>
+              <td>BE</td>
+              <td>§6.3 BR-O01..O05</td>
+            </tr>
+            <tr>
+              <td><b>V2-A04</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Scoping query list/detail/dashboard/jobs sesuai matrix role. <span class="muted">→ <code>getProjectScopeSql</code></span></td>
+              <td>BE</td>
+              <td>§5.3</td>
+            </tr>
+            <tr>
+              <td><b>V2-A05</b></td>
+              <td class="status s-done">[x]</td>
+              <td>RLS PostgreSQL — policy di <code>initDb</code>, konteks GUC per request (<code>rlsAfterLoadUser</code>). Aktifkan: <code>NAVPRO_RLS_ENABLED=true</code>. <span class="muted">→ <code>utils/rls.js</code>, <code>RLS_NAVPRO.md</code></span></td>
+              <td>BE</td>
+              <td>§15 R-05</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 id="v2-b">V2-B — Workflow state machine + approval steps</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 90px">ID</th>
+              <th style="width: 70px">Status</th>
+              <th>Task</th>
+              <th style="width: 120px">Owner</th>
+              <th style="width: 170px">Ref BRD</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>V2-B01</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Status v2 + kompatibilitas legacy (<code>APPROVED_L1</code>, dll). <span class="muted">→ FE types, StatusBadge</span></td>
+              <td>BE+FE</td>
+              <td>§11</td>
+            </tr>
+            <tr>
+              <td><b>V2-B02</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Tabel <code>approval_steps</code> + routing org_unit/segment. <span class="muted">→ <code>projects.js</code> submit/approve</span></td>
+              <td>BE</td>
+              <td>§4, §9.1</td>
+            </tr>
+            <tr>
+              <td><b>V2-B03</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Submit: validasi kalkulasi + org, snapshot <code>SUBMIT</code> (<code>calculationSnapshot.js</code>), step Asman + notif. <span class="muted">→ FE: submit disabled tanpa KPI</span></td>
+              <td>BE+FE</td>
+              <td>§4.2(4), BR-A01..A02</td>
+            </tr>
+            <tr>
+              <td><b>V2-B04</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Approve Asman → Manager; Approve Manager → <code>APPROVED</code> + <code>approved_at</code>, audit <code>PDF_AVAILABLE</code>, notif unduh PDF. <span class="muted">→ <code>export.pdf</code></span></td>
+              <td>BE+FE</td>
+              <td>§4.2(5)(6)</td>
+            </tr>
+            <tr>
+              <td><b>V2-B05</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Reject min 20 karakter → <code>DRAFT</code> + reset step. <span class="muted">→ BE+FE project detail</span></td>
+              <td>BE+FE</td>
+              <td>BR-A03, §4.3</td>
+            </tr>
+            <tr>
+              <td><b>V2-B06</b></td>
+              <td class="status s-done">[x]</td>
+              <td><code>GET /api/v1/approvals/queue</code> + <code>/queue/summary</code>; FE approvals &amp; dashboard. <span class="muted">→ <code>approvals.js</code></span></td>
+              <td>BE</td>
+              <td>§10.3, §9.3</td>
+            </tr>
+            <tr>
+              <td><b>V2-B07</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Delegation: <code>POST /approvals/steps/:id/delegate</code>, kandidat, audit <code>DELEGATE_APPROVAL</code>, UI di project detail.</td>
+              <td>BE+FE</td>
+              <td>§10.3, §15 R-02</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 id="v2-c">V2-C — SLA scheduler + reminder/eskalasi</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 90px">ID</th>
+              <th style="width: 70px">Status</th>
+              <th>Task</th>
+              <th style="width: 120px">Owner</th>
+              <th style="width: 170px">Ref BRD</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>V2-C01</b></td>
+              <td class="status s-done">[x]</td>
+              <td><code>sla_events.approval_step_id</code> + dedup per step. <span class="muted">→ <code>slaScheduler.js</code></span></td>
+              <td>BE</td>
+              <td>§9.1 SLA, §8.3</td>
+            </tr>
+            <tr>
+              <td><b>V2-C02</b></td>
+              <td class="status s-done">[x]</td>
+              <td><code>addWorkingDaysBusiness</code> Sen–Jum 08:00–17:00 + <code>GET /admin/sla-config/preview-due</code></td>
+              <td>BE</td>
+              <td>§13</td>
+            </tr>
+            <tr>
+              <td><b>V2-C03</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Reminder + eskalasi per <code>approval_step_id</code>; step → <code>ESCALATED</code> saat overdue</td>
+              <td>BE</td>
+              <td>BR-A06..A07</td>
+            </tr>
+            <tr>
+              <td><b>V2-C04</b></td>
+              <td class="status s-done">[x]</td>
+              <td><code>notifyMatrix</code>: SUBMITTED, APPROVED, REJECTED, REMINDER, ESCALATION (in-app + email)</td>
+              <td>BE</td>
+              <td>§12</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 id="v2-d">V2-D — Frontend UX + Admin</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 90px">ID</th>
+              <th style="width: 70px">Status</th>
+              <th>Task</th>
+              <th style="width: 120px">Owner</th>
+              <th style="width: 170px">Ref BRD</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>V2-D01</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Wizard step 1 org picker + validasi. <span class="muted">→ <code>ProjectWizard.tsx</code>, <code>GET /config/org-units</code></span></td>
+              <td>FE+BE</td>
+              <td>§4.2(1), BR-A01</td>
+            </tr>
+            <tr>
+              <td><b>V2-D02</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Halaman approvals v2 queue + due_at/overdue. <span class="muted">→ <code>approval-queue.ts</code></span></td>
+              <td>FE</td>
+              <td>§10.3, §9.3</td>
+            </tr>
+            <tr>
+              <td><b>V2-D03</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Detail proyek: status v2, submit/approve/reject by role. <span class="muted">→ project detail page</span></td>
+              <td>FE</td>
+              <td>§11</td>
+            </tr>
+            <tr>
+              <td><b>V2-D04</b></td>
+              <td class="status s-done">[x]</td>
+              <td>CRUD org unit (POST/PUT/DELETE) + backfill + assign user di tab Pengguna</td>
+              <td>FE+BE</td>
+              <td>§9.1, §3</td>
+            </tr>
+            <tr>
+              <td><b>V2-D05</b></td>
+              <td class="status s-done">[x]</td>
+              <td>SLA panel: simpan/hapus role + tombol Preview Due (jam kerja 08–17)</td>
+              <td>FE+BE</td>
+              <td>§13</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 id="v2-e">V2-E — Migration & Hardening</h3>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 90px">ID</th>
+              <th style="width: 70px">Status</th>
+              <th>Task</th>
+              <th style="width: 120px">Owner</th>
+              <th style="width: 170px">Ref BRD</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>V2-E01</b></td>
+              <td class="status s-done">[x]</td>
+              <td>Schema evolution di <code>initDb</code> + <code>POST /admin/projects/backfill-org</code> + seed idempotent.</td>
+              <td>BE</td>
+              <td>Lampiran Migration Notes</td>
+            </tr>
+            <tr>
+              <td><b>V2-E02</b></td>
+              <td class="status s-partial">[~]</td>
+              <td>Smoke API diperluas (<code>smoke-test.mjs</code>): health, org-units, create+org, approvals queue. <span class="muted">E2E approval — manual</span></td>
+              <td>QA</td>
+              <td>§4.2 end-to-end</td>
+            </tr>
+            <tr>
+              <td><b>V2-E03</b></td>
+              <td class="status s-todo">[ ]</td>
+              <td>Security pass ringan: refresh token, idle timeout, rate limit (nginx) sesuai roadmap enterprise.</td>
+              <td>BE+DevOps</td>
+              <td>§10.1 (refresh), NFR</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" style="margin-top: 12px">
+        <h2 id="acceptance">7. Acceptance criteria (minimum)</h2>
+        <ul>
+          <li><b>Scoping benar</b> <span class="status s-done">[x]</span>: filter query per role; uji manual lintas unit disarankan sebelum RLS.</li>
+          <li><b>State machine BRD</b> <span class="status s-done">[x]</span>: DRAFT/COMPUTED → IN_REVIEW_ASMAN → IN_REVIEW_MANAGER → APPROVED (legacy status tetap dibaca).</li>
+          <li><b>Mandatory rules</b> <span class="status s-done">[x]</span>: org unit wajib di wizard; reject ≥20 char; edit terkunci setelah submit.</li>
+          <li><b>SLA</b> <span class="status s-done">[x]</span>: due_at jam kerja, reminder/eskalasi, status <code>ESCALATED</code>.</li>
+          <li><b>Notifikasi</b> <span class="status s-done">[x]</span>: matrix SUBMITTED/APPROVED/REJECTED/REMINDER/ESCALATION.</li>
+          <li><b>Audit</b> <span class="status s-done">[x]</span>: submit/approve/reject/delegate/PDF_AVAILABLE tercatat.</li>
+          <li><b>Export</b> <span class="status s-done">[x]</span>: PDF/XLSX setelah data proyek tersedia (sesuai role).</li>
+        </ul>
+      </section>
+
+      <section class="card" style="margin-top: 12px" id="brd">
+        <h2>9. Business Requirements Document (BRD) — NAVPRO KKF</h2>
+        <p>
+          Dokumen ini menggabungkan <b>BRD KKF Proyek Investasi v1.0</b> (Excel 1-tahun, ICON+) dengan
+          <b>revisi NAVPRO v2.0</b> (organisasi Pusat/SBU, approval Asman→Manager, durasi 1–120 bulan).
+          Implementasi aktual: <code>frontend/</code> (Next.js) + <code>backend/</code> (Express + PostgreSQL).
+        </p>
+        <div class="grid cols2" style="margin-top: 10px">
+          <a class="brd-link" href="../docs/BRD_KKF_ProyekInvestasi_v1.docx">📄 BRD sumber v1.0 — <code>docs/BRD_KKF_ProyekInvestasi_v1.docx</code></a>
+          <a class="brd-link" href="../brd/BUSINESS_KKF_NAVPRO_v2.md">📄 BRD NAVPRO v2.1 — <code>brd/BUSINESS_KKF_NAVPRO_v2.md</code></a>
+        </div>
+
+        <h3 id="brd-v1">9.1 Identifikasi dokumen (BRD v1.0)</h3>
+        <table>
+          <thead><tr><th>Atribut</th><th>Nilai</th></tr></thead>
+          <tbody>
+            <tr><td>Judul</td><td>Business Requirements Document — KKF Proyek Investasi 1-Tahun</td></tr>
+            <tr><td>Document ID</td><td><code>BRD-KKF-INV-001</code></td></tr>
+            <tr><td>Versi / tanggal</td><td>v1.0 — 26 Mei 2026</td></tr>
+            <tr><td>Klien</td><td>ICON+ (PT Indonesia Comnets Plus) — PLN Group</td></tr>
+            <tr><td>Klasifikasi</td><td>Internal Confidential</td></tr>
+            <tr><td>AS-IS acuan</td><td>Template Excel KKF v01 — 9 sheet, 7 langkah input</td></tr>
+          </tbody>
+        </table>
+
+        <h3>9.2 Executive summary (ringkas dari BRD v1.0)</h3>
+        <p>
+          KKF adalah gerbang wajib sebelum CAPEX last-mile fiber disetujui. Keputusan investasi memakai
+          <b>NPV &gt; 0</b>, <b>XIRR &gt; WACC (9,72% p.a.)</b>, <b>BCR ≥ 1,23</b> (mandatory) / <b>≥ 1,08</b> (minimum + justifikasi),
+          dan <b>payback dalam durasi kontrak</b>. Permasalahan AS-IS: file Excel terisolasi, asumsi tidak terpusat,
+          approval kertas, tidak ada audit trail, tidak ada dashboard portofolio.
+        </p>
+        <table>
+          <thead><tr><th>Dimensi nilai bisnis (TO-BE)</th><th>Baseline</th><th>Target</th></tr></thead>
+          <tbody>
+            <tr><td>Siklus penyusunan KKF</td><td>3–5 hari kerja</td><td>&lt; 4 jam</td></tr>
+            <tr><td>Siklus approval</td><td>2–5 hari (kertas)</td><td>&lt; 24 jam (digital)</td></tr>
+            <tr><td>Konsistensi asumsi</td><td>~60%</td><td>100% (Assumption Master)</td></tr>
+            <tr><td>Cakupan audit trail</td><td>0%</td><td>100%</td></tr>
+            <tr><td>Visibilitas eksekutif</td><td>Manual / tertunda</td><td>Real-time dashboard</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="trace">9.3 Evolusi BRD v1.0 → NAVPRO v2.0</h3>
+        <table>
+          <thead>
+            <tr><th>Aspek</th><th>BRD v1.0 (docx)</th><th>NAVPRO v2.0 (implementasi)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Ruang lingkup durasi</td><td>Kontrak ≤ 12 bulan (1-tahun)</td><td>1–120 bulan + preset SHORT/MID/LONG/EXTENDED</td></tr>
+            <tr><td>Alur approval</td><td>SA → Manager → GM/SRM</td><td>SA → <b>ASMAN</b> (unit) → <b>MANAGER</b> (segment); kompat GM_SRM legacy</td></tr>
+            <tr><td>Organisasi</td><td>Tidak dimodelkan per SBU/Pusat</td><td>4 Pusat + 9 SBU, <code>org_unit_id</code>, segment ENT1/2/PLN1/2</td></tr>
+            <tr><td>Project ID</td><td>KKF-[YEAR]-[SEQ]</td><td><code>NAVPRO-YYYY-####</code></td></tr>
+            <tr><td>Tech stack</td><td>Next.js + API (generik)</td><td>Next.js 14 + Express + PostgreSQL 16</td></tr>
+            <tr><td>Kesimpulan</td><td>LAYAK / TIDAK LAYAK / BUTUH JUSTIFIKASI</td><td>LAYAK / BERSYARAT / TIDAK LAYAK (+ MARGINAL internal)</td></tr>
+            <tr><td>Agregat dashboard Revenue vs Cost</td><td>Exposure CAPEX portofolio</td><td>Lifetime cashflow per unit (CAPEX + OPEX vs revenue kontrak)</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="excel-map">9.4 Pemetaan Excel AS-IS → modul NAVPRO</h3>
+        <table>
+          <thead>
+            <tr><th>Langkah</th><th>Sheet Excel v01</th><th>Modul NAVPRO</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td><code>02_Inv_Details</code> — RAB Lastmile (8 item)</td><td>Wizard — identitas + RAB/CAPEX awal</td><td class="status s-done">[x]</td></tr>
+            <tr><td>2</td><td><code>03_CAPEX</code> — mapping CAPEX + PM</td><td>Wizard CAPEX + <code>getProjectCapexTotal</code></td><td class="status s-done">[x]</td></tr>
+            <tr><td>3</td><td><code>04_OPEX_Bulanan</code> — inflasi bulanan</td><td>Wizard OPEX + engine <code>OPEX[m]=baseline×(1+r)^(m-1)</code></td><td class="status s-done">[x]</td></tr>
+            <tr><td>4</td><td><code>05_Pendapatan</code> — hingga 12 layanan</td><td>Wizard Revenue (harsat×qty, OTC, eskalasi)</td><td class="status s-done">[x]</td></tr>
+            <tr><td>5</td><td><code>06_Asumsi</code> — WACC, BCR, PPN, FX</td><td><code>assumptions_master</code> + Admin</td><td class="status s-done">[x]</td></tr>
+            <tr><td>6</td><td><code>07_Cashflow_Bulanan</code> — XIRR/XNPV/BCR</td><td><code>calculationEngine.js</code> + versi snapshot</td><td class="status s-done">[x]</td></tr>
+            <tr><td>7</td><td><code>08_Ex_Summary</code> — KPI + tanda tangan</td><td><code>ExecutiveSummary.tsx</code> + PDF export</td><td class="status s-done">[x]</td></tr>
+            <tr><td>—</td><td><code>01_Menu</code> — navigasi &amp; auto-conclusion</td><td>Dashboard + status pipeline + health score</td><td class="status s-partial">[~]</td></tr>
+          </tbody>
+        </table>
+
+        <h3>9.5 Formula kelayakan (parity Excel §8.2)</h3>
+        <table>
+          <thead><tr><th>Metrik</th><th>Logika (BRD v1.0 / Excel)</th><th>Engine NAVPRO</th></tr></thead>
+          <tbody>
+            <tr><td>OPEX bulanan</td><td>Baseline × (1 + inflasi_bulanan)^(bulan−1)</td><td><code>computeCashflowMonthly</code></td></tr>
+            <tr><td>Active flag</td><td>Bulan &gt; durasi kontrak → 0</td><td>Sama</td></tr>
+            <tr><td>XNPV</td><td>Discount exact-date, WACC tahunan</td><td><code>calculateXNPV</code></td></tr>
+            <tr><td>XIRR</td><td>Newton-Raphson, max 1000 iter, tol 1e−7</td><td><code>calculateXIRR</code></td></tr>
+            <tr><td>BCR / PI</td><td>PV inflow M1–Mn ÷ |CAPEX M0|</td><td><code>computeProjectKpi</code></td></tr>
+            <tr><td>Payback</td><td>Bulan pertama cumulative CF ≥ 0</td><td><code>calculatePayback</code></td></tr>
+            <tr><td>Simple ROI</td><td>Net inflow M1–Mn ÷ |CAPEX M0|</td><td>Disimpan di KPI</td></tr>
+            <tr><td>Auto-conclusion</td><td>NPV&gt;0 ∧ XIRR≥WACC ∧ BCR≥ambang ∧ payback&lt;durasi</td><td>LAYAK / BERSYARAT / TIDAK_LAYAK</td></tr>
+          </tbody>
+        </table>
+
+        <h3>9.6 Fitur inti F-01 – F-12 (traceability BRD v1.0)</h3>
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Fitur (BRD v1.0)</th><th>NAVPRO</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>F-01</td><td>Authentication &amp; session (JWT)</td><td><code>/api/v1/auth</code></td><td class="status s-done">[x]</td></tr>
+            <tr><td>F-02</td><td>RBAC 6 role</td><td>SA, ASMAN, MANAGER, FINANCE_ADMIN, SUPER_ADMIN, VIEWER</td><td class="status s-done">[x]</td></tr>
+            <tr><td>F-03</td><td>Assumption Master</td><td>Admin assumptions + history</td><td class="status s-done">[x]</td></tr>
+            <tr><td>F-04</td><td>KKF lifecycle &amp; versioning</td><td>Status machine + <code>calculation_versions</code></td><td class="status s-done">[x]</td></tr>
+            <tr><td>F-05</td><td>7 modul entry (wizard)</td><td><code>ProjectWizard</code></td><td class="status s-done">[x]</td></tr>
+            <tr><td>F-06</td><td>Calculation engine server-side</td><td><code>calculationEngine.js</code></td><td class="status s-done">[x]</td></tr>
+            <tr><td>F-07</td><td>Approval workflow + SLA</td><td><code>approval_steps</code> + scheduler</td><td class="status s-done">[x]</td></tr>
+            <tr><td>F-08</td><td>Executive &amp; operational dashboard</td><td><code>/dashboard</code> + org_financial</td><td class="status s-done">[x]</td></tr>
+            <tr><td>F-09</td><td>Notifications</td><td>In-app + matrix email-ready</td><td class="status s-partial">[~]</td></tr>
+            <tr><td>F-10</td><td>Audit trail</td><td><code>audit_logs</code></td><td class="status s-done">[x]</td></tr>
+            <tr><td>F-11</td><td>Excel import / export</td><td>Export XLSX/PDF; import template</td><td class="status s-partial">[~]</td></tr>
+            <tr><td>F-12</td><td>Reporting terjadwal</td><td>Portfolio API; scheduled report</td><td class="status s-todo">[ ]</td></tr>
+          </tbody>
+        </table>
+
+        <h3>9.7 Functional requirements (sampel FR BRD v1.0)</h3>
+        <p class="muted">Cuplikan FR P1 dari dokumen v1.0; daftar lengkap di docx §11 dan markdown v2.1 §16.</p>
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Kebutuhan</th><th>Prio</th><th>NAVPRO</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>FR-001</td><td>Login username/password</td><td>P1</td><td class="status s-done">[x] JWT</td></tr>
+            <tr><td>FR-012</td><td>WACC/BCR hanya Finance Admin</td><td>P1</td><td class="status s-done">[x]</td></tr>
+            <tr><td>FR-021</td><td>Riwayat perubahan assumption</td><td>P1</td><td class="status s-done">[x] history table</td></tr>
+            <tr><td>FR-030</td><td>Project ID unik</td><td>P1</td><td class="status s-done">[x] NAVPRO-YYYY-####</td></tr>
+            <tr><td>FR-034</td><td>Lock data setelah submit</td><td>P1</td><td class="status s-done">[x]</td></tr>
+            <tr><td>FR-040–043</td><td>RAB 8 item + validasi</td><td>P1</td><td class="status s-done">[x] wizard</td></tr>
+            <tr><td>FR-050–051</td><td>CAPEX auto-link &amp; total</td><td>P1</td><td class="status s-done">[x]</td></tr>
+            <tr><td>FR-002</td><td>MFA Manager/GM</td><td>P1</td><td class="status s-todo">[ ] Phase 2</td></tr>
+            <tr><td>FR-006</td><td>LDAP/SSO</td><td>P2</td><td class="status s-todo">[ ] Phase 2</td></tr>
+            <tr><td>FR-035</td><td>Auto-save draft 2 menit</td><td>P2</td><td class="status s-partial">[~] manual save</td></tr>
+          </tbody>
+        </table>
+
+        <h3>9.8 Out of scope (BRD v1.0 §6.2) — tetap berlaku</h3>
+        <ul>
+          <li>Integrasi SAP / iCRM / LKPP real-time (Phase 2).</li>
+          <li>Mobile native app; AI scoring; customer portal.</li>
+          <li>Retrieval WACC otomatis dari perbankan.</li>
+          <li>Import massal Excel v01 — direncanakan; belum production-ready.</li>
+        </ul>
+
+        <h3>9.9 Modul NAVPRO v2.0 (tambahan di luar BRD v1.0)</h3>
+        <table>
+          <thead><tr><th>Modul</th><th>Kebutuhan</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>Unit organisasi</td><td>Pusat/SBU, backfill proyek, scope data</td><td>Admin, semua role scoped</td></tr>
+            <tr><td>Approval V2 queue</td><td>Antrian per <code>assigned_to</code>, delegate, SLA ESCALATED</td><td>ASMAN, MANAGER</td></tr>
+            <tr><td>RLS PostgreSQL</td><td>Isolasi baris proyek (opsional env)</td><td>Semua query proyek</td></tr>
+            <tr><td>Health score portofolio</td><td>% LAYAK + pipeline + gap kalkulasi</td><td>Dashboard</td></tr>
+          </tbody>
+        </table>
+
+        <h3>9.10 Parameter keuangan (governance)</h3>
+        <table>
+          <thead><tr><th>Parameter</th><th>Nilai</th><th>Aturan</th></tr></thead>
+          <tbody>
+            <tr><td>WACC</td><td>9,72% p.a.</td><td>Assumption Master; override Finance Admin + referensi memo</td></tr>
+            <tr><td>BCR Mandatory</td><td>≥ 1,23</td><td>LAYAK (dengan NPV&gt;0, XIRR≥WACC, payback&lt;durasi)</td></tr>
+            <tr><td>BCR Minimum</td><td>≥ 1,08</td><td>BERSYARAT (BRD v1: BUTUH JUSTIFIKASI)</td></tr>
+            <tr><td>Inflasi</td><td>3% p.a. → ~0,3%/bulan</td><td>OPEX compounding per BRD v1 §8.2</td></tr>
+            <tr><td>Durasi</td><td>1–120 bulan</td><td>Perluasan v2.0 (v1 fokus 12 bulan)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>9.11 Problem statement AS-IS (BRD v1.0 §4)</h3>
+        <table>
+          <thead><tr><th>ID</th><th>Masalah</th><th>Mitigasi NAVPRO</th></tr></thead>
+          <tbody>
+            <tr><td>P-01</td><td>Version proliferation Excel</td><td>DB terpusat + <code>calculation_versions</code></td></tr>
+            <tr><td>P-02</td><td>Asumsi tidak konsisten</td><td><code>assumptions_master</code></td></tr>
+            <tr><td>P-03</td><td>Risiko formula Excel</td><td>Engine server-side + unit test</td></tr>
+            <tr><td>P-04</td><td>Approval manual</td><td><code>approval_steps</code> + SLA digital</td></tr>
+            <tr><td>P-05</td><td>Tidak ada visibilitas portofolio</td><td>Dashboard + <code>org_financial</code></td></tr>
+            <tr><td>P-06</td><td>Tidak ada audit trail</td><td><code>audit_logs</code></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" style="margin-top: 12px" id="erd">
+        <h2>10. Entity Relationship Diagram (ERD)</h2>
+        <p class="muted">Skema sesuai <code>backend/src/db.js</code> (PostgreSQL). Data finansial detail proyek disimpan di <code>projects.detail</code> (JSONB).</p>
+        <div class="diagram-wrap mermaid">
+erDiagram
+  organization_units ||--o{ organization_units : parent_id
+  organization_units ||--o{ users : org_unit_id
+  organization_units ||--o{ projects : org_unit_id
+  organization_units ||--o{ approval_steps : org_unit_id
+  users ||--o{ projects : created_by
+  users ||--o{ projects : approved_by
+  users ||--o{ projects : rejected_by
+  users ||--o{ calculation_versions : created_by
+  users ||--o{ approval_steps : assigned_to
+  users ||--o{ approval_steps : delegated_to
+  users ||--o{ audit_logs : user_id
+  users ||--o{ notifications : user_id
+  users ||--o{ assumptions_master : updated_by
+  projects ||--o{ calculation_versions : project_id
+  projects ||--o{ approval_steps : project_id
+  projects ||--o{ audit_logs : project_id
+  projects ||--o{ notifications : project_id
+  projects ||--o{ sla_events : project_id
+  approval_steps ||--o{ sla_events : approval_step_id
+  organization_units {
+    uuid id PK
+    varchar code UK
+    varchar name
+    varchar type "PUSAT|SBU"
+    varchar segment "ENT1|ENT2|PLN1|PLN2"
+    uuid parent_id FK
+    boolean is_active
+  }
+  users {
+    uuid id PK
+    varchar email UK
+    varchar role
+    uuid org_unit_id FK
+    varchar org_level
+  }
+  projects {
+    uuid id PK
+    varchar project_code UK
+    varchar status
+    uuid org_unit_id FK
+    varchar segment
+    jsonb detail
+    int current_version
+  }
+  approval_steps {
+    uuid id PK
+    uuid project_id FK
+    int step_order
+    varchar approver_level "ASMAN|MANAGER"
+    varchar status
+    timestamptz due_at
+  }
+  calculation_versions {
+    uuid id PK
+    uuid project_id FK
+    int version_number
+    jsonb input_snapshot
+    jsonb result_snapshot
+  }
+        </div>
+        <h3>10.1 Entitas pendukung</h3>
+        <table>
+          <thead><tr><th>Tabel</th><th>Fungsi</th></tr></thead>
+          <tbody>
+            <tr><td><code>assumptions_master</code> / <code>assumptions_history</code></td><td>WACC, inflasi, threshold BCR global</td></tr>
+            <tr><td><code>duration_presets</code></td><td>Preset durasi &amp; ambang BCR per kategori</td></tr>
+            <tr><td><code>sla_config</code> / <code>sla_events</code></td><td>SLA hari kerja, reminder, eskalasi</td></tr>
+            <tr><td><code>categories</code></td><td>Master kode CAPEX/OPEX</td></tr>
+            <tr><td><code>system_config</code></td><td>Konfigurasi sistem (maintenance, dll.)</td></tr>
+            <tr><td><code>audit_logs</code></td><td>Jejak audit aksi pengguna</td></tr>
+            <tr><td><code>notifications</code></td><td>In-app notification matrix</td></tr>
+            <tr><td><code>app_meta</code></td><td>Metadata aplikasi</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" style="margin-top: 12px" id="dfd">
+        <h2>11. Data Flow Diagram (DFD)</h2>
+        <h3>11.1 Level 0 — Context Diagram</h3>
+        <div class="diagram-wrap mermaid">
+flowchart LR
+  subgraph actors [Aktor Eksternal]
+    STF[Staff / SA L4]
+    ASM[Asman L3]
+    MGR[Manager L2]
+    FIN[Finance Admin]
+    ADM[Super Admin]
+  end
+  NAV[(NAVPRO KKF System)]
+  DB[(PostgreSQL)]
+  STF -->|Input KKF, Hitung, Submit| NAV
+  ASM -->|Approve / Reject / Delegate| NAV
+  MGR -->|Approve Final / Reject| NAV
+  FIN -->|Assumption Master| NAV
+  ADM -->|Users, Org, SLA| NAV
+  NAV -->|Notifikasi, PDF, Dashboard| STF
+  NAV -->|Antrian approval| ASM
+  NAV -->|Antrian approval| MGR
+  NAV <-->|Persistensi| DB
+        </div>
+        <h3>11.2 Level 1 — Proses Utama</h3>
+        <div class="diagram-wrap mermaid">
+flowchart TB
+  P1[P1 Auth dan User Mgmt]
+  P2[P2 KKF Data Entry]
+  P3[P3 Calculation Engine]
+  P4[P4 Approval Workflow]
+  P5[P5 Notification dan SLA]
+  P6[P6 Reporting Dashboard]
+  D1[(users, organization_units)]
+  D2[(projects.detail JSONB)]
+  D3[(calculation_versions)]
+  D4[(approval_steps, sla_events)]
+  D5[(audit_logs, notifications)]
+  P1 --> D1
+  P2 --> D2
+  P2 --> P3
+  P3 --> D3
+  P2 --> P4
+  P4 --> D4
+  P4 --> P5
+  P5 --> D5
+  P2 --> P6
+  P3 --> P6
+  P4 --> P6
+        </div>
+        <h3>11.3 Level 2 — Alur Kalkulasi (P3)</h3>
+        <div class="diagram-wrap">
+          <pre>INPUT: detail.capex, detail.opex, detail.revenue, assumptions (WACC, inflasi, BCR)
+  → P3.1 Cashflow bulan 0..N (CAPEX M0, Revenue-OPEX per bulan, active flag)
+  → P3.2 KPI: XNPV, XIRR (Newton-Raphson), BCR, Payback, Simple ROI
+  → P3.3 Kesimpulan: LAYAK | BERSYARAT | TIDAK_LAYAK
+  → OUTPUT: projects.detail.kpi + calculation_versions snapshot</pre>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top: 12px" id="relasi-db">
+        <h2>12. Relasi Database</h2>
+        <h3>12.1 Kardinalitas relasi</h3>
+        <table>
+          <thead>
+            <tr><th>Parent</th><th>Child</th><th>Kardinalitas</th><th>FK</th><th>On Delete</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>organization_units</td><td>organization_units</td><td>1:N</td><td>parent_id</td><td>—</td></tr>
+            <tr><td>organization_units</td><td>users</td><td>1:N</td><td>org_unit_id</td><td>—</td></tr>
+            <tr><td>organization_units</td><td>projects</td><td>1:N</td><td>org_unit_id</td><td>—</td></tr>
+            <tr><td>users</td><td>projects</td><td>1:N</td><td>created_by</td><td>SET NULL</td></tr>
+            <tr><td>projects</td><td>calculation_versions</td><td>1:N</td><td>project_id</td><td>CASCADE</td></tr>
+            <tr><td>projects</td><td>approval_steps</td><td>1:N</td><td>project_id</td><td>CASCADE</td></tr>
+            <tr><td>projects</td><td>sla_events</td><td>1:N</td><td>project_id</td><td>CASCADE</td></tr>
+            <tr><td>approval_steps</td><td>sla_events</td><td>1:N</td><td>approval_step_id</td><td>CASCADE</td></tr>
+            <tr><td>users</td><td>approval_steps</td><td>1:N</td><td>assigned_to</td><td>SET NULL</td></tr>
+            <tr><td>users</td><td>notifications</td><td>1:N</td><td>user_id</td><td>CASCADE</td></tr>
+          </tbody>
+        </table>
+        <h3>12.2 Isolasi data (RLS + API scope)</h3>
+        <table>
+          <thead><tr><th>Role</th><th>Scope query projects</th></tr></thead>
+          <tbody>
+            <tr><td>SUPER_ADMIN, FINANCE_ADMIN</td><td>Semua proyek</td></tr>
+            <tr><td>SA, STAFF</td><td><code>created_by = user_id</code></td></tr>
+            <tr><td>ASMAN</td><td><code>org_unit_id = user.org_unit_id</code></td></tr>
+            <tr><td>MANAGER, GM_SRM</td><td><code>segment = segment unit user</code></td></tr>
+          </tbody>
+        </table>
+        <h3>12.3 Status proyek (implementasi)</h3>
+        <p class="muted">Status V2 utama + kompatibilitas legacy (APPROVED_FINAL, SUBMITTED, UNDER_REVIEW, dll.).</p>
+        <table>
+          <thead><tr><th>Status</th><th>Deskripsi</th></tr></thead>
+          <tbody>
+            <tr><td><code>DRAFT</code></td><td>Input / revisi data</td></tr>
+            <tr><td><code>COMPUTED</code></td><td>Kalkulasi selesai, belum submit</td></tr>
+            <tr><td><code>IN_REVIEW_ASMAN</code></td><td>Menunggu review Asman (step 1)</td></tr>
+            <tr><td><code>IN_REVIEW_MANAGER</code></td><td>Menunggu approve Manager (step 2)</td></tr>
+            <tr><td><code>APPROVED</code> / <code>APPROVED_FINAL</code></td><td>Disetujui final</td></tr>
+            <tr><td><code>REJECTED</code></td><td>Ditolak → kembali edit sebagai DRAFT</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="card" style="margin-top: 12px" id="workflow-bp">
+        <h2>13. Workflow Business Process</h2>
+        <h3>13.1 Proses bisnis end-to-end</h3>
+        <div class="diagram-wrap mermaid">
+flowchart TD
+  A[Staff/SA: Buat KKF + pilih Unit Pusat/SBU] --> B[DRAFT: Wizard RAB CAPEX OPEX Revenue]
+  B --> C{Hitung KPI?}
+  C -->|Ya| D[COMPUTED]
+  D --> E{Submit?}
+  E -->|Validasi OK| F[IN_REVIEW_ASMAN]
+  F --> G{Asman}
+  G -->|Approve| H[IN_REVIEW_MANAGER]
+  G -->|Reject min 20 char| B
+  H --> I{Manager Segment}
+  I -->|Approve| J[APPROVED / APPROVED_FINAL]
+  I -->|Reject| B
+  J --> K[PDF Executive Summary + Notifikasi + Audit]
+        </div>
+        <h3>13.2 State machine approval</h3>
+        <div class="diagram-wrap mermaid">
+stateDiagram-v2
+  [*] --> DRAFT
+  DRAFT --> COMPUTED: calculate
+  COMPUTED --> IN_REVIEW_ASMAN: submit
+  DRAFT --> IN_REVIEW_ASMAN: submit
+  REJECTED --> IN_REVIEW_ASMAN: submit ulang
+  IN_REVIEW_ASMAN --> IN_REVIEW_MANAGER: asman approve
+  IN_REVIEW_ASMAN --> DRAFT: asman reject
+  IN_REVIEW_MANAGER --> APPROVED: manager approve
+  IN_REVIEW_MANAGER --> DRAFT: manager reject
+  APPROVED --> [*]
+        </div>
+        <h3>13.3 Langkah approval_steps</h3>
+        <table>
+          <thead><tr><th>step_order</th><th>approver_level</th><th>Routing</th><th>SLA default</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>ASMAN</td><td>User role ASMAN pada <code>projects.org_unit_id</code> yang sama</td><td>2 hari kerja</td></tr>
+            <tr><td>2</td><td>MANAGER</td><td>Manager pada segment yang sama</td><td>1 hari kerja</td></tr>
+          </tbody>
+        </table>
+        <p class="muted">
+          Setelah submit: snapshot <code>calculation_versions</code>, data terkunci, <code>sla_events</code> untuk reminder/eskalasi,
+          notifikasi matrix (SUBMITTED, APPROVED, REJECTED, REMINDER, ESCALATION).
+        </p>
+      </section>
+
+      <section class="card" style="margin-top: 12px" id="verifikasi">
+        <h2>14. Verifikasi lokal (28 Mei 2026)</h2>
+        <p class="muted">Jika <code>npm run dev</code> menampilkan <code>EADDRINUSE :4000</code>, hentikan proses lama lalu jalankan ulang backend agar route baru aktif.</p>
+        <pre style="background: var(--code); padding: 12px; border-radius: 12px; overflow-x: auto; font-size: 12px;"><code># Backend
+cd backend
+# Set SEED_DEMO_PASSWORD di backend/.env (lihat docs/SECURITY.md)
+node src/seed.js          # org units, SLA v2, demo users
+node src/index.js         # atau npm run dev
+
+# Smoke API — set SMOKE_EMAIL + SMOKE_PASSWORD (+ opsional SMOKE_SA_EMAIL, SMOKE_ASMAN_EMAIL)
+node scripts/smoke-test.mjs
+
+# Frontend
+cd frontend && npm run build</code></pre>
+        <p class="muted">Kredensial development hanya via <code>backend/.env</code> — tidak didokumentasikan di repo. Lihat <code>docs/SECURITY.md</code>.</p>
+      </section>
+
+      <section class="card" style="margin-top: 12px">
+        <h2 id="risiko">8. Risiko & mitigasi (praktis)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 120px">Risiko</th>
+              <th>Dampak</th>
+              <th style="width: 320px">Mitigasi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Backfill org unit</b></td>
+              <td>Data lama tidak punya mapping unit/segment.</td>
+              <td>Script migrasi + “Unassigned bucket” sementara; admin wajib assign sebelum submit.</td>
+            </tr>
+            <tr>
+              <td><b>Approver kosong/cuti</b></td>
+              <td>Queue macet, SLA terlewat.</td>
+              <td>Delegation + eskalasi otomatis; notifikasi multi-channel.</td>
+            </tr>
+            <tr>
+              <td><b>Perubahan status breaking</b></td>
+              <td>FE/BE mismatch & data tidak terbaca.</td>
+              <td>Compat layer sementara (map status lama→baru) + migrasi bertahap.</td>
+            </tr>
+            <tr>
+              <td><b>Perhitungan hari kerja</b></td>
+              <td>SLA tidak akurat.</td>
+              <td>Gunakan kalender kerja (awal: Senin–Jumat) + opsi hari libur (iterasi berikut).</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <script>
+      const q = document.getElementById("q");
+      const cards = Array.from(document.querySelectorAll("main .card, main table, main h2, main h3, main ul, main p"));
+
+      function normalize(s) {
+        return String(s || "").toLowerCase();
+      }
+
+      function applyFilter() {
+        const term = normalize(q.value).trim();
+        if (!term) {
+          for (const el of cards) el.style.opacity = "";
+          for (const el of cards) el.style.filter = "";
+          return;
+        }
+        for (const el of cards) {
+          const hit = normalize(el.textContent).includes(term);
+          el.style.opacity = hit ? "" : "0.20";
+          el.style.filter = hit ? "" : "grayscale(0.4)";
+        }
+      }
+
+      q.addEventListener("input", applyFilter);
+      applyFilter();
+
+      if (typeof mermaid !== "undefined") {
+        mermaid.initialize({
+          startOnLoad: true,
+          theme: "dark",
+          securityLevel: "loose",
+          flowchart: { curve: "basis" },
+        });
+      }
+    </script>
+  </body>
+</html>
+

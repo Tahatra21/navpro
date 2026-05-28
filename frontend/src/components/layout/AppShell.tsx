@@ -10,6 +10,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useAuthStore } from "@/stores/authStore";
 import { canViewAdmin, canViewApprovals } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
+import { MagicNav } from "@/components/layout/MagicNav";
 import type { UserRole } from "@/types/navpro";
 import { navproApi } from "@/services/api";
 import { useToast } from "@/components/shared/toast";
@@ -26,11 +27,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: (p: string) => p === "/dashboard" },
-  { href: "/projects", label: "Daftar Proyek", icon: FolderKanban, match: (p: string) => p.startsWith("/projects") },
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+    shortLabel: "Dashboard",
+    icon: LayoutDashboard,
+    match: (p: string) => p === "/dashboard",
+  },
+  {
+    href: "/projects",
+    label: "Daftar Proyek",
+    shortLabel: "Proyek",
+    icon: FolderKanban,
+    match: (p: string) => p.startsWith("/projects"),
+  },
   {
     href: "/approvals",
     label: "Approvals",
+    shortLabel: "Approvals",
     icon: CheckCircle2,
     match: (p: string) => p.startsWith("/approvals"),
     roles: canViewApprovals,
@@ -38,6 +52,7 @@ const NAV_ITEMS = [
   {
     href: "/admin",
     label: "Admin",
+    shortLabel: "Admin",
     icon: Settings,
     match: (p: string) => p.startsWith("/admin"),
     roles: canViewAdmin,
@@ -104,7 +119,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <Image src="/img/pronav3.png" alt="NAVPRO" width={280} height={80} className="mx-auto opacity-90" />
+          <Image
+            src="/img/logonav2.png"
+            alt="NAVPRO"
+            width={200}
+            height={200}
+            priority
+            className="mx-auto h-auto w-auto max-w-[220px] object-contain"
+          />
           <p className="text-sm text-muted-foreground animate-pulse">Memuat NAVPRO…</p>
         </div>
       </div>
@@ -116,45 +138,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md shadow-sm">
-        <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-6 px-4 sm:px-6">
-          <Link href="/dashboard" className="flex items-center gap-2.5 shrink-0 group">
+        <div className="mx-auto flex h-[4.5rem] max-w-[1400px] items-center gap-6 px-4 sm:px-6">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-4 sm:gap-5 shrink-0 group max-w-[min(100%,20rem)]"
+          >
             <Image
-              src="/img/logonav.png"
+              src="/img/logonav2.png"
               alt="NAVPRO"
-              width={48}
-              height={48}
-              className="rounded-lg"
+              width={168}
+              height={56}
+              priority
+              className="h-11 sm:h-12 w-auto min-w-[7.5rem] sm:min-w-[8.75rem] max-w-[9.5rem] sm:max-w-[10.5rem] object-contain object-left flex-shrink-0"
             />
-            <div className="hidden sm:block">
-              <span className="font-bold text-foreground tracking-wide text-sm block leading-tight">
+            <div className="hidden sm:block flex-shrink-0 pl-0.5 border-l border-border/50 ml-0.5">
+              <span className="font-bold text-foreground tracking-wide text-sm block leading-tight whitespace-nowrap">
                 NAVPRO
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest whitespace-nowrap">
                 Your Compass for Viable Project
               </span>
             </div>
           </Link>
 
-          <nav className="flex-1 flex items-center gap-1 overflow-x-auto" aria-label="Main Navigation">
-            {visibleNav.map(({ href, label, icon: Icon, match }) => {
-              const active = match(pathname);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={cn(
-                    "inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
-                    active
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <Icon className="w-4 h-4" />
-                  {label}
-                </Link>
-              );
-            })}
-          </nav>
+          <div className="flex-1 hidden md:flex justify-center items-center min-w-0 px-2">
+            <MagicNav items={visibleNav} pathname={pathname} variant="header" />
+          </div>
 
           <div className="flex items-center gap-3 shrink-0">
             <span
@@ -230,7 +239,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 mx-auto w-full max-w-[1400px] px-4 sm:px-6 py-6">{children}</main>
+      <main className="flex-1 mx-auto w-full max-w-[1400px] px-4 sm:px-6 py-6 pb-[4.75rem] md:pb-6">
+        {children}
+      </main>
+
+      {/* Mobile: magic nav bottom bar */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center pb-3 px-4 pointer-events-none">
+        <MagicNav
+          items={visibleNav}
+          pathname={pathname}
+          variant="bottom"
+          className="pointer-events-auto"
+        />
+      </div>
 
       {/* Preferences dialog */}
       <Dialog open={prefsOpen} onOpenChange={setPrefsOpen}>

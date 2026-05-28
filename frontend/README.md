@@ -15,7 +15,7 @@ npm install
 npm run dev
 ```
 
-Buka [http://localhost:3000](http://localhost:3000) → login demo: `budi.santoso@navpro.app` / `Navpro@2026`
+Buka [http://localhost:3000](http://localhost:3000) — login dengan akun dari seed lokal (`SEED_DEMO_PASSWORD` di `backend/.env`). Lihat [docs/SECURITY.md](../docs/SECURITY.md).
 
 ## Struktur utama
 

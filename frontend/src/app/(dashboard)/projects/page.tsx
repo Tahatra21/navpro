@@ -85,6 +85,9 @@ export default function ProjectsPage() {
           <option value="COMPUTED">Terhitung</option>
           <option value="SUBMITTED">Diajukan</option>
           <option value="UNDER_REVIEW">Review</option>
+          <option value="IN_REVIEW_ASMAN">Review Asman</option>
+          <option value="IN_REVIEW_MANAGER">Review Manager</option>
+          <option value="APPROVED">Disetujui</option>
           <option value="APPROVED_L1">L1 Disetujui</option>
           <option value="APPROVED_FINAL">Disetujui Final</option>
           <option value="REJECTED">Ditolak</option>

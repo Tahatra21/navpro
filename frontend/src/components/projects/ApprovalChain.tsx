@@ -1,74 +1,141 @@
 "use client";
 
-import type { ApprovalNode, Project } from "@/types/navpro";
+import type { Project } from "@/types/navpro";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import styles from "./approval-chain.module.css";
 
-function nodeClass(status: string, active: boolean, rejected: boolean) {
-  if (rejected) return "border-destructive/40 bg-destructive/5";
-  if (status.includes("APPROVED") || status === "COMPLETED") return "border-emerald-500/40 bg-emerald-500/5";
-  if (active) return "border-primary/40 bg-primary/5";
-  return "border-border bg-muted/20 opacity-70";
+function isV2Flow(status: string) {
+  return ["IN_REVIEW_ASMAN", "IN_REVIEW_MANAGER", "APPROVED"].includes(status);
 }
 
-export function ApprovalChain({ project }: { project: Project }) {
+function statusBadgeClass(statusLabel: string, active: boolean, rejected: boolean) {
+  if (rejected) return styles.cardRejected;
+  if (
+    statusLabel.includes("APPROVED") ||
+    statusLabel === "SUBMITTED" ||
+    statusLabel === "COMPLETED"
+  )
+    return styles.cardDone;
+  if (active) return styles.cardActive;
+  return styles.cardMuted;
+}
+
+function dotClass(statusLabel: string, active: boolean, rejected: boolean) {
+  if (rejected) return styles.dotRejected;
+  if (
+    statusLabel.includes("APPROVED") ||
+    statusLabel === "SUBMITTED" ||
+    statusLabel === "COMPLETED"
+  )
+    return styles.dotDone;
+  if (active) return styles.dotActive;
+  return "";
+}
+
+function buildNodes(project: Project) {
   const chain = project.approval_chain || [];
   const submit = chain.find((c) => c.level === "SUBMIT");
+  const asman = chain.find((c) => c.level === "ASMAN");
   const manager = chain.find((c) => c.level === "MANAGER");
   const gm = chain.find((c) => c.level === "GM_SRM");
+  const v2 = isV2Flow(project.status);
 
-  const nodes: Array<{
-    title: string;
-    subtitle: string;
-    node?: ApprovalNode;
-    statusLabel: string;
-    active: boolean;
-    rejected: boolean;
-  }> = [
+  if (v2) {
+    return [
+      {
+        title: "Staff / Solution Architect",
+        subtitle: "Input KKF & submit",
+        node: submit,
+        statusLabel: submit ? "SUBMITTED" : project.status === "DRAFT" ? "DRAFT" : "—",
+        active: false,
+        rejected: false,
+      },
+      {
+        title: "Asman (Review Teknis)",
+        subtitle: "SLA: 2 hari kerja",
+        node: asman,
+        statusLabel:
+          asman?.status ||
+          (project.status === "IN_REVIEW_ASMAN" ? "PENDING" : asman ? "APPROVED" : "WAITING"),
+        active: project.status === "IN_REVIEW_ASMAN",
+        rejected: asman?.status === "REJECTED" || asman?.status === "REJECTED_TO_DRAFT",
+      },
+      {
+        title: "Manager Segment",
+        subtitle: "SLA: 1 hari kerja",
+        node: manager,
+        statusLabel:
+          manager?.status ||
+          (project.status === "IN_REVIEW_MANAGER"
+            ? "PENDING"
+            : project.status === "APPROVED"
+              ? "APPROVED"
+              : "WAITING"),
+        active: project.status === "IN_REVIEW_MANAGER",
+        rejected: manager?.status === "REJECTED" || manager?.status === "REJECTED_TO_DRAFT",
+      },
+    ];
+  }
+
+  return [
     {
-      title: "Solution Architect (Draft & Hitung)",
-      subtitle: "Pengusul KKF",
+      title: "Solution Architect",
+      subtitle: "Draft & hitung KKF",
       node: submit,
       statusLabel: submit ? "SUBMITTED" : project.status === "DRAFT" ? "DRAFT" : "—",
       active: false,
       rejected: false,
     },
     {
-      title: "Manager Keuangan (Review L1)",
-      subtitle: "SLA: 2 hari kerja",
+      title: "Manager Keuangan",
+      subtitle: "Review L1 · SLA 2 hari",
       node: manager,
-      statusLabel: manager?.status || (["SUBMITTED", "UNDER_REVIEW"].includes(project.status) ? "PENDING" : "WAITING"),
+      statusLabel:
+        manager?.status ||
+        (["SUBMITTED", "UNDER_REVIEW"].includes(project.status) ? "PENDING" : "WAITING"),
       active: ["SUBMITTED", "UNDER_REVIEW"].includes(project.status),
       rejected: manager?.status === "REJECTED" || (project.status === "REJECTED" && !gm),
     },
     {
-      title: "GM / SRM (Persetujuan Final)",
-      subtitle: "SLA: 1 hari kerja",
+      title: "GM / SRM",
+      subtitle: "Persetujuan final · SLA 1 hari",
       node: gm,
-      statusLabel: gm?.status || (project.status === "APPROVED_L1" ? "PENDING" : project.status === "APPROVED_FINAL" ? "APPROVED FINAL" : "WAITING"),
+      statusLabel:
+        gm?.status ||
+        (project.status === "APPROVED_L1"
+          ? "PENDING"
+          : project.status === "APPROVED_FINAL"
+            ? "APPROVED"
+            : "WAITING"),
       active: project.status === "APPROVED_L1",
       rejected: gm?.status === "REJECTED",
     },
   ];
+}
+
+export function ApprovalChain({ project }: { project: Project }) {
+  const nodes = buildNodes(project);
 
   return (
-    <div className="space-y-3">
+    <div className={styles.timeline}>
       {nodes.map((n, i) => (
-        <div key={i} className={cn("relative pl-6 pb-4 border-l-2 last:border-l-0 last:pb-0", i < nodes.length - 1 ? "border-border" : "border-transparent")}>
-          <div className={cn("absolute left-0 top-1 w-3 h-3 rounded-full -translate-x-[7px] border-2 bg-card", n.rejected ? "border-destructive" : n.active ? "border-primary" : "border-muted-foreground")} />
-          <div className={cn("rounded-lg border p-4", nodeClass(n.statusLabel, n.active, n.rejected))}>
-            <div className="flex justify-between gap-2 mb-1">
-              <span className="font-semibold text-sm text-foreground">{n.title}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{n.statusLabel}</span>
+        <div key={i} className={styles.step}>
+          <div
+            className={cn(styles.dot, dotClass(n.statusLabel, n.active, n.rejected))}
+            aria-hidden
+          />
+          <div className={cn(styles.card, statusBadgeClass(n.statusLabel, n.active, n.rejected))}>
+            <div className={styles.titleRow}>
+              <span className={styles.title}>{n.title}</span>
+              <span className={styles.badge}>{n.statusLabel}</span>
             </div>
-            <p className="text-xs text-muted-foreground">{n.subtitle}</p>
-            {n.node?.user && <p className="text-xs mt-1">Oleh: {n.node.user}</p>}
+            <p className={styles.subtitle}>{n.subtitle}</p>
+            {n.node?.user && <p className={styles.meta}>Oleh: {n.node.user}</p>}
             {n.node?.decided_at && (
-              <p className="text-xs text-muted-foreground">{formatDateTime(n.node.decided_at)}</p>
+              <p className={styles.meta}>{formatDateTime(n.node.decided_at)}</p>
             )}
-            {n.node?.comment && (
-              <p className="text-xs mt-2 italic border-l-2 border-primary/30 pl-2">&ldquo;{n.node.comment}&rdquo;</p>
-            )}
+            {n.node?.comment && <p className={styles.comment}>&ldquo;{n.node.comment}&rdquo;</p>}
           </div>
         </div>
       ))}

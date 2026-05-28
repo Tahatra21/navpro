@@ -15,74 +15,60 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { Project } from "@/types/navpro";
-import { getProjectCapexTotal, getProjectKursUsd } from "@/lib/project-mappers";
+import type { FinancialChartRow } from "@/lib/portfolio-org-financial";
 import { formatCurrency } from "@/lib/format";
-
-function sumOpexBaseline(p: Project): number {
-  if (p.kpi?.opex_baseline_total != null && Number.isFinite(Number(p.kpi.opex_baseline_total))) {
-    return Number(p.kpi.opex_baseline_total);
-  }
-  const kurs = getProjectKursUsd(p);
-  return (p.opex || []).reduce((s, o) => {
-    if (o.is_percent) return s;
-    const amt = parseFloat(String(o.baseline_amount || 0));
-    return s + (o.currency === "USD" ? amt * kurs : amt);
-  }, 0);
-}
-
-function sumRevenueBaseline(p: Project): number {
-  if (p.kpi?.revenue_baseline_total != null && Number.isFinite(Number(p.kpi.revenue_baseline_total))) {
-    return Number(p.kpi.revenue_baseline_total);
-  }
-  const kurs = getProjectKursUsd(p);
-  return (p.revenue || []).reduce((s, r) => {
-    const h = parseFloat(String(r.harsat ?? r.monthly_amount ?? 0));
-    const q = parseFloat(String(r.qty ?? 1));
-    return s + (r.currency === "USD" ? h * q * kurs : h * q);
-  }, 0);
-}
 
 export type CostRevenueChartType = "bar" | "line" | "pie";
 
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string; payload?: FinancialChartRow }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  const fullName = payload[0]?.payload?.fullName;
+  return (
+    <div className="rounded-lg border border-border bg-popover px-3 py-2 text-xs shadow-md">
+      <p className="font-semibold text-foreground mb-1">{fullName || label}</p>
+      {payload.map((p) => (
+        <p key={p.name} style={{ color: p.color }}>
+          {p.name}: {formatCurrency(Number(p.value) || 0)}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function CostRevenueChart({
-  projects,
+  rows,
   type = "bar",
 }: {
-  projects: Project[];
+  rows: FinancialChartRow[];
   type?: CostRevenueChartType;
 }) {
+  const data =
+    rows.length > 0
+      ? rows
+      : [{ name: "—", fullName: "Tidak ada data", CAPEX: 0, OPEX: 0, Revenue: 0 }];
+
   const aggregate = {
-    name: "Portofolio",
-    CAPEX: projects.reduce((s, p) => s + getProjectCapexTotal(p), 0),
-    OPEX: projects.reduce((s, p) => s + sumOpexBaseline(p), 0),
-    Revenue: projects.reduce((s, p) => s + sumRevenueBaseline(p), 0),
+    CAPEX: data.reduce((s, r) => s + r.CAPEX, 0),
+    OPEX: data.reduce((s, r) => s + r.OPEX, 0),
+    Revenue: data.reduce((s, r) => s + r.Revenue, 0),
   };
 
-  const data = projects.length <= 6
-    ? projects.map((p) => ({
-        name: p.project_code.replace("NAVPRO-", ""),
-        CAPEX: getProjectCapexTotal(p),
-        OPEX: sumOpexBaseline(p),
-        Revenue: sumRevenueBaseline(p),
-      }))
-    : [aggregate];
-
-  const pieData =
-    data.length === 1
-      ? [
-          { name: "CAPEX", value: data[0].CAPEX },
-          { name: "OPEX", value: data[0].OPEX },
-          { name: "Revenue", value: data[0].Revenue },
-        ]
-      : [
-          { name: "CAPEX", value: aggregate.CAPEX },
-          { name: "OPEX", value: aggregate.OPEX },
-          { name: "Revenue", value: aggregate.Revenue },
-        ];
+  const pieData = [
+    { name: "CAPEX", value: aggregate.CAPEX },
+    { name: "OPEX", value: aggregate.OPEX },
+    { name: "Revenue", value: aggregate.Revenue },
+  ];
 
   return (
-    <ResponsiveContainer width="100%" height={260}>
+    <ResponsiveContainer width="100%" height={280}>
       {type === "pie" ? (
         <PieChart>
           <Tooltip formatter={(v) => formatCurrency(Number(v) || 0)} />
@@ -94,22 +80,22 @@ export function CostRevenueChart({
           </Pie>
         </PieChart>
       ) : type === "line" ? (
-        <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <LineChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+          <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={56} />
           <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => formatCurrency(v, true)} />
-          <Tooltip formatter={(v) => formatCurrency(Number(v) || 0)} />
+          <Tooltip content={<ChartTooltip />} />
           <Legend />
           <Line type="monotone" dataKey="CAPEX" stroke="var(--chart-1)" strokeWidth={2} dot={false} />
           <Line type="monotone" dataKey="OPEX" stroke="var(--chart-4)" strokeWidth={2} dot={false} />
           <Line type="monotone" dataKey="Revenue" stroke="var(--chart-3)" strokeWidth={2} dot={false} />
         </LineChart>
       ) : (
-        <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-          <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+          <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={56} />
           <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => formatCurrency(v, true)} />
-          <Tooltip formatter={(v) => formatCurrency(Number(v) || 0)} />
+          <Tooltip content={<ChartTooltip />} />
           <Legend />
           <Bar dataKey="CAPEX" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
           <Bar dataKey="OPEX" fill="var(--chart-4)" radius={[4, 4, 0, 0]} />

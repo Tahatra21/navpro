@@ -1,7 +1,16 @@
 import jwt from 'jsonwebtoken';
 import { query } from '../db.js';
+import { buildRlsContextFromRequest, isRlsEnabled, runWithRlsContext } from '../utils/rls.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'navpro-dev-jwt-secret-change-in-production';
+const JWT_SECRET =
+  process.env.JWT_SECRET ||
+  (process.env.NODE_ENV === 'production'
+    ? null
+    : 'navpro-dev-only-not-for-production');
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET must be set when NODE_ENV=production');
+}
 
 export function signToken(user) {
   return jwt.sign(
@@ -57,7 +66,20 @@ export async function maintenanceGuard(req, res, next) {
 
 export async function loadUser(req, res, next) {
   if (!req.user?.sub) return next();
-  const { rows } = await query(`SELECT * FROM users WHERE id = $1 AND is_active = true`, [req.user.sub]);
+  const { rows } = await query(
+    `SELECT u.*, ou.segment AS org_segment
+     FROM users u
+     LEFT JOIN organization_units ou ON ou.id = u.org_unit_id
+     WHERE u.id = $1 AND u.is_active = true`,
+    [req.user.sub]
+  );
   req.dbUser = rows[0] || null;
   next();
+}
+
+/** Run after loadUser so org_unit_id / segment are available for RLS policies. */
+export function rlsAfterLoadUser(req, res, next) {
+  if (!isRlsEnabled() || !req.user?.sub) return next();
+  const ctx = buildRlsContextFromRequest(req);
+  return runWithRlsContext(ctx, () => next());
 }

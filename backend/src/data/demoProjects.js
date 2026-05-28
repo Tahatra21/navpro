@@ -1,4 +1,6 @@
-/** 20 demo projects — all workflow statuses represented */
+/** 26 demo projects — all workflow statuses, tersebar Pusat + SBU */
+
+import { orgUnitCodeForSeq } from './demoOrgUnits.js';
 
 const CREATED_BY = '11111111-1111-1111-1111-111111111103';
 
@@ -99,6 +101,12 @@ const DEFINITIONS = [
   { seq: 18, name: 'Dark Fiber Lease Toll Road', customer: 'PT Jasa Marga Tbk', contract: 'BAKBB/2026/DFL-018', pic: 'Rizky Aditya', status: 'SUBMITTED', months: 120, category: 'EXTENDED', start: '2026-01-01', scale: 2.0 },
   { seq: 19, name: 'Microwave Link Mining Site', customer: 'PT Tambang Mineral Sejahtera', contract: 'BAKBB/2026/MWL-019', pic: 'Siti Aminah', status: 'REJECTED', months: 12, category: 'SHORT_TERM', start: '2026-08-01', scale: 1.9 },
   { seq: 20, name: 'Data Center Tier III Batam', customer: 'PT Batam Free Trade Zone', contract: 'BAKBB/2026/DCT-020', pic: 'Teguh Permana', status: 'REJECTED', months: 48, category: 'LONG_TERM', start: '2026-09-01', scale: 2.2 },
+  { seq: 21, name: 'Edge Compute Cluster Bandung', customer: 'PT Bandung Cloud Nusantara', contract: 'BAKBB/2026/ECC-021', pic: 'Umar Hakim', status: 'COMPUTED', months: 36, category: 'MID_TERM', start: '2026-06-01', scale: 1.1 },
+  { seq: 22, name: 'PLN Smart Meter Rollout', customer: 'PLN UID Jawa Barat', contract: 'BAKBB/2026/SMR-022', pic: 'Vina Oktaviani', status: 'SUBMITTED', months: 60, category: 'LONG_TERM', start: '2026-05-01', scale: 1.45 },
+  { seq: 23, name: 'Enterprise HQ Network Refresh', customer: 'PT Holding Nusantara Abadi', contract: 'BAKBB/2026/EHQ-023', pic: 'Wawan Setiawan', status: 'UNDER_REVIEW', months: 24, category: 'MID_TERM', start: '2026-07-01', scale: 0.88 },
+  { seq: 24, name: 'Eastern Indonesia Backbone Link', customer: 'PT Papua Digital Connect', contract: 'BAKBB/2026/EIB-024', pic: 'Yuni Astuti', status: 'APPROVED_L1', months: 48, category: 'LONG_TERM', start: '2026-04-01', scale: 1.35 },
+  { seq: 25, name: 'NOC & SOC Upgrade Pusat', customer: 'Internal Solar Group', contract: 'BAKBB/2026/NOC-025', pic: 'Zaki Ramadhan', status: 'DRAFT', months: 18, category: 'SHORT_TERM', start: '2026-10-01', scale: 0.92 },
+  { seq: 26, name: 'Kalimantan Fiber Ring Extension', customer: 'PT Kalimantan Infra Net', contract: 'BAKBB/2026/KFR-026', pic: 'Aulia Prameswari', status: 'APPROVED_FINAL', months: 72, category: 'EXTENDED', start: '2026-02-01', scale: 1.7 },
 ];
 
 export function getDemoProjectDefinitions() {
@@ -109,7 +117,6 @@ export function getDemoProjectDefinitions() {
     fin.revenue[0].end_period = months;
 
     return {
-      id: `22222222-2222-2222-2222-2222222222${String(d.seq).padStart(2, '0')}`,
       project_code: `NAVPRO-2026-${String(d.seq).padStart(4, '0')}`,
       project_name: d.name,
       customer_name: d.customer,
@@ -119,6 +126,7 @@ export function getDemoProjectDefinitions() {
       project_duration_months: months,
       duration_category: d.category,
       contract_start_date: d.start,
+      org_unit_code: d.org_unit_code || orgUnitCodeForSeq(d.seq),
       created_by: CREATED_BY,
       wacc_override: null,
       inflation_rate_override: null,

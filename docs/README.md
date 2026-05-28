@@ -192,11 +192,12 @@ docker compose up -d postgres
 Atau PostgreSQL lokal (Homebrew) — buat role & database jika belum ada:
 
 ```bash
-psql -d postgres -c "CREATE ROLE navpro WITH LOGIN PASSWORD 'navpro_dev' CREATEDB;"
+# Ganti YOUR_DB_PASSWORD dengan secret lokal Anda
+psql -d postgres -c "CREATE ROLE navpro WITH LOGIN PASSWORD 'YOUR_DB_PASSWORD' CREATEDB;"
 psql -d postgres -c "CREATE DATABASE navpro_db OWNER navpro;"
 ```
 
-`backend/.env` default: `DATABASE_URL=postgresql://navpro:navpro_dev@localhost:5432/navpro_db`
+Salin `backend/.env.example` → `backend/.env` dan set `DATABASE_URL` (serta `SEED_DEMO_PASSWORD`, `JWT_SECRET`). Lihat [SECURITY.md](./SECURITY.md).
 
 Smoke test API (setelah `npm start`):
 
@@ -243,17 +244,11 @@ Buka `http://localhost:3000`.
 
 ---
 
-## Akun demo (setelah seed)
+## Akun development (setelah seed)
 
-Password semua user: `Navpro@2026`
+Kredensial **tidak** disimpan di repo. Set `SEED_DEMO_PASSWORD` di `backend/.env`, jalankan `npm run seed`, lalu login dengan email user yang dibuat seed dan password dari env Anda.
 
-| Role | Email |
-|---|---|
-| Super Admin | budi.santoso@navpro.app |
-| Finance Admin | ani.lestari@navpro.app |
-| Solution Architect | rian.hidayat@navpro.app |
-| Manager | dewi.sartika@navpro.app |
-| GM / SRM | irwan.setiawan@navpro.app |
+Detail: [SECURITY.md](./SECURITY.md)
 
 ---
 

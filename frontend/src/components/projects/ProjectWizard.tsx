@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { X, Trash2, ChevronRight } from "lucide-react";
 import { navproApi } from "@/services/api";
+import { useAuthStore } from "@/stores/authStore";
 import {
   buildProjectPayload,
   projectToWizardState,
@@ -93,21 +94,35 @@ export function ProjectWizard({
   const dirtyRef = useRef(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const authUser = useAuthStore((s) => s.user);
+
   const configQuery = useQuery({
     queryKey: ["wizard-config"],
     queryFn: async () => {
-      const [assumptions, presets] = await Promise.all([
+      const [assumptions, presets, orgUnitsRes] = await Promise.all([
         navproApi.getAssumptions(),
         navproApi.getPresets(),
+        navproApi.getOrgUnits(),
       ]);
-      return { assumptions, presets: presets.presets as Array<{ preset_name: string; duration_months: number }> };
+      return {
+        assumptions,
+        presets: presets.presets as Array<{ preset_name: string; duration_months: number }>,
+        orgUnits: orgUnitsRes.org_units,
+      };
     },
   });
 
   const globalAssumptions = configQuery.data?.assumptions as Record<string, number> | undefined;
   const presets = configQuery.data?.presets || [];
+  const orgUnits = configQuery.data?.orgUnits || [];
+  const canPickAnyOrg =
+    authUser?.role === "SUPER_ADMIN" ||
+    authUser?.role === "FINANCE_ADMIN" ||
+    !authUser?.org_unit_id;
+  const orgPickerLocked = !canPickAnyOrg && orgUnits.length <= 1;
 
   // Step 1
+  const [orgUnitId, setOrgUnitId] = useState("");
   const [projectName, setProjectName] = useState("");
   const [customer, setCustomer] = useState("");
   const [contractNo, setContractNo] = useState("");
@@ -191,6 +206,7 @@ export function ProjectWizard({
         project_name: projectName,
         contract_start_date: contractDate,
         project_duration_months: durationMonths,
+        org_unit_id: orgUnitId || undefined,
         customer_name: customer,
         contract_number: contractNo,
         pic_sales: picSales,
@@ -207,6 +223,7 @@ export function ProjectWizard({
       projectName,
       contractDate,
       durationMonths,
+      orgUnitId,
       customer,
       contractNo,
       picSales,
@@ -222,11 +239,21 @@ export function ProjectWizard({
   );
 
   useEffect(() => {
+    if (orgUnitId || orgUnits.length === 0) return;
+    if (authUser?.org_unit_id && orgUnits.some((o) => o.id === authUser.org_unit_id)) {
+      setOrgUnitId(authUser.org_unit_id);
+    } else if (orgUnits.length === 1) {
+      setOrgUnitId(orgUnits[0].id);
+    }
+  }, [orgUnits, authUser?.org_unit_id, orgUnitId]);
+
+  useEffect(() => {
     if (!initialProject || mode !== "edit") {
       if (mode === "create") setSaveStatus("Belum disimpan");
       return;
     }
     const s = projectToWizardState(initialProject);
+    setOrgUnitId(s.orgUnitId || initialProject.org_unit_id || "");
     setProjectCode(s.projectCode);
     setProjectName(s.projectName);
     setCustomer(s.customer);
@@ -273,6 +300,7 @@ export function ProjectWizard({
     mode,
     projectId,
     projectName,
+    orgUnitId,
     customer,
     contractNo,
     contractDate,
@@ -316,7 +344,12 @@ export function ProjectWizard({
   const validateStep = (): boolean => {
     try {
       if (step === 1) {
-        wizardStep1Schema.parse({ projectName, contractDate });
+        const needsOrg = mode === "create" || !initialProject?.org_unit_id;
+        if (needsOrg) {
+          wizardStep1Schema.parse({ projectName, contractDate, orgUnitId });
+        } else {
+          wizardStep1Schema.parse({ projectName, contractDate, orgUnitId: orgUnitId || "locked" });
+        }
       }
       if (step === 2) {
         wizardStep2Schema.parse({
@@ -472,6 +505,56 @@ export function ProjectWizard({
             <div className="space-y-5">
               <h2 className="text-xl font-bold text-foreground">Langkah 1: Informasi Dasar Proyek</h2>
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5 col-span-2">
+                  <Label className="text-sm">
+                    Unit Organisasi <span className="text-destructive">*</span>
+                  </Label>
+                  {mode === "edit" && initialProject?.org_unit_id ? (
+                    <div className="h-11 px-3 flex items-center rounded-md border border-input bg-muted/50 text-sm">
+                      {(() => {
+                        const ou = orgUnits.find((o) => o.id === initialProject.org_unit_id);
+                        if (ou) return `${ou.code} — ${ou.name} (${ou.segment})`;
+                        return `${initialProject.segment || initialProject.org_unit_id}`;
+                      })()}
+                      <span className="ml-2 text-xs text-muted-foreground">(tidak dapat diubah)</span>
+                    </div>
+                  ) : configQuery.isLoading ? (
+                    <p className="text-sm text-muted-foreground">Memuat unit organisasi…</p>
+                  ) : orgUnits.length === 0 ? (
+                    <p className="text-sm text-amber-600 dark:text-amber-400">
+                      Belum ada unit organisasi. Hubungi admin untuk assign org unit pada akun Anda.
+                    </p>
+                  ) : (
+                    <>
+                      <select
+                        value={orgUnitId}
+                        onChange={(e) => {
+                          setOrgUnitId(e.target.value);
+                          markDirty();
+                        }}
+                        disabled={orgPickerLocked}
+                        className="h-11 w-full px-3 rounded-md border border-input bg-background text-sm"
+                      >
+                        <option value="">— Pilih unit organisasi —</option>
+                        {orgUnits.map((ou) => (
+                          <option key={ou.id} value={ou.id}>
+                            {ou.code} — {ou.name} ({ou.type} / {ou.segment})
+                          </option>
+                        ))}
+                      </select>
+                      {orgPickerLocked && authUser?.org_unit_name && (
+                        <p className="text-xs text-muted-foreground">
+                          Terkunci ke unit Anda: {authUser.org_unit_code} — {authUser.org_unit_name}
+                        </p>
+                      )}
+                      {canPickAnyOrg && (
+                        <p className="text-xs text-muted-foreground">
+                          Menentukan routing approval Asman/Manager dan segment data proyek.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
                 <div className="space-y-1.5">
                   <Label className="text-sm">Kode Proyek NAVPRO (otomatis) <span className="text-destructive">*</span></Label>
                   <Input value={codeDisplay} readOnly className="h-11 bg-muted/50 text-muted-foreground cursor-default" />

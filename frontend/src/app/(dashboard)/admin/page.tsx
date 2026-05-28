@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { navproApi } from "@/services/api";
 import { useAuthStore } from "@/stores/authStore";
@@ -20,6 +20,7 @@ import {
   Activity,
   Bell,
   BookOpenCheck,
+  Building2,
   ClipboardList,
   Settings,
   Shield,
@@ -67,9 +68,15 @@ const TABS = [
     icon: Settings,
   },
   {
+    id: "org",
+    label: "Organisasi",
+    desc: "Unit organisasi (Pusat/SBU) dan backfill proyek lama.",
+    icon: Building2,
+  },
+  {
     id: "users",
     label: "Pengguna",
-    desc: "Manajemen user: role dan aktivasi akun.",
+    desc: "Manajemen user: role, org unit, dan aktivasi akun.",
     icon: Users,
   },
   {
@@ -104,6 +111,14 @@ type SlaRow = {
   escalation_hours: number;
   escalate_to_role: string | null;
 };
+type OrgUnitRow = {
+  id: string;
+  code: string;
+  name: string;
+  type: string;
+  segment: string;
+  is_active: boolean;
+};
 type AdminUserRow = {
   id: string;
   email: string;
@@ -112,6 +127,12 @@ type AdminUserRow = {
   is_active: boolean;
   last_login_at?: string | null;
   created_at?: string;
+  employee_id?: string | null;
+  org_unit_id?: string | null;
+  org_level?: string | null;
+  org_unit_code?: string | null;
+  org_unit_name?: string | null;
+  org_unit_segment?: string | null;
 };
 type AuditLogRow = {
   id: string;
@@ -169,6 +190,12 @@ export default function AdminPage() {
     queryKey: ["admin-opex-cats"],
     queryFn: () => navproApi.adminGetOpexCategories(),
     enabled: backendOnline === true && tab === "categories",
+  });
+
+  const orgUnits = useQuery({
+    queryKey: ["admin-org-units"],
+    queryFn: () => navproApi.adminGetOrgUnits(),
+    enabled: backendOnline === true && (tab === "org" || tab === "users"),
   });
 
   const users = useQuery({
@@ -347,7 +374,24 @@ export default function AdminPage() {
             }}
           />
         )}
-        {tab === "users" && <UsersPanel data={users.data} loading={users.isLoading} onRefresh={() => users.refetch()} />}
+        {tab === "org" && (
+          <OrgPanel
+            data={orgUnits.data}
+            loading={orgUnits.isLoading}
+            onRefresh={() => orgUnits.refetch()}
+          />
+        )}
+        {tab === "users" && (
+          <UsersPanel
+            data={users.data}
+            orgUnits={(orgUnits.data as { org_units?: OrgUnitRow[] })?.org_units || []}
+            loading={users.isLoading || orgUnits.isLoading}
+            onRefresh={() => {
+              users.refetch();
+              orgUnits.refetch();
+            }}
+          />
+        )}
         {tab === "audit" && <AuditPanel data={audit.data} loading={audit.isLoading} />}
         {tab === "health" && (
           <HealthPanel
@@ -1030,6 +1074,7 @@ function PresetsPanel({ data, loading, onRefresh }: { data: unknown; loading: bo
 
 function SlaPanel({ data, loading, onRefresh }: { data: unknown; loading: boolean; onRefresh: () => void }) {
   const items = ((data as { sla?: SlaRow[] })?.sla || []) as SlaRow[];
+  const toast = useToast();
   type SlaDraftRow = {
     role_key: string;
     role_name: string;
@@ -1037,19 +1082,25 @@ function SlaPanel({ data, loading, onRefresh }: { data: unknown; loading: boolea
     reminder_hours: string;
     escalation_hours: string;
     escalate_to_role: string;
+    preview_due_at?: string;
   };
-  const [draft, setDraft] = useState<SlaDraftRow[]>(() =>
-    items.map((r) => ({
+  const mapItems = (rows: SlaRow[]): SlaDraftRow[] =>
+    rows.map((r) => ({
       role_key: r.role_key,
       role_name: r.role_name,
       sla_working_days: String(r.sla_working_days ?? 2),
       reminder_hours: String(r.reminder_hours ?? 24),
       escalation_hours: String(r.escalation_hours ?? 48),
       escalate_to_role: r.escalate_to_role ?? "",
-    }))
-  );
+    }));
+
+  const [draft, setDraft] = useState<SlaDraftRow[]>([]);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!loading) setDraft(mapItems(items));
+  }, [loading, data]);
 
   if (loading) return <p className="text-sm text-muted-foreground">Memuat SLA…</p>;
 
@@ -1057,16 +1108,54 @@ function SlaPanel({ data, loading, onRefresh }: { data: unknown; loading: boolea
     setErr("");
     setBusy(true);
     try {
-      await navproApi.adminSaveSla(row.role_key, {
+      if (!row.role_key.trim()) throw new Error("Role key wajib diisi.");
+      await navproApi.adminSaveSla(row.role_key.trim(), {
         role_name: row.role_name,
         sla_working_days: Number(row.sla_working_days),
         reminder_hours: Number(row.reminder_hours),
         escalation_hours: Number(row.escalation_hours),
         escalate_to_role: row.escalate_to_role || null,
       });
+      toast.success(`SLA ${row.role_key} tersimpan.`);
       onRefresh();
     } catch (e: unknown) {
       setErr((e as Error)?.message || "Gagal menyimpan SLA.");
+      toast.error(e instanceof Error ? e.message : "Gagal menyimpan SLA.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const previewRow = async (idx: number) => {
+    const row = draft[idx];
+    if (!row.role_key.trim()) {
+      setErr("Isi role key dulu untuk preview due date.");
+      return;
+    }
+    setBusy(true);
+    setErr("");
+    try {
+      const res = await navproApi.adminPreviewSlaDue(row.role_key.trim());
+      setDraft((s) =>
+        s.map((r, i) => (i === idx ? { ...r, preview_due_at: res.due_at } : r))
+      );
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Gagal preview SLA.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteRow = async (roleKey: string) => {
+    if (!roleKey || !confirm(`Hapus konfigurasi SLA untuk ${roleKey}?`)) return;
+    setBusy(true);
+    setErr("");
+    try {
+      await navproApi.adminDeleteSla(roleKey);
+      toast.success("SLA dihapus.");
+      onRefresh();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Gagal menghapus SLA.");
     } finally {
       setBusy(false);
     }
@@ -1186,9 +1275,31 @@ function SlaPanel({ data, loading, onRefresh }: { data: unknown; loading: boolea
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2">
+              {row.preview_due_at && (
+                <p className="text-xs text-muted-foreground">
+                  Preview due (dari sekarang):{" "}
+                  <span className="font-mono text-foreground">
+                    {new Date(row.preview_due_at).toLocaleString("id-ID")}
+                  </span>
+                  <span className="ml-1">— jam kerja 08–17, Sen–Jum</span>
+                </p>
+              )}
+
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => previewRow(idx)} disabled={busy}>
+                  Preview Due
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => saveRow(row)} disabled={busy}>
-                  Simpan Row
+                  Simpan
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={() => deleteRow(row.role_key)}
+                  disabled={busy || !row.role_key}
+                >
+                  Hapus
                 </Button>
               </div>
             </Card>
@@ -1300,11 +1411,270 @@ function CategoriesPanel({
   );
 }
 
-function UsersPanel({ data, loading, onRefresh }: { data: unknown; loading: boolean; onRefresh: () => void }) {
+const USER_ROLE_OPTIONS = [
+  "SUPER_ADMIN",
+  "FINANCE_ADMIN",
+  "VP_SA",
+  "MANAGER",
+  "ASMAN",
+  "SA",
+  "STAFF",
+  "GM_SRM",
+  "VIEWER",
+] as const;
+const ORG_LEVEL_OPTIONS = ["L1", "L2", "L3", "L4", "L5"] as const;
+
+const ORG_SEGMENTS = ["ENT1", "ENT2", "PLN1", "PLN2"] as const;
+
+function OrgPanel({ data, loading, onRefresh }: { data: unknown; loading: boolean; onRefresh: () => void }) {
+  const units = ((data as { org_units?: OrgUnitRow[] })?.org_units || []) as OrgUnitRow[];
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const [typeFilter, setTypeFilter] = useState("");
+  const [err, setErr] = useState("");
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"create" | "edit">("create");
+  const [draft, setDraft] = useState({
+    id: "",
+    code: "",
+    name: "",
+    type: "SBU",
+    segment: "ENT2",
+    is_active: true,
+  });
+
+  const filtered = typeFilter ? units.filter((u) => u.type === typeFilter) : units;
+
+  const runBackfill = async () => {
+    const ok = window.confirm(
+      "Backfill org_unit/segment pada proyek yang belum punya, berdasarkan org unit pembuat proyek. Lanjutkan?"
+    );
+    if (!ok) return;
+    setBusy(true);
+    try {
+      const res = await navproApi.adminBackfillProjectsOrg();
+      toast.success(`Backfill selesai: ${res.updated} proyek diperbarui.`);
+      onRefresh();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Gagal backfill proyek.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openCreate = () => {
+    setErr("");
+    setMode("create");
+    setDraft({ id: "", code: "", name: "", type: "SBU", segment: "ENT2", is_active: true });
+    setOpen(true);
+  };
+
+  const openEdit = (u: OrgUnitRow) => {
+    setErr("");
+    setMode("edit");
+    setDraft({
+      id: u.id,
+      code: u.code,
+      name: u.name,
+      type: u.type,
+      segment: u.segment,
+      is_active: u.is_active !== false,
+    });
+    setOpen(true);
+  };
+
+  const save = async () => {
+    setErr("");
+    setBusy(true);
+    try {
+      const payload = {
+        code: draft.code.trim().toUpperCase(),
+        name: draft.name.trim(),
+        type: draft.type,
+        segment: draft.segment,
+        is_active: draft.is_active,
+      };
+      if (!payload.code || !payload.name) throw new Error("Kode dan nama wajib diisi.");
+      if (mode === "create") {
+        await navproApi.adminCreateOrgUnit(payload);
+        toast.success("Unit organisasi dibuat.");
+      } else {
+        await navproApi.adminUpdateOrgUnit(draft.id, payload);
+        toast.success("Unit organisasi diperbarui.");
+      }
+      setOpen(false);
+      onRefresh();
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Gagal menyimpan unit.");
+      toast.error(e instanceof Error ? e.message : "Gagal menyimpan unit.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (u: OrgUnitRow) => {
+    if (!confirm(`Hapus/nonaktifkan unit ${u.code}?`)) return;
+    setBusy(true);
+    try {
+      const res = await navproApi.adminDeleteOrgUnit(u.id);
+      toast.success(res.message || (res.soft_deleted ? "Unit dinonaktifkan." : "Unit dihapus."));
+      onRefresh();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Gagal menghapus unit.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading) return <p className="text-sm text-muted-foreground">Memuat unit organisasi…</p>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h3 className="font-semibold">Unit Organisasi</h3>
+          <p className="text-xs text-muted-foreground">
+            {units.length} unit. CRUD lengkap — assign ke user di tab Pengguna.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={onRefresh} disabled={busy}>
+            Refresh
+          </Button>
+          <Button size="sm" onClick={openCreate} disabled={busy}>
+            Tambah Unit
+          </Button>
+          <Button variant="outline" size="sm" onClick={runBackfill} disabled={busy}>
+            Backfill Proyek
+          </Button>
+        </div>
+      </div>
+
+      {err && <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">{err}</p>}
+
+      <select
+        value={typeFilter}
+        onChange={(e) => setTypeFilter(e.target.value)}
+        className="h-10 px-3 rounded-md border border-input bg-background text-sm w-full sm:w-[200px]"
+      >
+        <option value="">Semua tipe</option>
+        <option value="PUSAT">PUSAT</option>
+        <option value="SBU">SBU</option>
+      </select>
+
+      <div className="grid gap-2">
+        {filtered.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Belum ada unit organisasi.</p>
+        ) : (
+          filtered.map((u) => (
+            <Card key={u.id} className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="font-medium font-mono text-sm">{u.code}</div>
+                <div className="text-xs text-muted-foreground">
+                  {u.name} • {u.type} • {u.segment} • {u.is_active !== false ? "ACTIVE" : "INACTIVE"}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => openEdit(u)} disabled={busy}>
+                  Edit
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => remove(u)} disabled={busy}>
+                  Hapus
+                </Button>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{mode === "create" ? "Tambah Unit Organisasi" : "Edit Unit Organisasi"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Kode</Label>
+              <Input
+                value={draft.code}
+                onChange={(e) => setDraft((s) => ({ ...s, code: e.target.value.toUpperCase() }))}
+                placeholder="REG-SBU"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Nama</Label>
+              <Input value={draft.name} onChange={(e) => setDraft((s) => ({ ...s, name: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Tipe</Label>
+                <select
+                  value={draft.type}
+                  onChange={(e) => setDraft((s) => ({ ...s, type: e.target.value }))}
+                  className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm"
+                >
+                  <option value="PUSAT">PUSAT</option>
+                  <option value="SBU">SBU</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label>Segment</Label>
+                <select
+                  value={draft.segment}
+                  onChange={(e) => setDraft((s) => ({ ...s, segment: e.target.value }))}
+                  className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm"
+                >
+                  {ORG_SEGMENTS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {mode === "edit" && (
+              <div className="space-y-1">
+                <Label>Status</Label>
+                <select
+                  value={draft.is_active ? "true" : "false"}
+                  onChange={(e) => setDraft((s) => ({ ...s, is_active: e.target.value === "true" }))}
+                  className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm"
+                >
+                  <option value="true">ACTIVE</option>
+                  <option value="false">INACTIVE</option>
+                </select>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+              Batal
+            </Button>
+            <Button onClick={save} disabled={busy}>
+              {busy ? "Menyimpan…" : "Simpan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function UsersPanel({
+  data,
+  orgUnits,
+  loading,
+  onRefresh,
+}: {
+  data: unknown;
+  orgUnits: OrgUnitRow[];
+  loading: boolean;
+  onRefresh: () => void;
+}) {
   const users = ((data as { users?: AdminUserRow[] })?.users || []) as AdminUserRow[];
   const myRole = useAuthStore((s: { user: { role: string } | null }) => s.user?.role || null);
   const canEditEmail = myRole === "SUPER_ADMIN";
-  const ROLE_OPTIONS = ["SUPER_ADMIN", "FINANCE_ADMIN", "SA", "MANAGER", "GM_SRM", "VIEWER"] as const;
+  const ROLE_OPTIONS = USER_ROLE_OPTIONS;
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"create" | "edit">("create");
@@ -1318,13 +1688,19 @@ function UsersPanel({ data, loading, onRefresh }: { data: unknown; loading: bool
     role: string;
     is_active: boolean;
     password: string;
+    employee_id: string;
+    org_unit_id: string;
+    org_level: string;
   }>({
     id: "",
     email: "",
     full_name: "",
     role: "VIEWER",
     is_active: true,
-    password: "Navpro@2026",
+    password: "",
+    employee_id: "",
+    org_unit_id: "",
+    org_level: "",
   });
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1340,7 +1716,10 @@ function UsersPanel({ data, loading, onRefresh }: { data: unknown; loading: bool
       full_name: "",
       role: "VIEWER",
       is_active: true,
-      password: "Navpro@2026",
+      password: "",
+      employee_id: "",
+      org_unit_id: "",
+      org_level: "",
     });
     setOpen(true);
   };
@@ -1355,6 +1734,9 @@ function UsersPanel({ data, loading, onRefresh }: { data: unknown; loading: bool
       role: u.role,
       is_active: !!u.is_active,
       password: "",
+      employee_id: u.employee_id || "",
+      org_unit_id: u.org_unit_id || "",
+      org_level: u.org_level || "",
     });
     setOpen(true);
   };
@@ -1368,6 +1750,9 @@ function UsersPanel({ data, loading, onRefresh }: { data: unknown; loading: bool
         full_name: String(draft.full_name || "").trim(),
         role: String(draft.role || "VIEWER"),
         is_active: !!draft.is_active,
+        employee_id: String(draft.employee_id || "").trim() || null,
+        org_unit_id: String(draft.org_unit_id || "").trim() || null,
+        org_level: String(draft.org_level || "").trim() || null,
       };
       if (mode === "create" && !payload.email) throw new Error("Email wajib diisi.");
       if (!payload.full_name) throw new Error("Nama wajib diisi.");
@@ -1376,7 +1761,9 @@ function UsersPanel({ data, loading, onRefresh }: { data: unknown; loading: bool
       }
 
       if (mode === "create") {
-        await navproApi.adminCreateUser({ ...payload, password: String(draft.password || "").trim() || undefined });
+        const pwd = String(draft.password || "").trim();
+        if (pwd.length < 8) throw new Error("Password wajib diisi (minimal 8 karakter).");
+        await navproApi.adminCreateUser({ ...payload, password: pwd });
       } else {
         if (draft.is_active === false) {
           const ok = window.confirm(`Nonaktifkan user "${draft.full_name}"? Mereka tidak bisa login sampai diaktifkan kembali.`);
@@ -1386,7 +1773,16 @@ function UsersPanel({ data, loading, onRefresh }: { data: unknown; loading: bool
           }
         }
         if (canEditEmail) await navproApi.adminUpdateUser(String(draft.id), payload);
-        else await navproApi.adminUpdateUser(String(draft.id), (({ full_name, role, is_active }) => ({ full_name, role, is_active }))(payload));
+        else {
+          await navproApi.adminUpdateUser(String(draft.id), {
+            full_name: payload.full_name,
+            role: payload.role,
+            is_active: payload.is_active,
+            employee_id: payload.employee_id,
+            org_unit_id: payload.org_unit_id,
+            org_level: payload.org_level,
+          });
+        }
       }
       setOpen(false);
       onRefresh();
@@ -1404,7 +1800,7 @@ function UsersPanel({ data, loading, onRefresh }: { data: unknown; loading: bool
     if (activeFilter === "ACTIVE" && !u.is_active) return false;
     if (activeFilter === "INACTIVE" && u.is_active) return false;
     if (!search.trim()) return true;
-    const s = `${u.full_name} ${u.email} ${u.role}`.toLowerCase();
+    const s = `${u.full_name} ${u.email} ${u.role} ${u.org_unit_code || ""} ${u.org_unit_name || ""}`.toLowerCase();
     return s.includes(search.toLowerCase().trim());
   });
 
@@ -1469,6 +1865,16 @@ function UsersPanel({ data, loading, onRefresh }: { data: unknown; loading: bool
                 <div className="font-medium truncate">{u.full_name}</div>
                 <div className="text-xs text-muted-foreground">
                   {u.email} • {u.role} • {u.is_active ? "ACTIVE" : "INACTIVE"}
+                  {u.org_unit_code ? (
+                    <>
+                      {" "}
+                      • {u.org_unit_code}
+                      {u.org_unit_segment ? ` (${u.org_unit_segment})` : ""}
+                      {u.org_level ? ` • ${u.org_level}` : ""}
+                    </>
+                  ) : (
+                    <span className="text-amber-600 dark:text-amber-400"> • belum assign org</span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -1534,26 +1940,73 @@ function UsersPanel({ data, loading, onRefresh }: { data: unknown; loading: bool
                 </select>
               </div>
             </div>
+            <div className="space-y-1">
+              <Label>Employee ID (opsional)</Label>
+              <Input
+                value={draft.employee_id}
+                onChange={(e) => setDraft((s) => ({ ...s, employee_id: e.target.value }))}
+                placeholder="NIP / ID karyawan"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Unit Organisasi</Label>
+              <select
+                value={draft.org_unit_id}
+                onChange={(e) => setDraft((s) => ({ ...s, org_unit_id: e.target.value }))}
+                className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm"
+              >
+                <option value="">— Belum di-assign —</option>
+                {orgUnits.map((ou) => (
+                  <option key={ou.id} value={ou.id}>
+                    {ou.code} — {ou.name} ({ou.segment})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Wajib untuk SA/ASMAN/MANAGER agar routing approval dan scope data berfungsi.
+              </p>
+            </div>
+            <div className="space-y-1">
+              <Label>Level Organisasi</Label>
+              <select
+                value={draft.org_level}
+                onChange={(e) => setDraft((s) => ({ ...s, org_level: e.target.value }))}
+                className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm"
+              >
+                <option value="">— Otomatis / kosong —</option>
+                {ORG_LEVEL_OPTIONS.map((lv) => (
+                  <option key={lv} value={lv}>
+                    {lv}
+                  </option>
+                ))}
+              </select>
+            </div>
             {mode === "edit" && canEditEmail && (
               <Card className="p-3 border border-destructive/20 bg-destructive/5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Reset Password</p>
-                    <p className="text-xs text-muted-foreground">
-                      Set password user menjadi default <span className="font-mono">Navpro@2026</span>.
-                    </p>
-                  </div>
+                <p className="text-sm font-semibold text-foreground">Reset Password</p>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Masukkan password baru (min. 8 karakter). Bagikan ke user lewat saluran aman.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input
+                    type="password"
+                    placeholder="Password baru"
+                    value={draft.password}
+                    onChange={(e) => setDraft((s) => ({ ...s, password: e.target.value }))}
+                    autoComplete="new-password"
+                  />
                   <Button
                     variant="destructive"
                     size="sm"
-                    disabled={busy}
+                    disabled={busy || String(draft.password || "").length < 8}
                     onClick={async () => {
-                      const ok = window.confirm(`Reset password untuk "${draft.full_name}" ke default?`);
+                      const ok = window.confirm(`Reset password untuk "${draft.full_name}"?`);
                       if (!ok) return;
                       setBusy(true);
                       setErr("");
                       try {
-                        await navproApi.adminResetUserPassword(String(draft.id), "Navpro@2026");
+                        await navproApi.adminResetUserPassword(String(draft.id), String(draft.password));
+                        setDraft((s) => ({ ...s, password: "" }));
                         toast.success("Password berhasil di-reset.");
                       } catch (e: unknown) {
                         setErr(e instanceof Error ? e.message : "Gagal reset password.");
@@ -1570,15 +2023,28 @@ function UsersPanel({ data, loading, onRefresh }: { data: unknown; loading: bool
             )}
             {mode === "create" && (
               <div className="space-y-1">
-                <Label>Password (optional)</Label>
-                <Input
-                  type="password"
-                  value={draft.password}
+                <Label>Password (wajib, min. 8 karakter)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="password"
+                    value={draft.password}
                     onChange={(e) => setDraft((s) => ({ ...s, password: e.target.value }))}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Jika kosong, default backend: <span className="font-mono">Navpro@2026</span>
-                </p>
+                    autoComplete="new-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const bytes = new Uint8Array(12);
+                      crypto.getRandomValues(bytes);
+                      const chunk = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("").slice(0, 12);
+                      setDraft((s) => ({ ...s, password: `Np-${chunk}!` }));
+                    }}
+                  >
+                    Generate
+                  </Button>
+                </div>
               </div>
             )}
           </div>

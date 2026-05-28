@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { query } from '../db.js';
-import { authRequired } from '../middleware/auth.js';
+import { authRequired, loadUser } from '../middleware/auth.js';
 
 const router = Router();
 router.use(authRequired);
+router.use(loadUser);
 
 router.get('/assumptions', async (_req, res) => {
   const { rows } = await query(`SELECT data FROM assumptions_master ORDER BY id DESC LIMIT 1`);
@@ -24,6 +25,25 @@ router.get('/categories', async (_req, res) => {
     capex: capex.map((r) => r.code),
     opex: opex.map((r) => r.code),
   });
+});
+
+/** Active org units for wizard (scoped for non-admin users with assigned unit). */
+router.get('/org-units', async (req, res) => {
+  const role = req.user.role;
+  const userOrgId = req.dbUser?.org_unit_id || null;
+  const params = [];
+  let sql = `SELECT id, code, name, type, segment
+             FROM organization_units
+             WHERE is_active = true`;
+
+  if (!['SUPER_ADMIN', 'FINANCE_ADMIN', 'VP_SA'].includes(role) && userOrgId) {
+    params.push(userOrgId);
+    sql += ` AND id = $${params.length}`;
+  }
+
+  sql += ` ORDER BY type, code`;
+  const { rows } = await query(sql, params);
+  res.json({ org_units: rows });
 });
 
 export default router;

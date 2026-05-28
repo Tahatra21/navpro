@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { Eye } from "lucide-react";
 import type { ApprovalQueueItem } from "@/types/navpro";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatDateTime } from "@/lib/format";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function ApprovalQueueTable({
@@ -32,6 +32,9 @@ export function ApprovalQueueTable({
             {!compact && (
               <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Pengusul</th>
             )}
+            {!compact && (
+              <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Level</th>
+            )}
             <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Durasi</th>
             <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Status</th>
             <th className="px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">SLA Due</th>
@@ -46,7 +49,14 @@ export function ApprovalQueueTable({
               {!compact && (
                 <td className="px-4 py-3 text-muted-foreground">{it.created_by_name || "—"}</td>
               )}
-              <td className="px-4 py-3">{it.duration_months} bln</td>
+              {!compact && (
+                <td className="px-4 py-3 text-xs text-muted-foreground">
+                  {it.approver_level || "—"}
+                </td>
+              )}
+              <td className="px-4 py-3">
+                {it.duration_months != null ? `${it.duration_months} bln` : "—"}
+              </td>
               <td className="px-4 py-3">
                 <StatusBadge status={it.status} />
               </td>
@@ -62,9 +72,13 @@ export function ApprovalQueueTable({
                 </span>
               </td>
               <td className="px-4 py-3 text-right">
-                <Button size="sm" variant="outline" asChild>
-                  <Link href={`/projects/${it.project_id}`}>Review</Link>
-                </Button>
+                <Link
+                  href={`/projects/${it.project_id}`}
+                  className="inline-flex p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md"
+                  title="Lihat detail"
+                >
+                  <Eye size={16} />
+                </Link>
               </td>
             </tr>
           ))}

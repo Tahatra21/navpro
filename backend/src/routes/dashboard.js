@@ -1,13 +1,50 @@
 import { Router } from 'express';
 import { query } from '../db.js';
-import { authRequired } from '../middleware/auth.js';
+import { authRequired, loadUser, rlsAfterLoadUser } from '../middleware/auth.js';
 import { rowToProject } from '../db.js';
+import { buildPortfolioOrgFinancial } from '../utils/portfolioOrgFinancial.js';
+import {
+  getProjectLifetimeFinancials,
+  sumCapexTotal,
+} from '../utils/projectLifetimeFinancials.js';
 
 const router = Router();
 router.use(authRequired);
+router.use(loadUser);
+router.use(rlsAfterLoadUser);
 
-function canViewAll(role) {
-  return ['SUPER_ADMIN', 'FINANCE_ADMIN', 'MANAGER', 'GM_SRM'].includes(role);
+function getProjectScopeSql({ role, dbUser, params }) {
+  if (role === 'SUPER_ADMIN' || role === 'FINANCE_ADMIN') {
+    return { where: '1=1', params };
+  }
+
+  if (role === 'SA' || role === 'STAFF') {
+    params.push(dbUser?.id || null);
+    return { where: `created_by = $${params.length}`, params };
+  }
+
+  if (role === 'ASMAN') {
+    if (dbUser?.org_unit_id) {
+      params.push(dbUser.org_unit_id);
+      return { where: `org_unit_id = $${params.length}`, params };
+    }
+    params.push(dbUser?.id || null);
+    return { where: `created_by = $${params.length}`, params };
+  }
+
+  if (role === 'MANAGER' || role === 'GM_SRM') {
+    if (dbUser?.org_unit_id) {
+      params.push(dbUser.org_unit_id);
+      const idx = params.length;
+      return {
+        where: `segment = (SELECT segment FROM organization_units WHERE id = $${idx})`,
+        params,
+      };
+    }
+    return { where: '1=1', params };
+  }
+
+  return { where: '1=0', params };
 }
 
 function addWorkingDays(startDate, days) {
@@ -43,57 +80,77 @@ function getKursUsd(p) {
   return 16500;
 }
 
-function sumCapexTotal(p) {
-  if (p?.kpi?.capex_total != null && Number.isFinite(Number(p.kpi.capex_total))) {
-    return Number(p.kpi.capex_total);
-  }
-  const kurs = getKursUsd(p);
-  return (p.capex || []).reduce((s, c) => {
-    const amt = parseFloat(String(c.amount || 0));
-    return s + (c.currency === 'USD' ? amt * kurs : amt);
-  }, 0);
-}
-
-function sumOpexBaseline(p) {
-  const kurs = getKursUsd(p);
-  return (p.opex || []).reduce((s, o) => {
-    if (o.is_percent) return s;
-    const amt = parseFloat(String(o.baseline_amount || 0));
-    return s + (o.currency === 'USD' ? amt * kurs : amt);
-  }, 0);
-}
-
-function sumRevenueBaseline(p) {
-  const kurs = getKursUsd(p);
-  return (p.revenue || []).reduce((s, r) => {
-    const h = parseFloat(String(r.harsat ?? r.monthly_amount ?? 0));
-    const q = parseFloat(String(r.qty ?? 1));
-    return s + (r.currency === 'USD' ? h * q * kurs : h * q);
-  }, 0);
-}
-
 router.get('/portfolio', async (req, res) => {
   const params = [];
-  let sql = `SELECT * FROM projects`;
-  if (!canViewAll(req.user.role)) {
-    params.push(req.user.sub);
-    sql += ` WHERE created_by = $1`;
-  }
-  const { rows } = await query(sql, params);
+  const scope = getProjectScopeSql({ role: req.user.role, dbUser: req.dbUser, params });
+  const { rows } = await query(`SELECT * FROM projects WHERE ${scope.where}`, scope.params);
   const projects = rows.map(rowToProject);
 
   const active = projects.filter((p) => !['ARCHIVED', 'CANCELLED'].includes(p.status));
-  const approved = active.filter((p) => p.status === 'APPROVED_FINAL');
-  const pending = active.filter((p) =>
-    ['SUBMITTED', 'UNDER_REVIEW', 'APPROVED_L1'].includes(p.status)
+  const APPROVED_STATUSES = ['APPROVED_FINAL', 'APPROVED'];
+  const PENDING_STATUSES = [
+    'SUBMITTED',
+    'UNDER_REVIEW',
+    'APPROVED_L1',
+    'IN_REVIEW_ASMAN',
+    'IN_REVIEW_MANAGER',
+  ];
+
+  const approved = active.filter((p) => APPROVED_STATUSES.includes(p.status));
+  const pending = active.filter((p) => PENDING_STATUSES.includes(p.status));
+  const draft = active.filter((p) => p.status === 'DRAFT');
+  const computed = active.filter((p) => p.status === 'COMPUTED');
+  const rejected = active.filter((p) => p.status === 'REJECTED');
+
+  const withKpi = active.filter((p) => p.kpi?.xirr != null && Number.isFinite(Number(p.kpi.xirr)));
+  const needsCalculation = active.filter(
+    (p) => ['DRAFT', 'COMPUTED'].includes(p.status) && (p.kpi?.xirr == null || !Number.isFinite(Number(p.kpi.xirr)))
   );
 
   const avgXirr =
-    approved.length > 0
-      ? approved.reduce((s, p) => s + (p.kpi?.xirr || 0), 0) / approved.length
+    withKpi.length > 0
+      ? withKpi.reduce((s, p) => s + (p.kpi?.xirr || 0), 0) / withKpi.length
       : 0;
 
-  const totalXnpv = approved.reduce((s, p) => s + (p.kpi?.xnpv || 0), 0);
+  const totalXnpv = withKpi.reduce((s, p) => s + (p.kpi?.xnpv || 0), 0);
+
+  const conclusionCounts = { LAYAK: 0, BERSYARAT: 0, TIDAK_LAYAK: 0, NONE: 0 };
+  for (const p of withKpi) {
+    const c = p.kpi?.conclusion;
+    if (c && Object.prototype.hasOwnProperty.call(conclusionCounts, c)) conclusionCounts[c] += 1;
+    else conclusionCounts.NONE += 1;
+  }
+
+  const { rows: assRows } = await query(`SELECT data FROM assumptions_master ORDER BY id DESC LIMIT 1`);
+  const globalAss = assRows[0]?.data || {};
+
+  let total_capex = 0;
+  let total_revenue = 0;
+  let total_opex = 0;
+  for (const p of active) {
+    const fin = getProjectLifetimeFinancials(p, globalAss);
+    if (fin) {
+      total_capex += fin.capex;
+      total_revenue += fin.revenue;
+      total_opex += fin.opex;
+    } else {
+      total_capex += sumCapexTotal(p);
+    }
+  }
+
+  const top_by_xirr = [...withKpi]
+    .sort((a, b) => (b.kpi?.xirr || 0) - (a.kpi?.xirr || 0))
+    .slice(0, 5)
+    .map((p) => ({
+      id: p.id,
+      project_code: p.project_code,
+      project_name: p.project_name,
+      status: p.status,
+      xirr: p.kpi?.xirr ?? null,
+      xnpv: p.kpi?.xnpv ?? null,
+      bcr: p.kpi?.bcr ?? null,
+      conclusion: p.kpi?.conclusion ?? null,
+    }));
 
   const riskCounts = { LOW: 0, MEDIUM: 0, HIGH: 0 };
   for (const p of active) {
@@ -111,15 +168,16 @@ router.get('/portfolio', async (req, res) => {
   const compact = String(req.query.compact || '').toLowerCase() === 'true';
   const payloadProjects = compact
     ? active.map((p) => {
-        const capex_total = sumCapexTotal(p);
-        const opex_baseline_total = sumOpexBaseline(p);
-        const revenue_baseline_total = sumRevenueBaseline(p);
+        const fin = getProjectLifetimeFinancials(p, globalAss);
+        const capex_total = fin?.capex ?? sumCapexTotal(p);
         return {
           id: p.id,
           created_by: p.created_by,
           project_code: p.project_code,
           project_name: p.project_name,
           status: p.status,
+          org_unit_id: p.org_unit_id ?? null,
+          segment: p.segment ?? null,
           project_duration_months: p.project_duration_months,
           duration_category: p.duration_category,
           contract_start_date: p.contract_start_date,
@@ -127,23 +185,42 @@ router.get('/portfolio', async (req, res) => {
           kpi: {
             ...(p.kpi || {}),
             capex_total,
-            opex_baseline_total,
-            revenue_baseline_total,
+            lifetime_revenue_total: fin?.revenue ?? p.kpi?.lifetime_revenue_total,
+            lifetime_opex_total: fin?.opex ?? p.kpi?.lifetime_opex_total,
           },
         };
       })
     : active;
+
+  const { rows: orgUnitRows } = await query(
+    `SELECT id, code, name, type, segment
+     FROM organization_units
+     WHERE is_active = true
+     ORDER BY type, code`
+  );
+  const org_financial = buildPortfolioOrgFinancial(active, orgUnitRows, globalAss);
 
   res.json({
     kpi: {
       total_projects: active.length,
       approved_count: approved.length,
       pending_approval: pending.length,
+      draft_count: draft.length,
+      computed_count: computed.length,
+      rejected_count: rejected.length,
+      with_kpi_count: withKpi.length,
+      needs_calculation_count: needsCalculation.length,
       avg_xirr: avgXirr,
       total_xnpv: totalXnpv,
+      total_capex,
+      total_revenue,
+      total_opex,
+      conclusion_counts: conclusionCounts,
     },
+    top_by_xirr,
     risk_distribution: riskCounts,
     status_distribution: statusCounts,
+    org_financial,
     projects: payloadProjects,
   });
 });
@@ -158,13 +235,19 @@ router.get('/approval-queue', async (req, res) => {
   else if (role === 'SUPER_ADMIN' || role === 'FINANCE_ADMIN') statuses = ['SUBMITTED', 'UNDER_REVIEW', 'APPROVED_L1'];
   else return res.status(403).json({ error: 'Forbidden' });
 
+  const params = [statuses];
+  const scope = getProjectScopeSql({ role: req.user.role, dbUser: req.dbUser, params });
+  const scopedWhere = scope.where
+    .replaceAll('created_by', 'p.created_by')
+    .replaceAll('org_unit_id', 'p.org_unit_id')
+    .replaceAll('segment', 'p.segment');
   const { rows } = await query(
     `SELECT p.*, u.full_name AS created_by_name
      FROM projects p
      LEFT JOIN users u ON u.id = p.created_by
-     WHERE p.status = ANY($1::text[])
+     WHERE p.status = ANY($1::text[]) AND (${scopedWhere})
      ORDER BY p.updated_at DESC`,
-    [statuses]
+    scope.params
   );
   const projects = rows.map(rowToProject);
 

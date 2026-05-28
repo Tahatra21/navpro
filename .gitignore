@@ -1,7 +1,14 @@
 node_modules/
 backend/node_modules/
 .env
+.env.docker
 backend/.env
+frontend/.env.local
+.seed-credentials.local
+db/*.sql
+.pgdata/
+.vscode/
+nginx/certs/
 .DS_Store
 webhook.js
 ecosystem.config.js
