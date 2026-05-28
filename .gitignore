@@ -3,3 +3,5 @@ backend/node_modules/
 .env
 backend/.env
 .DS_Store
+webhook.js
+ecosystem.config.js
