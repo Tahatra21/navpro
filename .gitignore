@@ -5,7 +5,9 @@ backend/node_modules/
 backend/.env
 frontend/.env.local
 .seed-credentials.local
-db/*.sql
+# Auto-generated dumps (use npm run db:dump); baseline snapshot may be committed in db/
+db/navpro_db_[0-9]*.sql
+!db/navpro_db_20260529_011809.sql
 .pgdata/
 .vscode/
 nginx/certs/
