@@ -177,7 +177,6 @@ export function ProjectWizard({
 
   const totalCapex = capexRows.reduce((s, r) => s + (r.currency === "IDR" ? r.amount : r.amount * 16500), 0);
   const totalOpex = opexRows.filter(r => r.type === "NOMINAL").reduce((s, r) => s + (r.currency === "IDR" ? r.amount : r.amount * 16500), 0);
-  const totalRevOtc = revenueRows.reduce((s, r) => s + (r.currency === "IDR" ? r.otc : r.otc * kursForPreview), 0);
   const totalRevSewa = revenueRows.reduce((s, r) => {
     const base = r.revenueMode === "step_yearly" ? r.harsatYear1 * r.qty : r.harsat * r.qty;
     return s + (r.currency === "IDR" ? base : base * kursForPreview);

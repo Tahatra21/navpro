@@ -11,7 +11,6 @@ import { useAuthStore } from "@/stores/authStore";
 import { canViewAdmin, canViewApprovals } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 import { MagicNav } from "@/components/layout/MagicNav";
-import type { UserRole } from "@/types/navpro";
 import { navproApi } from "@/services/api";
 import { useToast } from "@/components/shared/toast";
 import {
@@ -63,8 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, isLoading, backendOnline, logout, setUser } = useAuthStore();
-  const roleOverride = useAuthStore((s: { roleOverride: UserRole | null }) => s.roleOverride);
-  const effectiveRole = roleOverride || user?.role;
+  const effectiveRole = user?.role;
   const toast = useToast();
 
   const [prefsOpen, setPrefsOpen] = useState(false);
@@ -104,10 +102,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [pwdOpen]);
 
-  const roleLabel = useMemo(() => {
-    const r = (effectiveRole || "").replace("_", " ");
-    return roleOverride ? `${r} (override)` : r;
-  }, [effectiveRole, roleOverride]);
+  const roleLabel = useMemo(() => (effectiveRole || "").replace("_", " "), [effectiveRole]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
