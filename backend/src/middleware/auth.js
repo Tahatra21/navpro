@@ -67,7 +67,7 @@ export async function maintenanceGuard(req, res, next) {
 export async function loadUser(req, res, next) {
   if (!req.user?.sub) return next();
   const { rows } = await query(
-    `SELECT u.*, ou.segment AS org_segment
+    `SELECT u.*, ou.code AS org_unit_code, ou.type AS org_unit_type, ou.segment AS org_segment
      FROM users u
      LEFT JOIN organization_units ou ON ou.id = u.org_unit_id
      WHERE u.id = $1 AND u.is_active = true`,

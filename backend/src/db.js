@@ -46,7 +46,7 @@ export async function initDb() {
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       code VARCHAR(30) UNIQUE NOT NULL,
       name VARCHAR(200) NOT NULL,
-      type VARCHAR(20) NOT NULL CHECK (type IN ('PUSAT','SBU')),
+      type VARCHAR(20) NOT NULL CHECK (type IN ('PUSAT','SBU','GLOBAL')),
       segment VARCHAR(20) CHECK (segment IN ('ENT1','ENT2','PLN1','PLN2')),
       parent_id UUID REFERENCES organization_units(id),
       is_active BOOLEAN NOT NULL DEFAULT true,
@@ -252,6 +252,10 @@ export async function initDb() {
       ADD COLUMN IF NOT EXISTS approval_step_id UUID REFERENCES approval_steps(id) ON DELETE CASCADE,
       ADD COLUMN IF NOT EXISTS is_sent BOOLEAN,
       ADD COLUMN IF NOT EXISTS sent_at TIMESTAMPTZ;
+
+    ALTER TABLE organization_units DROP CONSTRAINT IF EXISTS organization_units_type_check;
+    ALTER TABLE organization_units ADD CONSTRAINT organization_units_type_check
+      CHECK (type IN ('PUSAT', 'SBU', 'GLOBAL'));
   `);
 
   if (isRlsEnabled()) {

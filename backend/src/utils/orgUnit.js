@@ -1,4 +1,5 @@
 import { query } from '../db.js';
+import { canPickAnyProjectOrg } from './globalOrg.js';
 
 /**
  * Resolve org_unit_id + segment for new projects (wizard / API create).
@@ -10,7 +11,7 @@ export async function resolveProjectOrgUnit(req, bodyOrgUnitId) {
 
   const requested = bodyOrgUnitId ? String(bodyOrgUnitId) : null;
   if (requested) {
-    if (['SUPER_ADMIN', 'FINANCE_ADMIN'].includes(role)) {
+    if (canPickAnyProjectOrg(role, req.dbUser)) {
       orgUnitId = requested;
     } else if (!userOrgId) {
       orgUnitId = requested;
@@ -32,11 +33,17 @@ export async function resolveProjectOrgUnit(req, bodyOrgUnitId) {
   }
 
   const { rows: ouRows } = await query(
-    `SELECT id, segment FROM organization_units WHERE id = $1 AND is_active = true`,
+    `SELECT id, segment, type FROM organization_units WHERE id = $1 AND is_active = true`,
     [orgUnitId]
   );
   if (!ouRows[0]) {
     return { error: 'ORG_INVALID', message: 'Unit organisasi tidak ditemukan atau tidak aktif.' };
+  }
+  if (ouRows[0].type === 'GLOBAL') {
+    return {
+      error: 'ORG_INVALID',
+      message: 'Unit GLOBAL hanya untuk admin sistem. Pilih unit operasional tujuan proyek.',
+    };
   }
 
   return { orgUnitId, segment: ouRows[0].segment || null };

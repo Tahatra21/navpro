@@ -10,6 +10,7 @@ import { notifyMatrix } from '../utils/notifyMatrix.js';
 import { validateProjectPayload } from '../utils/validate.js';
 import { getQueue, isQueueEnabled } from '../services/queue.js';
 import { resolveProjectOrgUnit } from '../utils/orgUnit.js';
+import { getProjectScopeSql } from '../utils/globalOrg.js';
 import { computeDueAtForRole } from '../utils/sla.js';
 import { createCalculationSnapshot } from '../utils/calculationSnapshot.js';
 
@@ -32,46 +33,6 @@ async function getAssumptions() {
 
 function canViewAllLegacy(role) {
   return ['SUPER_ADMIN', 'FINANCE_ADMIN', 'MANAGER', 'GM_SRM'].includes(role);
-}
-
-function getProjectScopeSql({ role, dbUser, params }) {
-  // BRD v2.0 scoping (soft-enforced to avoid breaking existing envs):
-  // - Admins: all
-  // - SA/STAFF: own only
-  // - ASMAN: unit scope if assigned, else own only
-  // - MANAGER/GM_SRM: segment scope if assigned, else legacy (all)
-  if (role === 'SUPER_ADMIN' || role === 'FINANCE_ADMIN') {
-    return { where: '1=1', params };
-  }
-
-  if (role === 'SA' || role === 'STAFF') {
-    params.push(dbUser?.id || null);
-    return { where: `created_by = $${params.length}`, params };
-  }
-
-  if (role === 'ASMAN') {
-    if (dbUser?.org_unit_id) {
-      params.push(dbUser.org_unit_id);
-      return { where: `org_unit_id = $${params.length}`, params };
-    }
-    params.push(dbUser?.id || null);
-    return { where: `created_by = $${params.length}`, params };
-  }
-
-  if (role === 'MANAGER' || role === 'GM_SRM') {
-    if (dbUser?.org_unit_id) {
-      params.push(dbUser.org_unit_id);
-      const idx = params.length;
-      return {
-        where: `segment = (SELECT segment FROM organization_units WHERE id = $${idx})`,
-        params,
-      };
-    }
-    // Until org assignment is rolled out everywhere, keep legacy behavior to avoid "empty data" surprises.
-    return { where: '1=1', params };
-  }
-
-  return { where: '1=0', params };
 }
 
 function formatIdr(n) {

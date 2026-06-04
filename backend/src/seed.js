@@ -68,6 +68,13 @@ async function seed() {
     { code: 'REG-BNR', name: 'Tch/Jtc Solar BNR', type: 'SBU', segment: 'ENT2' },
     { code: 'REG-KLM', name: 'Tch/Jtc Solar KLM', type: 'SBU', segment: 'ENT2' },
     { code: 'REG-SIBT', name: 'Tch/Jtc Solar SIBT', type: 'SBU', segment: 'ENT2' },
+    // Admin global — lintas unit (bukan unit operasional proyek)
+    {
+      code: 'GLOBAL-ADMIN',
+      name: 'Admin Global NAVPRO (lintas unit)',
+      type: 'GLOBAL',
+      segment: null,
+    },
   ];
   for (const ou of orgUnits) {
     await query(
@@ -98,6 +105,16 @@ async function seed() {
       `UPDATE users SET org_unit_id = COALESCE(org_unit_id, $1), org_level = COALESCE(org_level, 'L2')
        WHERE email = 'dewi.sartika@navpro.app'`,
       [ent2[0].id]
+    );
+  }
+  const { rows: globalAdmin } = await query(
+    `SELECT id FROM organization_units WHERE code = 'GLOBAL-ADMIN' LIMIT 1`
+  );
+  if (globalAdmin[0]) {
+    await query(
+      `UPDATE users SET org_unit_id = $1, org_level = COALESCE(org_level, 'L0')
+       WHERE role IN ('SUPER_ADMIN', 'FINANCE_ADMIN')`,
+      [globalAdmin[0].id]
     );
   }
   await query(

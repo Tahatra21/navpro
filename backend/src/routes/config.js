@@ -1,6 +1,4 @@
-import { Router } from 'express';
-import { query } from '../db.js';
-import { authRequired, loadUser } from '../middleware/auth.js';
+import { canPickAnyProjectOrg } from '../utils/globalOrg.js';
 
 const router = Router();
 router.use(authRequired);
@@ -62,14 +60,14 @@ router.get('/categories', async (_req, res) => {
 /** Active org units for wizard (scoped for non-admin users with assigned unit). */
 router.get('/org-units', async (req, res) => {
   const role = req.user.role;
-  const userOrgId = req.dbUser?.org_unit_id || null;
+  const dbUser = req.dbUser;
   const params = [];
   let sql = `SELECT id, code, name, type, segment
              FROM organization_units
-             WHERE is_active = true`;
+             WHERE is_active = true AND type <> 'GLOBAL'`;
 
-  if (!['SUPER_ADMIN', 'FINANCE_ADMIN', 'VP_SA'].includes(role) && userOrgId) {
-    params.push(userOrgId);
+  if (!canPickAnyProjectOrg(role, dbUser) && dbUser?.org_unit_id) {
+    params.push(dbUser.org_unit_id);
     sql += ` AND id = $${params.length}`;
   }
 

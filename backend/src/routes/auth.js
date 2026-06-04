@@ -54,9 +54,19 @@ router.post('/login', loginLimiter, async (req, res) => {
   });
 
   const token = signToken(user);
+  const { rows: profileRows } = await query(
+    `SELECT
+       u.id, u.email, u.full_name, u.role, u.is_active,
+       u.employee_id, u.org_unit_id, u.org_level,
+       ou.code AS org_unit_code, ou.name AS org_unit_name, ou.type AS org_unit_type, ou.segment AS org_unit_segment
+     FROM users u
+     LEFT JOIN organization_units ou ON ou.id = u.org_unit_id
+     WHERE u.id = $1`,
+    [user.id]
+  );
   res.json({
     token,
-    user: {
+    user: profileRows[0] || {
       id: user.id,
       email: user.email,
       full_name: user.full_name,

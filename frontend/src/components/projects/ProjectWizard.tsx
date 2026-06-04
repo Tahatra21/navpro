@@ -28,6 +28,7 @@ import {
   resolveGlobalAssumptions,
 } from "@/lib/global-assumptions";
 import { RevenueTariffStep } from "@/components/projects/RevenueTariffStep";
+import { canPickAnyProjectOrg, isGlobalOrgHome } from "@/lib/global-org";
 import { OpexCatalogStep } from "@/components/projects/OpexCatalogStep";
 import { TARIFF_PACKAGES } from "@/lib/tariff-calculator";
 import type { OpexCatalogItem } from "@/lib/opex-service-catalog";
@@ -128,10 +129,8 @@ export function ProjectWizard({
   const presets = configQuery.data?.presets || [];
   const orgUnits = configQuery.data?.orgUnits || [];
   const opexCatalog = configQuery.data?.opexCatalog || [];
-  const canPickAnyOrg =
-    authUser?.role === "SUPER_ADMIN" ||
-    authUser?.role === "FINANCE_ADMIN" ||
-    !authUser?.org_unit_id;
+  const canPickAnyOrg = canPickAnyProjectOrg(authUser);
+  const isGlobalAdmin = isGlobalOrgHome(authUser);
   const orgPickerLocked = !canPickAnyOrg && orgUnits.length <= 1;
 
   // Step 1
@@ -235,12 +234,13 @@ export function ProjectWizard({
 
   useEffect(() => {
     if (orgUnitId || orgUnits.length === 0) return;
+    if (isGlobalAdmin) return;
     if (authUser?.org_unit_id && orgUnits.some((o) => o.id === authUser.org_unit_id)) {
       setOrgUnitId(authUser.org_unit_id);
     } else if (orgUnits.length === 1) {
       setOrgUnitId(orgUnits[0].id);
     }
-  }, [orgUnits, authUser?.org_unit_id, orgUnitId]);
+  }, [orgUnits, authUser?.org_unit_id, orgUnitId, isGlobalAdmin]);
 
   useEffect(() => {
     if (!initialProject || mode !== "edit") {
@@ -576,7 +576,9 @@ export function ProjectWizard({
                       )}
                       {canPickAnyOrg && (
                         <p className="text-xs text-muted-foreground">
-                          Menentukan routing approval Asman/Manager dan segment data proyek.
+                          {isGlobalAdmin
+                            ? "Admin global — pilih unit operasional tujuan proyek (semua unit tersedia)."
+                            : "Menentukan routing approval Asman/Manager dan segment data proyek."}
                         </p>
                       )}
                     </>
