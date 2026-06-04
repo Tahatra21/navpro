@@ -1,4 +1,12 @@
-import type { CapexItem, OpexItem, Project, RevenueItem } from "@/types/navpro";
+import type {
+  CapexItem,
+  OpexItem,
+  Project,
+  RevenueItem,
+  TariffCalculatorSnapshot,
+} from "@/types/navpro";
+import type { RevenueMode } from "@/types/navpro";
+import { revenueItemToWizardRow, wizardRowToRevenueItem } from "@/lib/revenue-yearly";
 
 export interface WizardCapexRow {
   id: string;
@@ -18,6 +26,9 @@ export interface WizardOpexRow {
   currency: "IDR" | "USD";
   startPeriod: number;
   endPeriod: number;
+  catalogCode?: string;
+  iconKey?: string;
+  unit?: string;
 }
 
 export interface WizardRevenueRow {
@@ -32,6 +43,10 @@ export interface WizardRevenueRow {
   escalation: number;
   startPeriod: number;
   endPeriod: number;
+  revenueMode: RevenueMode;
+  harsatYear1: number;
+  harsatYear2: number;
+  harsatByYear?: number[];
 }
 
 const KURS_USD = 16500;
@@ -73,6 +88,7 @@ export function buildProjectPayload(input: {
   capexRows: WizardCapexRow[];
   opexRows: WizardOpexRow[];
   revenueRows: WizardRevenueRow[];
+  tariffCalculatorSnapshot?: TariffCalculatorSnapshot | null;
 }): Partial<Project> {
   const capex: CapexItem[] = input.capexRows.map((r) => ({
     name: r.name,
@@ -81,6 +97,12 @@ export function buildProjectPayload(input: {
     period: r.period,
     currency: r.currency,
   }));
+
+  const opexMeta = (r: WizardOpexRow) => ({
+    ...(r.catalogCode ? { catalog_code: r.catalogCode } : {}),
+    ...(r.iconKey ? { icon_key: r.iconKey } : {}),
+    ...(r.unit ? { unit: r.unit } : {}),
+  });
 
   const opex: OpexItem[] = input.opexRows.map((r) => {
     if (r.type === "PERCENT") {
@@ -91,6 +113,7 @@ export function buildProjectPayload(input: {
         coefficient_rate: r.amount / 100,
         start_period: r.startPeriod,
         end_period: r.endPeriod,
+        ...opexMeta(r),
       };
     }
     return {
@@ -100,22 +123,11 @@ export function buildProjectPayload(input: {
       currency: r.currency,
       start_period: r.startPeriod,
       end_period: r.endPeriod,
+      ...opexMeta(r),
     };
   });
 
-  const revenue: RevenueItem[] = input.revenueRows.map((r) => ({
-    name: r.serviceName,
-    customer_name: r.customerName,
-    location: r.location,
-    harsat: r.harsat,
-    qty: r.qty,
-    monthly_amount: r.harsat * r.qty,
-    escalation_rate: r.escalation / 100,
-    otc: r.otc,
-    currency: r.currency,
-    start_period: r.startPeriod,
-    end_period: r.endPeriod,
-  }));
+  const revenue: RevenueItem[] = input.revenueRows.map((r) => wizardRowToRevenueItem(r));
 
   const payload: Partial<Project> = {
     project_name: input.project_name.trim(),
@@ -128,6 +140,7 @@ export function buildProjectPayload(input: {
     capex,
     opex,
     revenue,
+    tariff_calculator_snapshot: input.tariffCalculatorSnapshot ?? undefined,
     status: "DRAFT",
   };
 
@@ -191,19 +204,14 @@ export function projectToWizardState(project: Project) {
       currency: (o.currency as "IDR" | "USD") || "IDR",
       startPeriod: o.start_period,
       endPeriod: o.end_period,
+      catalogCode: o.catalog_code,
+      iconKey: o.icon_key,
+      unit: o.unit,
     })),
     revenueRows: (project.revenue || []).map((r) => ({
       id: uid(),
-      serviceName: r.name,
-      customerName: r.customer_name || "",
-      location: r.location || "",
-      harsat: Number(r.harsat ?? r.monthly_amount ?? 0),
-      currency: (r.currency as "IDR" | "USD") || "IDR",
-      qty: Number(r.qty ?? 1),
-      otc: Number(r.otc ?? 0),
-      escalation: Number((r.escalation_rate ?? 0) * 100),
-      startPeriod: r.start_period,
-      endPeriod: r.end_period,
+      ...revenueItemToWizardRow(r, project.project_duration_months),
     })),
+    tariffSnapshot: project.tariff_calculator_snapshot ?? null,
   };
 }

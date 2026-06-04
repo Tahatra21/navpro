@@ -368,6 +368,48 @@ router.post('/opex-categories', async (req, res) => {
   res.status(201).json({ ok: true });
 });
 
+router.get('/opex-service-catalog', async (_req, res) => {
+  const { rows } = await query(
+    `SELECT * FROM opex_service_catalog ORDER BY sort_order, name`
+  );
+  res.json({ items: rows });
+});
+
+router.post('/opex-service-catalog', async (req, res) => {
+  const b = req.body || {};
+  if (!b.code || !b.name || !b.category) {
+    return res.status(400).json({ error: 'code, name, category wajib' });
+  }
+  await query(
+    `INSERT INTO opex_service_catalog (
+      code, name, category, icon_key, unit, default_type, default_amount, default_currency, description, sort_order
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    ON CONFLICT (code) DO UPDATE SET
+      name = EXCLUDED.name,
+      category = EXCLUDED.category,
+      icon_key = EXCLUDED.icon_key,
+      unit = EXCLUDED.unit,
+      default_type = EXCLUDED.default_type,
+      default_amount = EXCLUDED.default_amount,
+      default_currency = EXCLUDED.default_currency,
+      description = EXCLUDED.description,
+      sort_order = EXCLUDED.sort_order`,
+    [
+      b.code,
+      b.name,
+      b.category,
+      b.icon_key || 'box',
+      b.unit || 'per_month',
+      b.default_type === 'PERCENT' ? 'PERCENT' : 'NOMINAL',
+      Number(b.default_amount) || 0,
+      b.default_currency || 'IDR',
+      b.description || null,
+      Number(b.sort_order) || 0,
+    ]
+  );
+  res.status(201).json({ ok: true });
+});
+
 // System config
 router.get('/system-config', async (_req, res) => {
   const { rows } = await query(`SELECT * FROM system_config ORDER BY category, config_key`);

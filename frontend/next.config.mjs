@@ -1,4 +1,22 @@
 /** @type {import('next').NextConfig} */
+function apiConnectSources() {
+  const out = new Set(["'self'"]);
+  const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  try {
+    const { protocol, host } = new URL(api);
+    out.add(`${protocol}//${host}`);
+  } catch {
+    /* ignore invalid URL */
+  }
+  if (process.env.NODE_ENV !== "production") {
+    out.add("http://localhost:4000");
+    out.add("http://127.0.0.1:4000");
+    out.add("ws://localhost:3000");
+    out.add("ws://127.0.0.1:3000");
+  }
+  return [...out].join(" ");
+}
+
 const nextConfig = {
   // Remove 'X-Powered-By: Next.js' header — avoid server fingerprinting
   poweredByHeader: false,
@@ -43,7 +61,7 @@ const nextConfig = {
               // Next.js needs inline scripts for hydration
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "img-src 'self' data: blob:",
-              "connect-src 'self'",
+              `connect-src ${apiConnectSources()}`,
               "frame-ancestors 'none'",
               "object-src 'none'",
               "base-uri 'self'",

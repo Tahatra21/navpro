@@ -4,7 +4,7 @@
  * Uses in-memory store by default; set REDIS_URL to use Redis store
  * for distributed/multi-instance deployments.
  */
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 // ──────────────────────────────────────────────────────────────
 // Helper: build store (Redis if available, otherwise memory)
@@ -27,9 +27,11 @@ async function buildStore(prefix) {
 // ──────────────────────────────────────────────────────────────
 // Login limiter: 5 attempts per 15 min per IP
 // ──────────────────────────────────────────────────────────────
+const isDev = process.env.NODE_ENV !== 'production';
+
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,
+  max: isDev ? 50 : 5,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: {
@@ -37,7 +39,7 @@ export const loginLimiter = rateLimit({
     message: 'Terlalu banyak percobaan login. Coba lagi setelah 15 menit.',
   },
   skipSuccessfulRequests: true, // only count failures
-  keyGenerator: (req) => req.ip,
+  keyGenerator: (req) => ipKeyGenerator(req.ip, 56),
   store: undefined, // overridden in initRateLimiters()
 });
 
@@ -53,7 +55,7 @@ export const apiLimiter = rateLimit({
     error: 'Too Many Requests',
     message: 'Terlalu banyak permintaan. Coba lagi setelah beberapa saat.',
   },
-  keyGenerator: (req) => req.user?.sub || req.ip, // per-user if authenticated
+  keyGenerator: (req) => req.user?.sub || ipKeyGenerator(req.ip, 56),
   store: undefined,
   skip: (req) => req.path === '/health', // skip health checks
 });
@@ -70,7 +72,7 @@ export const exportLimiter = rateLimit({
     error: 'Too Many Requests',
     message: 'Terlalu banyak permintaan export. Coba lagi setelah 1 menit.',
   },
-  keyGenerator: (req) => req.user?.sub || req.ip,
+  keyGenerator: (req) => req.user?.sub || ipKeyGenerator(req.ip, 56),
   store: undefined,
 });
 

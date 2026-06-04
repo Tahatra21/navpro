@@ -13,6 +13,8 @@
     "dev:web": "npm run dev --prefix frontend",
     "db:up": "docker compose up -d postgres",
     "db:seed": "npm run seed --prefix backend",
+    "reset:local": "npm run reset:local --prefix backend",
+    "db:dump": "npm run db:dump --prefix backend",
     "backend:install": "npm install --prefix backend",
     "backend:dev": "npm run dev --prefix backend",
     "start:stack": "docker compose up -d && sleep 3 && npm run db:seed --prefix backend"

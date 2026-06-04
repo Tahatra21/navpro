@@ -22,7 +22,19 @@ const defaultAssumptions = {
   notes: 'Memo DirKeu 16 Sep 2025 & VP Keuangan April 2026',
 };
 
+/** Canonical demo accounts — lokal & VPS harus pakai password yang sama: SEED_DEMO_PASSWORD */
+const DEMO_USERS = [
+  { email: 'admin@navpro.app', full_name: 'Admin NAVPRO', role: 'SUPER_ADMIN' },
+  { email: 'budi.santoso@navpro.app', full_name: 'Budi Santoso', role: 'SUPER_ADMIN' },
+  { email: 'ani.lestari@navpro.app', full_name: 'Ani Lestari', role: 'FINANCE_ADMIN' },
+  { email: 'rian.hidayat@navpro.app', full_name: 'Rian Hidayat', role: 'SA' },
+  { email: 'sari.wulandari@navpro.app', full_name: 'Sari Wulandari', role: 'ASMAN' },
+  { email: 'dewi.sartika@navpro.app', full_name: 'Dewi Sartika', role: 'MANAGER' },
+  { email: 'irwan.setiawan@navpro.app', full_name: 'Irwan Setiawan', role: 'GM_SRM' },
+];
+
 const DEMO_USER_IDS = {
+  'admin@navpro.app': '11111111-1111-1111-1111-111111111100',
   'budi.santoso@navpro.app': '11111111-1111-1111-1111-111111111101',
   'ani.lestari@navpro.app': '11111111-1111-1111-1111-111111111102',
   'rian.hidayat@navpro.app': '11111111-1111-1111-1111-111111111103',
@@ -138,14 +150,11 @@ async function seed() {
   }
 
   const seedPassword = getSeedDemoPassword();
-
-  // Ensure BRD v2 demo users exist even if DB was seeded before ASMAN was added.
   const demoHash = await bcrypt.hash(seedPassword, 10);
-  const demoUsers = [
-    { email: 'sari.wulandari@navpro.app', full_name: 'Sari Wulandari', role: 'ASMAN' },
-    { email: 'dewi.sartika@navpro.app', full_name: 'Dewi Sartika', role: 'MANAGER' },
-  ];
-  for (const u of demoUsers) {
+  const demoEmails = DEMO_USERS.map((u) => u.email);
+
+  // Idempotent: pastikan semua akun demo ada (meski DB sudah pernah di-seed).
+  for (const u of DEMO_USERS) {
     const userId = DEMO_USER_IDS[u.email] || uuidv4();
     await query(
       `INSERT INTO users (id, email, password_hash, full_name, role, is_active)
@@ -159,19 +168,9 @@ async function seed() {
     process.env.NODE_ENV !== 'production'
   ) {
     await query(
-      `UPDATE users SET password_hash = $1
+      `UPDATE users SET password_hash = $1, is_active = true
        WHERE email = ANY($2::text[])`,
-      [
-        demoHash,
-        [
-          'budi.santoso@navpro.app',
-          'ani.lestari@navpro.app',
-          'rian.hidayat@navpro.app',
-          'sari.wulandari@navpro.app',
-          'dewi.sartika@navpro.app',
-          'irwan.setiawan@navpro.app',
-        ],
-      ]
+      [demoHash, demoEmails]
     );
     console.log('SEED_RESET_DEMO_PASSWORDS=true — demo user passwords updated.');
   }
@@ -185,16 +184,7 @@ async function seed() {
 
   const passwordHash = await bcrypt.hash(seedPassword, 10);
 
-  const users = [
-    { email: 'budi.santoso@navpro.app', full_name: 'Budi Santoso', role: 'SUPER_ADMIN' },
-    { email: 'ani.lestari@navpro.app', full_name: 'Ani Lestari', role: 'FINANCE_ADMIN' },
-    { email: 'rian.hidayat@navpro.app', full_name: 'Rian Hidayat', role: 'SA' },
-    { email: 'sari.wulandari@navpro.app', full_name: 'Sari Wulandari', role: 'ASMAN' },
-    { email: 'dewi.sartika@navpro.app', full_name: 'Dewi Sartika', role: 'MANAGER' },
-    { email: 'irwan.setiawan@navpro.app', full_name: 'Irwan Setiawan', role: 'GM_SRM' },
-  ];
-
-  for (const u of users) {
+  for (const u of DEMO_USERS) {
     const userId = DEMO_USER_IDS[u.email] || uuidv4();
     await query(
       `INSERT INTO users (id, email, password_hash, full_name, role) VALUES ($1,$2,$3,$4,$5)
@@ -242,6 +232,38 @@ async function seed() {
   }
   for (const c of opexCats) {
     await query(`INSERT INTO categories (type, code) VALUES ('opex', $1) ON CONFLICT DO NOTHING`, [c]);
+  }
+
+  const { OPEX_SERVICE_CATALOG_SEED } = await import('./data/opexServiceCatalogSeed.js');
+  for (const item of OPEX_SERVICE_CATALOG_SEED) {
+    await query(
+      `INSERT INTO opex_service_catalog (
+        code, name, category, icon_key, unit, default_type, default_amount, default_currency, description, sort_order
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      ON CONFLICT (code) DO UPDATE SET
+        name = EXCLUDED.name,
+        category = EXCLUDED.category,
+        icon_key = EXCLUDED.icon_key,
+        unit = EXCLUDED.unit,
+        default_type = EXCLUDED.default_type,
+        default_amount = EXCLUDED.default_amount,
+        default_currency = EXCLUDED.default_currency,
+        description = EXCLUDED.description,
+        sort_order = EXCLUDED.sort_order,
+        is_active = true`,
+      [
+        item.code,
+        item.name,
+        item.category,
+        item.icon_key,
+        item.unit,
+        item.default_type,
+        item.default_amount,
+        item.default_currency || 'IDR',
+        item.description || null,
+        item.sort_order ?? 0,
+      ]
+    );
   }
 
   const sysParams = [

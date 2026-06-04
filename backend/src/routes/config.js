@@ -18,6 +18,38 @@ router.get('/presets', async (_req, res) => {
   res.json({ presets: rows });
 });
 
+router.get('/opex-catalog', async (req, res) => {
+  const q = String(req.query.q || '')
+    .trim()
+    .toLowerCase();
+  const params = [];
+  let sql = `SELECT code, name, category, icon_key, unit, default_type, default_amount, default_currency, description
+             FROM opex_service_catalog
+             WHERE is_active = true`;
+  if (q) {
+    params.push(`%${q}%`);
+    sql += ` AND (
+      lower(code) LIKE $1 OR lower(name) LIKE $1 OR lower(category) LIKE $1
+      OR lower(coalesce(description, '')) LIKE $1
+    )`;
+  }
+  sql += ` ORDER BY sort_order, name LIMIT 100`;
+  const { rows } = await query(sql, params);
+  res.json({
+    items: rows.map((r) => ({
+      code: r.code,
+      name: r.name,
+      category: r.category,
+      icon_key: r.icon_key,
+      unit: r.unit,
+      default_type: r.default_type,
+      default_amount: parseFloat(r.default_amount),
+      default_currency: r.default_currency,
+      description: r.description,
+    })),
+  });
+});
+
 router.get('/categories', async (_req, res) => {
   const { rows: capex } = await query(`SELECT code FROM categories WHERE type = 'capex' ORDER BY code`);
   const { rows: opex } = await query(`SELECT code FROM categories WHERE type = 'opex' ORDER BY code`);

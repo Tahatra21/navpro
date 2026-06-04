@@ -7,8 +7,10 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "PG_PASSWORD=navpro_dev node src/dev/dev-embedded.js",
+    "db:dump": "node scripts/dump-db.mjs",
     "dev:embedded": "node src/dev/dev-embedded.js",
     "seed": "node src/seed.js",
+    "reset:local": "SEED_RESET_DEMO_PASSWORDS=true node src/seed.js",
     "seed:demo": "node src/seed-demo-projects.js",
     "seed:enrich": "node src/seed-enrich-portfolio.js",
     "worker": "node src/worker.js",

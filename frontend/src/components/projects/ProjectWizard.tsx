@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -22,17 +22,25 @@ import {
   wizardStep1Schema,
   wizardStep2Schema,
 } from "@/lib/wizard-validate";
+import {
+  assumptionFieldsForWizard,
+  projectUsesCustomAssumptions,
+  resolveGlobalAssumptions,
+} from "@/lib/global-assumptions";
+import { RevenueTariffStep } from "@/components/projects/RevenueTariffStep";
+import { OpexCatalogStep } from "@/components/projects/OpexCatalogStep";
+import { TARIFF_PACKAGES } from "@/lib/tariff-calculator";
+import type { OpexCatalogItem } from "@/lib/opex-service-catalog";
+import type { TariffCalculatorSnapshot } from "@/types/navpro";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const CAPEX_CATEGORIES = ["HARDWARE", "SOFTWARE", "CIVIL", "NETWORK", "POWER", "VEHICLE", "INTEGRATION", "OTHER"];
-const OPEX_CATEGORIES = ["LABOR", "MAINTENANCE", "ELECTRICITY", "BANDWIDTH", "RENT", "INSURANCE", "ADMIN", "TRANSPORT", "OVERHEAD", "OTHER"];
-
 const STEPS = [
   { id: 1, label: "Info Dasar" },
   { id: 2, label: "Durasi" },
   { id: 3, label: "CAPEX" },
   { id: 4, label: "OPEX" },
-  { id: 5, label: "Revenue" },
+  { id: 5, label: "Tarif" },
   { id: 6, label: "Hitung" },
 ];
 
@@ -99,22 +107,27 @@ export function ProjectWizard({
   const configQuery = useQuery({
     queryKey: ["wizard-config"],
     queryFn: async () => {
-      const [assumptions, presets, orgUnitsRes] = await Promise.all([
+      const [assumptions, presets, orgUnitsRes, opexCatalogRes] = await Promise.all([
         navproApi.getAssumptions(),
         navproApi.getPresets(),
         navproApi.getOrgUnits(),
+        navproApi.getOpexCatalog(),
       ]);
       return {
         assumptions,
         presets: presets.presets as Array<{ preset_name: string; duration_months: number }>,
         orgUnits: orgUnitsRes.org_units,
+        opexCatalog: opexCatalogRes.items as OpexCatalogItem[],
       };
     },
   });
 
   const globalAssumptions = configQuery.data?.assumptions as Record<string, number> | undefined;
+  const resolvedAssumptions = resolveGlobalAssumptions(globalAssumptions);
+  const assumptionEffectiveDate = resolvedAssumptions.effective_date;
   const presets = configQuery.data?.presets || [];
   const orgUnits = configQuery.data?.orgUnits || [];
+  const opexCatalog = configQuery.data?.opexCatalog || [];
   const canPickAnyOrg =
     authUser?.role === "SUPER_ADMIN" ||
     authUser?.role === "FINANCE_ADMIN" ||
@@ -136,6 +149,8 @@ export function ProjectWizard({
   const [kursUsdOverride, setKursUsdOverride] = useState("");
   const [bcrMandatory, setBcrMandatory] = useState("");
   const [bcrMinimum, setBcrMinimum] = useState("");
+  /** true = pakai asumsi master (pre-fill, tanpa override di payload) */
+  const [useMasterAssumptions, setUseMasterAssumptions] = useState(true);
 
   // Step 3 – CAPEX
   const [capexRows, setCapexRows] = useState<WizardCapexRow[]>([]);
@@ -147,50 +162,27 @@ export function ProjectWizard({
     period: number;
   }>({ name: "", category: "HARDWARE", amount: 0, currency: "IDR", period: 0 });
 
-  // Step 4 – OPEX
+  // Step 4 – OPEX (katalog Icon+)
   const [opexRows, setOpexRows] = useState<WizardOpexRow[]>([]);
-  const [opexInput, setOpexInput] = useState<{
-    name: string;
-    category: string;
-    type: "NOMINAL" | "PERCENT";
-    amount: number;
-    currency: "IDR" | "USD";
-    startPeriod: number;
-    endPeriod: number;
-  }>({ name: "", category: "LABOR", type: "NOMINAL", amount: 0, currency: "IDR", startPeriod: 1, endPeriod: durationMonths });
 
-  // Step 5 – Revenue
+  // Step 5 – Kalkulator tarif → revenue
   const [revenueRows, setRevenueRows] = useState<WizardRevenueRow[]>([]);
-  const [revInput, setRevInput] = useState<{
-    serviceName: string;
-    customerName: string;
-    location: string;
-    harsat: number;
-    currency: "IDR" | "USD";
-    qty: number;
-    satuan: string;
-    otc: number;
-    escalation: number;
-    startPeriod: number;
-    endPeriod: number;
-  }>({
-    serviceName: "",
-    customerName: "",
-    location: "",
-    harsat: 0,
-    currency: "IDR",
-    qty: 1,
-    satuan: "unit",
-    otc: 0,
-    escalation: 0,
-    startPeriod: 1,
-    endPeriod: durationMonths,
-  });
+  const [tariffSnapshot, setTariffSnapshot] = useState<TariffCalculatorSnapshot | null>(null);
+
+  const kursForPreview = useMemo(() => {
+    const v = useMasterAssumptions
+      ? resolvedAssumptions.kurs_usd
+      : parseFloat(kursUsdOverride);
+    return Number.isFinite(v) && v > 0 ? v : 16500;
+  }, [useMasterAssumptions, resolvedAssumptions.kurs_usd, kursUsdOverride]);
 
   const totalCapex = capexRows.reduce((s, r) => s + (r.currency === "IDR" ? r.amount : r.amount * 16500), 0);
   const totalOpex = opexRows.filter(r => r.type === "NOMINAL").reduce((s, r) => s + (r.currency === "IDR" ? r.amount : r.amount * 16500), 0);
-  const totalRevOtc = revenueRows.reduce((s, r) => s + (r.currency === "IDR" ? r.otc : r.otc * 16500), 0);
-  const totalRevSewa = revenueRows.reduce((s, r) => s + (r.currency === "IDR" ? r.harsat * r.qty : r.harsat * r.qty * 16500), 0);
+  const totalRevOtc = revenueRows.reduce((s, r) => s + (r.currency === "IDR" ? r.otc : r.otc * kursForPreview), 0);
+  const totalRevSewa = revenueRows.reduce((s, r) => {
+    const base = r.revenueMode === "step_yearly" ? r.harsatYear1 * r.qty : r.harsat * r.qty;
+    return s + (r.currency === "IDR" ? base : base * kursForPreview);
+  }, 0);
 
   const codeDisplay =
     projectCode ||
@@ -210,14 +202,15 @@ export function ProjectWizard({
         customer_name: customer,
         contract_number: contractNo,
         pic_sales: picSales,
-        wacc_override: waccOverride,
-        inflation_rate_override: inflationOverride,
-        kurs_usd_override: kursUsdOverride,
-        bcr_mandatory_override: bcrMandatory,
-        bcr_minimum_override: bcrMinimum,
+        wacc_override: useMasterAssumptions ? "" : waccOverride,
+        inflation_rate_override: useMasterAssumptions ? "" : inflationOverride,
+        kurs_usd_override: useMasterAssumptions ? "" : kursUsdOverride,
+        bcr_mandatory_override: useMasterAssumptions ? "" : bcrMandatory,
+        bcr_minimum_override: useMasterAssumptions ? "" : bcrMinimum,
         capexRows,
         opexRows,
         revenueRows,
+        tariffCalculatorSnapshot: tariffSnapshot,
       }),
     [
       projectName,
@@ -235,6 +228,8 @@ export function ProjectWizard({
       capexRows,
       opexRows,
       revenueRows,
+      tariffSnapshot,
+      useMasterAssumptions,
     ]
   );
 
@@ -261,6 +256,7 @@ export function ProjectWizard({
     setContractDate(s.contractDate);
     setPicSales(s.picSales);
     setDurationMonths(s.durationMonths);
+    setUseMasterAssumptions(!projectUsesCustomAssumptions(initialProject));
     setWaccOverride(s.waccOverride);
     setInflationOverride(s.inflationOverride);
     setKursUsdOverride("kursUsdOverride" in s ? String((s as { kursUsdOverride?: string }).kursUsdOverride || "") : "");
@@ -269,10 +265,45 @@ export function ProjectWizard({
     setCapexRows(s.capexRows);
     setOpexRows(s.opexRows);
     setRevenueRows(s.revenueRows);
+    setTariffSnapshot(s.tariffSnapshot ?? null);
     setProjectId(initialProject.id);
     setSaveStatus("Tersimpan");
     dirtyRef.current = false;
   }, [initialProject, mode]);
+
+  /** Pre-fill parameter finansial dari asumsi master (P1). */
+  useEffect(() => {
+    if (!globalAssumptions || !useMasterAssumptions) return;
+    const f = assumptionFieldsForWizard(globalAssumptions);
+    setWaccOverride(f.waccOverride);
+    setInflationOverride(f.inflationOverride);
+    setKursUsdOverride(f.kursUsdOverride);
+    setBcrMandatory(f.bcrMandatory);
+    setBcrMinimum(f.bcrMinimum);
+  }, [globalAssumptions, useMasterAssumptions]);
+
+  const toggleCustomAssumptions = (custom: boolean) => {
+    setUseMasterAssumptions(!custom);
+    if (!custom && globalAssumptions) {
+      const f = assumptionFieldsForWizard(globalAssumptions);
+      setWaccOverride(f.waccOverride);
+      setInflationOverride(f.inflationOverride);
+      setKursUsdOverride(f.kursUsdOverride);
+      setBcrMandatory(f.bcrMandatory);
+      setBcrMinimum(f.bcrMinimum);
+    }
+    markDirty();
+  };
+
+  const displayWacc = useMasterAssumptions ? String(resolvedAssumptions.wacc_annual) : waccOverride;
+  const displayInflation = useMasterAssumptions
+    ? String(resolvedAssumptions.inflation_monthly)
+    : inflationOverride;
+  const displayKurs = useMasterAssumptions ? String(resolvedAssumptions.kurs_usd) : kursUsdOverride;
+  const displayBcrMandatory = useMasterAssumptions
+    ? String(resolvedAssumptions.bcr_mandatory)
+    : bcrMandatory;
+  const displayBcrMinimum = useMasterAssumptions ? String(resolvedAssumptions.bcr_minimum) : bcrMinimum;
 
   const autosaveDraft = useCallback(async () => {
     if (mode !== "edit" || !projectId || !projectName.trim()) return;
@@ -310,9 +341,11 @@ export function ProjectWizard({
     inflationOverride,
     bcrMandatory,
     bcrMinimum,
+    useMasterAssumptions,
     capexRows,
     opexRows,
     revenueRows,
+    tariffSnapshot,
     autosaveDraft,
   ]);
 
@@ -327,18 +360,6 @@ export function ProjectWizard({
     if (!confirm("Terapkan template RAB 8-item Lastmile? Item CAPEX yang ada akan diganti.")) return;
     setCapexRows(RAB_8ITEM_LASTMILE.map((r) => ({ ...r, id: uid() })));
     markDirty();
-  };
-
-  const addOpex = () => {
-    if (!opexInput.name) return;
-    setOpexRows(p => [...p, { ...opexInput, id: uid() }]);
-    setOpexInput({ name: "", category: "LABOR", type: "NOMINAL", amount: 0, currency: "IDR", startPeriod: 1, endPeriod: durationMonths });
-  };
-
-  const addRevenue = () => {
-    if (!revInput.serviceName) return;
-    setRevenueRows(p => [...p, { ...revInput, id: uid() }]);
-    setRevInput({ serviceName: "", customerName: "", location: "", harsat: 0, currency: "IDR", qty: 1, satuan: "unit", otc: 0, escalation: 0, startPeriod: 1, endPeriod: durationMonths });
   };
 
   const validateStep = (): boolean => {
@@ -360,6 +381,12 @@ export function ProjectWizard({
           bcrMandatory,
           bcrMinimum,
         });
+      }
+      if (step === 5) {
+        if (revenueRows.length === 0) {
+          setSaveError("Terapkan hasil kalkulator tarif ke proyek (minimal 1 baris revenue).");
+          return false;
+        }
       }
       setSaveError("");
       return true;
@@ -618,79 +645,96 @@ export function ProjectWizard({
                 </div>
               </div>
               <div className="border border-border rounded-lg p-4 space-y-4 bg-muted/20">
-                <div>
-                  <h4 className="text-sm font-semibold text-primary mb-0.5">Override Parameter Keuangan (Opsional)</h4>
-                  <p className="text-xs text-muted-foreground">Kosongkan jika ingin menggunakan asumsi global dari Finance Admin.</p>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-primary mb-0.5">Parameter Keuangan Proyek</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Nilai default diisi otomatis dari Asumsi Master Finance Admin.
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                    Dari Asumsi Master
+                    {assumptionEffectiveDate ? ` · ${assumptionEffectiveDate}` : ""}
+                  </span>
                 </div>
+                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={!useMasterAssumptions}
+                    onChange={(e) => toggleCustomAssumptions(e.target.checked)}
+                    className="rounded border-input"
+                  />
+                  Ubah parameter untuk proyek ini (override)
+                </label>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-sm">Override WACC Tahunan (%)</Label>
+                    <Label className="text-sm">WACC Tahunan (%)</Label>
                     <Input
-                      value={waccOverride}
+                      value={displayWacc}
                       onChange={(e) => {
                         setWaccOverride(e.target.value);
                         markDirty();
                       }}
+                      readOnly={useMasterAssumptions}
                       type="number"
                       step="0.01"
-                      placeholder={`Global (${globalAssumptions?.wacc_annual ?? 9.72}%)`}
-                      className="h-10"
+                      className={`h-10 ${useMasterAssumptions ? "bg-muted/50 cursor-default" : ""}`}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-sm">Override Inflasi Bulanan (%)</Label>
+                    <Label className="text-sm">Inflasi Bulanan (%)</Label>
                     <Input
-                      value={inflationOverride}
+                      value={displayInflation}
                       onChange={(e) => {
                         setInflationOverride(e.target.value);
                         markDirty();
                       }}
+                      readOnly={useMasterAssumptions}
                       type="number"
                       step="0.01"
-                      placeholder={`Global (${globalAssumptions?.inflation_monthly ?? 0.2466}%)`}
-                      className="h-10"
+                      className={`h-10 ${useMasterAssumptions ? "bg-muted/50 cursor-default" : ""}`}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-sm">Override Kurs USD (IDR)</Label>
+                    <Label className="text-sm">Kurs USD (IDR)</Label>
                     <Input
-                      value={kursUsdOverride}
+                      value={displayKurs}
                       onChange={(e) => {
                         setKursUsdOverride(e.target.value);
                         markDirty();
                       }}
+                      readOnly={useMasterAssumptions}
                       type="number"
                       step="1"
-                      placeholder={`Global (${globalAssumptions?.kurs_usd ?? 16500})`}
-                      className="h-10"
+                      className={`h-10 ${useMasterAssumptions ? "bg-muted/50 cursor-default" : ""}`}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-sm">Override BCR Mandatory</Label>
+                    <Label className="text-sm">BCR Mandatory</Label>
                     <Input
-                      value={bcrMandatory}
+                      value={displayBcrMandatory}
                       onChange={(e) => {
                         setBcrMandatory(e.target.value);
                         markDirty();
                       }}
+                      readOnly={useMasterAssumptions}
                       type="number"
                       step="0.01"
-                      placeholder={`Global (${globalAssumptions?.bcr_mandatory ?? 1.23})`}
-                      className="h-10"
+                      className={`h-10 ${useMasterAssumptions ? "bg-muted/50 cursor-default" : ""}`}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-sm">Override BCR Minimum</Label>
+                    <Label className="text-sm">BCR Minimum</Label>
                     <Input
-                      value={bcrMinimum}
+                      value={displayBcrMinimum}
                       onChange={(e) => {
                         setBcrMinimum(e.target.value);
                         markDirty();
                       }}
+                      readOnly={useMasterAssumptions}
                       type="number"
                       step="0.01"
-                      placeholder={`Global (${globalAssumptions?.bcr_minimum ?? 1.08})`}
-                      className="h-10"
+                      className={`h-10 ${useMasterAssumptions ? "bg-muted/50 cursor-default" : ""}`}
                     />
                   </div>
                 </div>
@@ -786,192 +830,31 @@ export function ProjectWizard({
             </div>
           )}
 
-          {/* ── STEP 4: OPEX ─────────────────────────────────────────────────── */}
+          {/* ── STEP 4: OPEX — Katalog Icon+ ─────────────────────────────────── */}
           {step === 4 && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-xl font-bold text-foreground">Langkah 4: Input Biaya Operasional (OPEX)</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Baseline biaya operasional bulanan beserta bulan mulai/akhir. Inflasi bulanan menghitung bunga majemuk otomatis.</p>
-              </div>
-              {/* Add Form */}
-              <div className="bg-muted/30 border border-border rounded-lg p-3 flex flex-wrap gap-2 items-end">
-                <div className="flex-[2] min-w-[150px] space-y-1">
-                  <Label className="text-xs">Nama Biaya</Label>
-                  <Input value={opexInput.name} onChange={e => setOpexInput(p => ({ ...p, name: e.target.value }))} placeholder="Nama biaya..." className="h-8 text-sm" />
-                </div>
-                <div className="flex-1 min-w-[110px] space-y-1">
-                  <Label className="text-xs">Kategori</Label>
-                  <select value={opexInput.category} onChange={e => setOpexInput(p => ({ ...p, category: e.target.value }))}
-                    className="w-full h-8 px-2 border border-input rounded-md text-xs bg-background text-foreground">
-                    {OPEX_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="w-28 space-y-1">
-                  <Label className="text-xs">Cara Hitung</Label>
-                  <select value={opexInput.type} onChange={e => setOpexInput(p => ({ ...p, type: e.target.value as "NOMINAL" | "PERCENT" }))}
-                    className="w-full h-8 px-2 border border-input rounded-md text-xs bg-background text-foreground">
-                    <option value="NOMINAL">Nominal</option>
-                    <option value="PERCENT">% Pendapatan</option>
-                  </select>
-                </div>
-                <div className="flex-1 min-w-[110px] space-y-1">
-                  <Label className="text-xs">Nilai / Koef</Label>
-                  <div className="flex gap-1">
-                    <Input type="number" min={0} value={opexInput.amount} onChange={e => setOpexInput(p => ({ ...p, amount: Number(e.target.value) }))} className="h-8 text-sm" />
-                    <select value={opexInput.currency} onChange={e => setOpexInput(p => ({ ...p, currency: e.target.value as "IDR" | "USD" }))}
-                      className="h-8 px-1 border border-input rounded-md text-xs bg-background text-foreground w-16">
-                      <option value="IDR">IDR</option>
-                      <option value="USD">USD</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="w-32 space-y-1">
-                  <Label className="text-xs">Rentang Periode</Label>
-                  <div className="flex gap-1">
-                    <Input type="number" min={1} max={durationMonths} value={opexInput.startPeriod} onChange={e => setOpexInput(p => ({ ...p, startPeriod: Number(e.target.value) }))} placeholder="Mulai" className="h-8 text-sm w-14" />
-                    <Input type="number" min={1} max={durationMonths} value={opexInput.endPeriod} onChange={e => setOpexInput(p => ({ ...p, endPeriod: Number(e.target.value) }))} placeholder="Akhir" className="h-8 text-sm w-14" />
-                  </div>
-                </div>
-                <Button size="sm" onClick={addOpex} className="h-8 bg-secondary hover:bg-secondary/90 text-secondary-foreground">Tambah</Button>
-              </div>
-              {/* Table */}
-              <div className="overflow-auto rounded-lg border border-border max-h-56">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-muted/50 border-b border-border">
-                    <tr>
-                      <th className="px-3 py-2 font-semibold text-muted-foreground">Item OPEX</th>
-                      <th className="px-3 py-2 font-semibold text-muted-foreground">Kategori</th>
-                      <th className="px-3 py-2 font-semibold text-muted-foreground">Cara Hitung</th>
-                      <th className="px-3 py-2 font-semibold text-muted-foreground text-right">Nilai Baseline</th>
-                      <th className="px-3 py-2 font-semibold text-muted-foreground text-center">Mata Uang</th>
-                      <th className="px-3 py-2 font-semibold text-muted-foreground text-center">Periode</th>
-                      <th className="px-3 py-2 w-10" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {opexRows.length === 0 ? (
-                      <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">Belum ada item OPEX.</td></tr>
-                    ) : opexRows.map(r => (
-                      <tr key={r.id} className="border-b border-border/50 hover:bg-accent/30">
-                        <td className="px-3 py-2 font-medium text-foreground">{r.name}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{r.category}</td>
-                        <td className="px-3 py-2">{r.type}</td>
-                        <td className="px-3 py-2 text-right font-mono">{r.amount.toLocaleString("id-ID")}</td>
-                        <td className="px-3 py-2 text-center">{r.currency}</td>
-                        <td className="px-3 py-2 text-center">{r.startPeriod}–{r.endPeriod}</td>
-                        <td className="px-3 py-2">
-                          <button onClick={() => setOpexRows(p => p.filter(x => x.id !== r.id))} className="text-destructive hover:bg-destructive/10 p-1 rounded">
-                            <Trash2 size={13} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="text-right text-sm font-bold text-foreground">
-                Total OPEX Baseline: {formatRp(totalOpex)}/bln
-              </div>
-            </div>
+            <OpexCatalogStep
+              durationMonths={durationMonths}
+              catalog={opexCatalog}
+              catalogLoading={configQuery.isLoading}
+              opexRows={opexRows}
+              setOpexRows={setOpexRows}
+              onDirty={markDirty}
+              formatRpTotal={formatRp}
+            />
           )}
 
-          {/* ── STEP 5: Revenue ──────────────────────────────────────────────── */}
+          {/* ── STEP 5: Kalkulator tarif → Revenue ─────────────────────────── */}
           {step === 5 && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-xl font-bold text-foreground">Langkah 5: Input Aliran Pendapatan (Revenue Stream)</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Rincian layanan yang dijual. Nilai sewa bulanan = Harsat × Qty. OTC dibayarkan pada Bulan 1.</p>
-              </div>
-              {/* Add Form */}
-              <div className="bg-muted/30 border border-border rounded-lg p-3 space-y-3">
-                <p className="text-xs font-semibold text-primary">Tambah Detail Layanan (Revenue Stream)</p>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Tipe Service / Layanan</Label>
-                    <Input value={revInput.serviceName} onChange={e => setRevInput(p => ({ ...p, serviceName: e.target.value }))} placeholder="IBBC CIR4-BW50 FTTH" className="h-8 text-sm" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Nama Pelanggan (NPWP)</Label>
-                    <Input value={revInput.customerName} onChange={e => setRevInput(p => ({ ...p, customerName: e.target.value }))} placeholder="PT Contoh Pelanggan" className="h-8 text-sm" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Lokasi Pelanggan</Label>
-                    <Input value={revInput.location} onChange={e => setRevInput(p => ({ ...p, location: e.target.value }))} placeholder="Medan Pusat" className="h-8 text-sm" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 gap-2">
-                  <div className="space-y-1 col-span-2">
-                    <Label className="text-xs">Harga Satuan (Sewa/Bulan)</Label>
-                    <div className="flex gap-1">
-                      <Input type="number" min={0} value={revInput.harsat} onChange={e => setRevInput(p => ({ ...p, harsat: Number(e.target.value) }))} className="h-8 text-sm" />
-                      <select value={revInput.currency} onChange={e => setRevInput(p => ({ ...p, currency: e.target.value as "IDR" | "USD" }))}
-                        className="h-8 px-1 border border-input rounded-md text-xs bg-background text-foreground w-16">
-                        <option value="IDR">IDR</option>
-                        <option value="USD">USD</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Qty</Label>
-                    <Input type="number" min={1} value={revInput.qty} onChange={e => setRevInput(p => ({ ...p, qty: Number(e.target.value) }))} className="h-8 text-sm" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">OTC</Label>
-                    <Input type="number" min={0} value={revInput.otc} onChange={e => setRevInput(p => ({ ...p, otc: Number(e.target.value) }))} placeholder="0" className="h-8 text-sm" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 items-end">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Eskalasi Bulanan (%)</Label>
-                    <Input type="number" min={0} step={0.01} value={revInput.escalation} onChange={e => setRevInput(p => ({ ...p, escalation: Number(e.target.value) }))} placeholder="0" className="h-8 text-sm" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Rentang Periode (Bulan)</Label>
-                    <div className="flex gap-1">
-                      <Input type="number" min={1} max={durationMonths} value={revInput.startPeriod} onChange={e => setRevInput(p => ({ ...p, startPeriod: Number(e.target.value) }))} placeholder="Mulai" className="h-8 text-sm w-full" />
-                      <Input type="number" min={1} max={durationMonths} value={revInput.endPeriod} onChange={e => setRevInput(p => ({ ...p, endPeriod: Number(e.target.value) }))} placeholder="Akhir" className="h-8 text-sm w-full" />
-                    </div>
-                  </div>
-                  <Button size="sm" onClick={addRevenue} className="h-8 bg-secondary hover:bg-secondary/90 text-secondary-foreground">Tambah Layanan</Button>
-                </div>
-              </div>
-              {/* Table */}
-              <div className="overflow-auto rounded-lg border border-border max-h-52">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-muted/50 border-b border-border">
-                    <tr>
-                      <th className="px-3 py-2 font-semibold text-muted-foreground">Layanan &amp; Pelanggan</th>
-                      <th className="px-3 py-2 font-semibold text-muted-foreground">Lokasi</th>
-                      <th className="px-3 py-2 font-semibold text-muted-foreground text-right">Sewa/Bln</th>
-                      <th className="px-3 py-2 font-semibold text-muted-foreground text-right">OTC</th>
-                      <th className="px-3 py-2 font-semibold text-muted-foreground text-center">Periode</th>
-                      <th className="px-3 py-2 w-10" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {revenueRows.length === 0 ? (
-                      <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">Belum ada item Revenue.</td></tr>
-                    ) : revenueRows.map(r => (
-                      <tr key={r.id} className="border-b border-border/50 hover:bg-accent/30">
-                        <td className="px-3 py-2 font-medium text-foreground">{r.serviceName}<br /><span className="text-muted-foreground font-normal">{r.customerName}</span></td>
-                        <td className="px-3 py-2 text-muted-foreground">{r.location}</td>
-                        <td className="px-3 py-2 text-right font-mono">{(r.harsat * r.qty).toLocaleString("id-ID")}</td>
-                        <td className="px-3 py-2 text-right font-mono">{r.otc.toLocaleString("id-ID")}</td>
-                        <td className="px-3 py-2 text-center">{r.startPeriod}–{r.endPeriod}</td>
-                        <td className="px-3 py-2">
-                          <button onClick={() => setRevenueRows(p => p.filter(x => x.id !== r.id))} className="text-destructive hover:bg-destructive/10 p-1 rounded">
-                            <Trash2 size={13} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="text-right text-sm font-bold text-foreground">
-                Total OTC: {formatRp(totalRevOtc)} | Total Sewa Baseline: {formatRp(totalRevSewa)}/bln
-              </div>
-            </div>
+            <RevenueTariffStep
+              durationMonths={durationMonths}
+              customerName={customer}
+              revenueRows={revenueRows}
+              setRevenueRows={setRevenueRows}
+              tariffSnapshot={tariffSnapshot}
+              setTariffSnapshot={setTariffSnapshot}
+              onDirty={markDirty}
+              kursUsd={kursForPreview}
+            />
           )}
 
           {/* ── STEP 6: Review & Hitung ──────────────────────────────────────── */}
@@ -1003,13 +886,17 @@ export function ProjectWizard({
                 <div className="bg-muted/30 border border-border rounded-lg p-4 space-y-2">
                   <h4 className="text-sm font-semibold text-foreground border-b border-border pb-2 mb-2">Variabel Parameter</h4>
                   {[
-                    ["WACC Digunakan", waccOverride ? `${waccOverride}% (Override)` : "9.72% (Global)"],
-                    ["Inflasi Digunakan", inflationOverride ? `${inflationOverride}%/bln (Override)` : "0.30%/bln (Global)"],
+                    ["WACC", `${displayWacc}%${useMasterAssumptions ? " (Master)" : " (Override)"}`],
+                    ["Inflasi/bulan", `${displayInflation}%${useMasterAssumptions ? " (Master)" : " (Override)"}`],
+                    ["Kurs USD", `${Number(displayKurs).toLocaleString("id-ID")}${useMasterAssumptions ? " (Master)" : " (Override)"}`],
+                    ["BCR Mandatory", displayBcrMandatory],
+                    ["BCR Minimum", displayBcrMinimum],
                     ["Total Item CAPEX", `${capexRows.length} item`],
                     ["Total CAPEX", formatRp(totalCapex)],
                     ["Total Item OPEX", `${opexRows.length} item`],
                     ["Total OPEX Baseline", `${formatRp(totalOpex)}/bln`],
-                    ["Total Revenue Stream", `${revenueRows.length} item`],
+                    ["Total Revenue Stream", `${revenueRows.length} item (dari kalkulator)`],
+                    ["Paket tarif", tariffSnapshot?.params?.packageId ? TARIFF_PACKAGES.find(p => p.id === tariffSnapshot.params.packageId)?.label ?? tariffSnapshot.params.packageId : "—"],
                     ["Sewa Baseline", `${formatRp(totalRevSewa)}/bln`],
                   ].map(([k, v]) => (
                     <div key={k} className="flex justify-between text-sm">
@@ -1023,7 +910,7 @@ export function ProjectWizard({
                 <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p>Menekan <strong>Hitung</strong> akan memicu <strong>Job Queue BullMQ</strong> untuk menghitung <strong>XIRR, XNPV, BCR, dan Payback Period</strong> secara asinkron. Status proyek akan berubah ke <code className="bg-primary/15 px-1 rounded">COMPUTED</code> setelah selesai.</p>
+                <p>Menekan <strong>Hitung</strong> akan menghitung <strong>NPV (XNPV), IRR (XIRR), BCR, Payback (Balik Modal),</strong> dan <strong>Kesimpulan Kelayakan</strong>. Status proyek berubah ke <code className="bg-primary/15 px-1 rounded">COMPUTED</code> setelah selesai.</p>
               </div>
             </div>
           )}

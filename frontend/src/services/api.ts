@@ -299,6 +299,23 @@ export class NavproApi {
     );
   }
 
+  getOpexCatalog(q?: string) {
+    const qs = q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : "";
+    return this.request<{
+      items: Array<{
+        code: string;
+        name: string;
+        category: string;
+        icon_key: string;
+        unit: string;
+        default_type: "NOMINAL" | "PERCENT";
+        default_amount: number;
+        default_currency: "IDR" | "USD";
+        description?: string | null;
+      }>;
+    }>("GET", `/api/v1/config/opex-catalog${qs}`);
+  }
+
   getOrgUnits() {
     return this.request<{
       org_units: Array<{

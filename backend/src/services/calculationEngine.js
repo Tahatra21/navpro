@@ -1,5 +1,10 @@
 /** Financial calculation engine — aligned with frontend NAVPRO logic */
 
+import {
+  monthlyRevenueAmount,
+  recurringBaselineForItem,
+} from '../utils/revenueModes.js';
+
 export function calculateXNPV(rate, cashflows, dates) {
   let npv = 0;
   const t0 = dates[0].getTime();
@@ -115,10 +120,15 @@ export function computeCashflowMonthly(proj, globalAss) {
   let total_recurring_revenue_baseline = 0;
   if (proj.revenue) {
     for (const item of proj.revenue) {
-      const harsat = parseFloat(item.harsat !== undefined ? item.harsat : item.monthly_amount || 0);
-      const qty = parseFloat(item.qty !== undefined ? item.qty : 1);
-      const rate_conv = item.currency === 'USD' ? kurs_usd : 1;
-      total_recurring_revenue_baseline += harsat * qty * rate_conv;
+      const start = item.start_period ?? 1;
+      const end = item.end_period ?? N;
+      total_recurring_revenue_baseline += recurringBaselineForItem(
+        item,
+        start,
+        end,
+        kurs_usd,
+        N
+      );
     }
   }
 
@@ -161,12 +171,7 @@ export function computeCashflowMonthly(proj, globalAss) {
     if (active_flag) {
       for (const item of proj.revenue || []) {
         if (m >= item.start_period && m <= item.end_period) {
-          const harsat = parseFloat(item.harsat !== undefined ? item.harsat : item.monthly_amount || 0);
-          const qty = parseFloat(item.qty !== undefined ? item.qty : 1);
-          const rate_conv = item.currency === 'USD' ? kurs_usd : 1;
-          const baseline = harsat * qty * rate_conv;
-          const item_esc = item.escalation_rate !== undefined ? item.escalation_rate : 0;
-          revenue += baseline * Math.pow(1 + item_esc, m - item.start_period);
+          revenue += monthlyRevenueAmount(item, m, kurs_usd, N);
         }
       }
       if (m === 1 && otc > 0) revenue += otc;

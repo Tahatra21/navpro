@@ -87,9 +87,15 @@ export function validateProjectPayload(body, { allowPartial = false } = {}) {
     else {
       body.opex.forEach((o, idx) => {
         if (!isNonEmptyString(o?.name)) errors.push(`opex[${idx}].name wajib diisi`);
-        const base = asNumber(o?.baseline_amount);
-        if (base == null) errors.push(`opex[${idx}].baseline_amount harus angka`);
-        else if (base < 0) errors.push(`opex[${idx}].baseline_amount tidak boleh negatif`);
+        if (o?.is_percent) {
+          const coef = asNumber(o?.coefficient_rate);
+          if (coef == null) errors.push(`opex[${idx}].coefficient_rate harus angka`);
+          else if (coef < 0) errors.push(`opex[${idx}].coefficient_rate tidak boleh negatif`);
+        } else {
+          const base = asNumber(o?.baseline_amount);
+          if (base == null) errors.push(`opex[${idx}].baseline_amount harus angka`);
+          else if (base < 0) errors.push(`opex[${idx}].baseline_amount tidak boleh negatif`);
+        }
         const start = asInt(o?.start_period);
         const end = asInt(o?.end_period);
         if (start == null || start < 1 || start > duration)
@@ -108,9 +114,21 @@ export function validateProjectPayload(body, { allowPartial = false } = {}) {
     else {
       body.revenue.forEach((r, idx) => {
         if (!isNonEmptyString(r?.name)) errors.push(`revenue[${idx}].name wajib diisi`);
-        const amt = asNumber(r?.monthly_amount);
-        if (amt == null) errors.push(`revenue[${idx}].monthly_amount harus angka`);
-        else if (amt < 0) errors.push(`revenue[${idx}].monthly_amount tidak boleh negatif`);
+        const mode = r?.revenue_mode;
+        if (mode != null && !['flat', 'escalation', 'step_yearly'].includes(mode)) {
+          errors.push(`revenue[${idx}].revenue_mode tidak valid`);
+        }
+        const isStep = mode === 'step_yearly' || (r?.harsat_year_1 != null && r?.harsat_year_2 != null);
+        if (isStep) {
+          const y1 = asNumber(r?.harsat_year_1 ?? r?.harsat);
+          const y2 = asNumber(r?.harsat_year_2);
+          if (y1 == null || y1 < 0) errors.push(`revenue[${idx}].harsat_year_1 harus angka >= 0`);
+          if (y2 == null || y2 < 0) errors.push(`revenue[${idx}].harsat_year_2 harus angka >= 0`);
+        } else {
+          const amt = asNumber(r?.monthly_amount ?? r?.harsat);
+          if (amt == null) errors.push(`revenue[${idx}].monthly_amount harus angka`);
+          else if (amt < 0) errors.push(`revenue[${idx}].monthly_amount tidak boleh negatif`);
+        }
         const esc = asNumber(r?.escalation_rate);
         if (esc != null && esc < 0) errors.push(`revenue[${idx}].escalation_rate tidak boleh negatif`);
         const start = asInt(r?.start_period);

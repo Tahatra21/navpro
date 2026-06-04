@@ -21,7 +21,7 @@
    ```bash
    cd backend && node src/seed.js
    ```
-4. Login dengan email user yang dibuat seed + password dari `SEED_DEMO_PASSWORD`.
+4. Login dengan email user demo + password dari `SEED_DEMO_PASSWORD` (lihat [DEMO_LOGIN.md](./DEMO_LOGIN.md)).
 
 ## Smoke test
 

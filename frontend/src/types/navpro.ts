@@ -100,6 +100,8 @@ export interface Project {
   capex?: CapexItem[];
   opex?: OpexItem[];
   revenue?: RevenueItem[];
+  /** P2: snapshot parameter kalkulator tarif (audit) */
+  tariff_calculator_snapshot?: TariffCalculatorSnapshot;
   otc_amount?: number;
   approval_chain?: ApprovalNode[];
   versions?: CalculationVersionSummary[];
@@ -124,6 +126,44 @@ export interface OpexItem {
   start_period: number;
   end_period: number;
   currency?: "IDR" | "USD";
+  /** P3: referensi katalog layanan Icon+ */
+  catalog_code?: string;
+  icon_key?: string;
+  unit?: string;
+}
+
+export type RevenueMode = "flat" | "escalation" | "step_yearly";
+
+export type TariffSla = "standard" | "premium" | "platinum";
+
+export interface TariffCommercialParams {
+  packageId: string;
+  bandwidthMbps: number;
+  sla: TariffSla;
+  discountPercent: number;
+  qty: number;
+  currency: "IDR" | "USD";
+  otcOverride: number | null;
+  revenueMode: RevenueMode;
+  escalationPercent: number;
+  year2UpliftPercent: number;
+  location: string;
+}
+
+export interface TariffCalculatorSnapshot {
+  calculated_at: string;
+  params: TariffCommercialParams;
+  breakdown: {
+    listPriceMonthly: number;
+    slaMultiplier: number;
+    afterSla: number;
+    discountPercent: number;
+    netMonthlyYear1: number;
+    netMonthlyYear2: number | null;
+    otc: number;
+    formulaSummary: string;
+  };
+  lines_count: number;
 }
 
 export interface RevenueItem {
@@ -138,6 +178,11 @@ export interface RevenueItem {
   customer_name?: string;
   location?: string;
   currency?: "IDR" | "USD";
+  /** P2: flat | escalation | step_yearly (Y1/Y2 tariff step at month 13) */
+  revenue_mode?: RevenueMode;
+  harsat_year_1?: number;
+  harsat_year_2?: number;
+  harsat_by_year?: number[];
 }
 
 export interface CalculationVersionSummary {

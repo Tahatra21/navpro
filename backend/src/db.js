@@ -107,6 +107,21 @@ export async function initDb() {
       UNIQUE (type, code)
     );
 
+    CREATE TABLE IF NOT EXISTS opex_service_catalog (
+      code VARCHAR(50) PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      category VARCHAR(50) NOT NULL,
+      icon_key VARCHAR(50) NOT NULL DEFAULT 'box',
+      unit VARCHAR(40) NOT NULL DEFAULT 'per_month',
+      default_type VARCHAR(10) NOT NULL DEFAULT 'NOMINAL'
+        CHECK (default_type IN ('NOMINAL', 'PERCENT')),
+      default_amount NUMERIC(18,4) NOT NULL DEFAULT 0,
+      default_currency VARCHAR(3) NOT NULL DEFAULT 'IDR',
+      description TEXT,
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      sort_order INTEGER NOT NULL DEFAULT 0
+    );
+
     CREATE TABLE IF NOT EXISTS system_config (
       config_key VARCHAR(100) PRIMARY KEY,
       config_val TEXT NOT NULL,
@@ -338,6 +353,7 @@ export function rowToProject(row) {
     capex: detail.capex || [],
     opex: detail.opex || [],
     revenue: detail.revenue || [],
+    tariff_calculator_snapshot: detail.tariff_calculator_snapshot || null,
     otc_amount: detail.otc_amount,
     kurs_usd_override:
       detail.kurs_usd_override != null ? parseFloat(detail.kurs_usd_override) : null,
@@ -356,6 +372,7 @@ export function projectToDetail(body) {
     capex: body.capex || [],
     opex: body.opex || [],
     revenue: body.revenue || [],
+    tariff_calculator_snapshot: body.tariff_calculator_snapshot || null,
     otc_amount: body.otc_amount,
     kurs_usd_override: body.kurs_usd_override,
     approval_chain: body.approval_chain || [],

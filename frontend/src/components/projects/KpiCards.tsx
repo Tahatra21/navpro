@@ -2,6 +2,8 @@
 
 import type { ProjectKpi } from "@/types/navpro";
 import { ConclusionBadge } from "@/components/shared/ConclusionBadge";
+import { KpiFinalSummary } from "@/components/projects/KpiFinalSummary";
+import { KPI_LABELS } from "@/lib/kpi-display";
 import { formatCurrency, formatPercent } from "@/lib/format";
 
 export function KpiCards({ kpi }: { kpi?: ProjectKpi }) {
@@ -14,10 +16,13 @@ export function KpiCards({ kpi }: { kpi?: ProjectKpi }) {
   }
 
   const cards = [
-    { label: "XNPV", value: formatCurrency(kpi.xnpv || 0) },
-    { label: "XIRR (p.a.)", value: formatPercent(kpi.xirr || 0) },
-    { label: "BCR / PI", value: kpi.bcr != null ? kpi.bcr.toFixed(4) : "—" },
-    { label: "Payback", value: kpi.payback_months != null ? `${kpi.payback_months.toFixed(1)} bln` : "—" },
+    { label: KPI_LABELS.npv, value: formatCurrency(kpi.xnpv || 0) },
+    { label: KPI_LABELS.irr, value: formatPercent(kpi.xirr || 0) },
+    { label: KPI_LABELS.bcr, value: kpi.bcr != null ? kpi.bcr.toFixed(4) : "—" },
+    {
+      label: KPI_LABELS.payback,
+      value: kpi.payback_months != null ? `${kpi.payback_months.toFixed(1)} bln` : "—",
+    },
     {
       label: "Simple ROI",
       value: kpi.simple_roi != null ? formatPercent(kpi.simple_roi) : "—",
@@ -26,8 +31,9 @@ export function KpiCards({ kpi }: { kpi?: ProjectKpi }) {
 
   return (
     <div className="space-y-4">
+      <KpiFinalSummary kpi={kpi} />
       <div className="flex items-center gap-3">
-        <span className="text-sm text-muted-foreground">Kesimpulan:</span>
+        <span className="text-sm text-muted-foreground">Status detail:</span>
         <ConclusionBadge conclusion={kpi.conclusion} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

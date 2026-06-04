@@ -24,6 +24,8 @@ import {
   getConclusionExplanation,
   METRIC_HELP,
 } from "@/lib/executive-summary";
+import { KPI_LABELS } from "@/lib/kpi-display";
+import { KpiFinalSummary } from "@/components/projects/KpiFinalSummary";
 import {
   formatCurrency,
   formatDate,
@@ -245,6 +247,8 @@ export function ExecutiveSummary({ project }: { project: Project }) {
         )}
       </div>
 
+      {kpi ? <KpiFinalSummary kpi={kpi} /> : null}
+
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
         <div className="lg:col-span-7 space-y-4">
           <div className="flex items-center justify-between gap-2">
@@ -265,20 +269,20 @@ export function ExecutiveSummary({ project }: { project: Project }) {
 
           {!kpi ? (
             <p className="text-sm text-muted-foreground rounded-lg border border-dashed border-border px-4 py-8 text-center">
-              Metrik XIRR, XNPV, dan BCR akan muncul setelah kalkulasi.
+              Metrik {KPI_LABELS.irr}, {KPI_LABELS.npv}, dan {KPI_LABELS.bcr} akan muncul setelah kalkulasi.
             </p>
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <HeroMetric
-                  label="XIRR (per tahun)"
+                  label={KPI_LABELS.irr}
                   value={kpi.xirr != null ? formatPercent(kpi.xirr) : "—"}
                   hint={analyst ? METRIC_HELP.xirr : undefined}
                   help={METRIC_HELP.xirr}
                   accent
                 />
                 <HeroMetric
-                  label="XNPV"
+                  label={KPI_LABELS.npv}
                   value={kpi.xnpv != null ? formatCurrency(kpi.xnpv) : "—"}
                   hint={
                     analyst
@@ -303,13 +307,13 @@ export function ExecutiveSummary({ project }: { project: Project }) {
                 <>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                     <SecondaryMetric
-                      label="BCR / PI"
+                      label={KPI_LABELS.bcr}
                       value={kpi.bcr != null ? Number(kpi.bcr).toFixed(3) : "—"}
                       help={bcrHint}
                       status={bcrVerdict === "unknown" ? "neutral" : bcrVerdict}
                     />
                     <SecondaryMetric
-                      label="Payback"
+                      label={KPI_LABELS.payback}
                       value={formatPaybackMonths(kpi.payback_months)}
                       help={METRIC_HELP.payback}
                     />
