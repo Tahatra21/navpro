@@ -11,6 +11,7 @@
     "dev:embedded": "node src/dev/dev-embedded.js",
     "seed": "node src/seed.js",
     "reset:local": "SEED_RESET_DEMO_PASSWORDS=true node src/seed.js",
+    "reset:passwords": "SEED_RESET_DEMO_PASSWORDS=true node src/seed.js",
     "seed:demo": "node src/seed-demo-projects.js",
     "seed:enrich": "node src/seed-enrich-portfolio.js",
     "worker": "node src/worker.js",

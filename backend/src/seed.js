@@ -180,10 +180,7 @@ async function seed() {
       [userId, u.email, demoHash, u.full_name, u.role]
     );
   }
-  if (
-    process.env.SEED_RESET_DEMO_PASSWORDS === 'true' &&
-    process.env.NODE_ENV !== 'production'
-  ) {
+  if (process.env.SEED_RESET_DEMO_PASSWORDS === 'true') {
     await query(
       `UPDATE users SET password_hash = $1, is_active = true
        WHERE email = ANY($2::text[])`,

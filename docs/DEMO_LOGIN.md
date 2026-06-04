@@ -26,10 +26,18 @@ Semua user demo memakai **satu password**: nilai `SEED_DEMO_PASSWORD` di environ
    ```
    Lalu restart `npm run dev` dan hard-refresh browser.
 
-3. **VPS (Docker)** — setelah `git pull`:
+3. **VPS** — setelah `git pull`, samakan password ke `SEED_DEMO_PASSWORD` di env backend:
+
+   **PM2:**
+   ```bash
+   cd /var/www/navpro/backend
+   # Pastikan SEED_DEMO_PASSWORD ada di .env atau environment PM2
+   npm run reset:passwords
+   ```
+
+   **Docker:**
    ```bash
    docker compose exec backend node src/seed.js
-   # atau dari host, dengan env yang sama:
    SEED_RESET_DEMO_PASSWORDS=true docker compose run --rm -e SEED_RESET_DEMO_PASSWORDS backend node src/seed.js
    ```
 
