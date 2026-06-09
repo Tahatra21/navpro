@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: "Platform enterprise untuk kajian kelayakan finansial proyek investasi",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

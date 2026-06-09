@@ -1,0 +1,8 @@
+Contact: mailto:security@navpro.app
+Expires: 2027-06-09T00:00:00.000Z
+Preferred-Languages: id, en
+Canonical: https://maharyuda.my.id/.well-known/security.txt
+Policy: https://maharyuda.my.id/login
+
+# NAVPRO — laporkan kerentanan keamanan ke Contact di atas.
+# Sertakan langkah reproduksi dan dampak. Kami akan merespons dalam 5 hari kerja.

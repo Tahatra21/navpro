@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { navproApi } from "@/services/api";
@@ -52,9 +53,12 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-[900px]">
         <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
           <div className="md:w-1/2 p-10 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-white/10">
-            <img
+            <Image
               src="/img/pronav3.png"
               alt="NAVPRO"
+              width={300}
+              height={120}
+              priority
               className="w-full max-w-[300px] h-auto object-contain mb-4"
             />
             <p className="text-slate-300 text-sm tracking-widest font-medium uppercase mt-2">
@@ -67,7 +71,13 @@ export default function LoginPage() {
               NAVPRO LOGIN
             </h2>
 
-            <form onSubmit={handleLogin} className="space-y-5">
+            <form
+              method="post"
+              action="/login"
+              onSubmit={handleLogin}
+              className="space-y-5"
+              autoComplete="on"
+            >
               {error && (
                 <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-sm p-3 rounded-md">
                   {error}

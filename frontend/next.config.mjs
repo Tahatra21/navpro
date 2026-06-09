@@ -1,73 +1,19 @@
 /** @type {import('next').NextConfig} */
-function apiConnectSources() {
-  const out = new Set(["'self'"]);
-  const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-  try {
-    const { protocol, host } = new URL(api);
-    out.add(`${protocol}//${host}`);
-  } catch {
-    /* ignore invalid URL */
-  }
-  if (process.env.NODE_ENV !== "production") {
-    out.add("http://localhost:4000");
-    out.add("http://127.0.0.1:4000");
-    out.add("ws://localhost:3000");
-    out.add("ws://127.0.0.1:3000");
-  }
-  return [...out].join(" ");
-}
-
 const nextConfig = {
-  // Remove 'X-Powered-By: Next.js' header — avoid server fingerprinting
   poweredByHeader: false,
+
+  // Limit image optimizer disk cache growth (CVE-2026-27980 mitigation on supported versions)
+  images: {
+    minimumCacheTTL: 60,
+  },
 
   async headers() {
     return [
       {
-        // Apply security headers to all routes
-        source: "/(.*)",
+        source: "/.well-known/security.txt",
         headers: [
-          {
-            key: "X-DNS-Prefetch-Control",
-            value: "on",
-          },
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "DENY",
-          },
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
-          },
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              // Google Fonts
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              // Next.js needs inline scripts for hydration
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "img-src 'self' data: blob:",
-              `connect-src ${apiConnectSources()}`,
-              "frame-ancestors 'none'",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join("; "),
-          },
+          { key: "Content-Type", value: "text/plain; charset=utf-8" },
+          { key: "Cache-Control", value: "public, max-age=86400" },
         ],
       },
     ];
@@ -82,4 +28,3 @@ const nextConfig = {
 };
 
 export default nextConfig;
-
