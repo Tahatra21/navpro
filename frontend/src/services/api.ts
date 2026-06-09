@@ -328,6 +328,49 @@ export class NavproApi {
     }>("GET", "/api/v1/config/org-units");
   }
 
+  getExchangeRate() {
+    return this.request<import("@/types/exchange-rate").ExchangeRateCurrent>(
+      "GET",
+      "/api/v1/config/exchange-rate"
+    );
+  }
+
+  getExchangeRateHistory(params?: { from?: string; to?: string; limit?: number; order?: "asc" | "desc" }) {
+    const qs = new URLSearchParams();
+    if (params?.from) qs.set("from", params.from);
+    if (params?.to) qs.set("to", params.to);
+    if (params?.limit != null) qs.set("limit", String(params.limit));
+    if (params?.order) qs.set("order", params.order);
+    const q = qs.toString();
+    return this.request<import("@/types/exchange-rate").ExchangeRateHistoryResponse>(
+      "GET",
+      `/api/v1/config/exchange-rate/history${q ? `?${q}` : ""}`
+    );
+  }
+
+  syncExchangeRate(force?: boolean) {
+    return this.request<import("@/types/exchange-rate").ExchangeRateSyncResult>(
+      "POST",
+      "/api/v1/admin/exchange-rate/sync",
+      force ? { force: true } : undefined
+    );
+  }
+
+  getExchangeRateSyncLog(limit = 50) {
+    return this.request<{ items: import("@/types/exchange-rate").ExchangeRateSyncLogItem[] }>(
+      "GET",
+      `/api/v1/admin/exchange-rate/sync-log?limit=${limit}`
+    );
+  }
+
+  patchExchangeRateSettings(kurs_auto_sync_enabled: boolean) {
+    return this.request<{ kurs_auto_sync_enabled: boolean }>(
+      "PATCH",
+      "/api/v1/admin/exchange-rate/settings",
+      { kurs_auto_sync_enabled }
+    );
+  }
+
   adminGetAssumptions() {
     return this.request("GET", "/api/v1/admin/assumptions");
   }

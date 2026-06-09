@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { LayoutDashboard, FolderKanban, CheckCircle2, Settings, ChevronDown, KeyRound, UserCog, LogOut } from "lucide-react";
+import { LayoutDashboard, FolderKanban, CheckCircle2, Settings, ChevronDown, KeyRound, UserCog, LogOut, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { useAuthStore } from "@/stores/authStore";
@@ -47,6 +47,13 @@ const NAV_ITEMS = [
     icon: CheckCircle2,
     match: (p: string) => p.startsWith("/approvals"),
     roles: canViewApprovals,
+  },
+  {
+    href: "/kurs-usd",
+    label: "Kurs USD",
+    shortLabel: "Kurs",
+    icon: DollarSign,
+    match: (p: string) => p.startsWith("/kurs-usd"),
   },
   {
     href: "/admin",

@@ -13,6 +13,9 @@ import notificationRoutes from './routes/notifications.js';
 import adminRoutes from './routes/admin.js';
 import configRoutes from './routes/config.js';
 import { startSlaScheduler } from './services/slaScheduler.js';
+import { startKursScheduler } from './services/kursScheduler.js';
+import { seedDailyFromAssumptions } from './services/exchangeRateService.js';
+import { exchangeRateConfigRouter, exchangeRateAdminRouter } from './routes/exchangeRate.js';
 import jobsRoutes from './routes/jobs.js';
 import approvalsRoutes from './routes/approvals.js';
 import { isQueueEnabled, startWorker } from './services/queue.js';
@@ -103,6 +106,8 @@ app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/config', configRoutes);
+app.use('/api/v1/config', exchangeRateConfigRouter);
+app.use('/api/v1/admin', exchangeRateAdminRouter);
 app.use('/api/v1/jobs', jobsRoutes);
 app.use('/api/v1/approvals', approvalsRoutes);
 
@@ -132,7 +137,11 @@ app.use((err, req, _res, next) => {
 async function start() {
   await initRateLimiters();
   await initDb();
+  await seedDailyFromAssumptions().catch((err) =>
+    console.warn('[navpro:kurs] seed daily from assumptions skipped:', err.message)
+  );
   startSlaScheduler();
+  startKursScheduler();
 
   if (isQueueEnabled()) {
     startWorker('navpro-calc', processCalcJob);

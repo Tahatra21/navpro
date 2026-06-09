@@ -29,6 +29,7 @@ import {
   Users,
 } from "lucide-react";
 import { useToast } from "@/components/shared/toast";
+import { ExchangeRateAdminPanel } from "@/components/kurs/ExchangeRateAdminPanel";
 
 const TABS = [
   {
@@ -475,6 +476,7 @@ function AssumptionsPanel({
 
   const entries = Object.keys(a)
     .map((k) => k)
+    .filter((k) => !["kurs_usd_source", "kurs_usd_updated_at", "kurs_auto_sync_enabled"].includes(k))
     .filter((k) => (search.trim() ? k.toLowerCase().includes(search.toLowerCase().trim()) : true));
   const grouped = entries.reduce<Record<string, string[]>>((acc, key) => {
     const g = META[key]?.group || "Lainnya";
@@ -485,6 +487,7 @@ function AssumptionsPanel({
 
   return (
     <div className="space-y-4">
+      <ExchangeRateAdminPanel />
       <p className="text-sm text-muted-foreground mb-4">
         Parameter global WACC, inflasi, dan threshold BCR (Memo DirKeu).
       </p>

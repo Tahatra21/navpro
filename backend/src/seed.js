@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
 import { pool, initDb, query } from './db.js';
+import { seedDailyFromAssumptions } from './services/exchangeRateService.js';
 import { runCalculationOnProject } from './services/calculationEngine.js';
 import { getDemoProjectDefinitions } from './data/demoProjects.js';
 import { loadOrgUnitByCode, resolveOrgUnitFromCode } from './utils/demoProjectOrg.js';
@@ -17,6 +18,9 @@ const defaultAssumptions = {
   bcr_minimum: 1.08,
   ppn_rate: 12.0,
   kurs_usd: 16500,
+  kurs_usd_source: 'manual',
+  kurs_usd_updated_at: new Date().toISOString(),
+  kurs_auto_sync_enabled: true,
   currency: 'IDR',
   effective_date: '2026-04-01',
   notes: 'Memo DirKeu 16 Sep 2025 & VP Keuangan April 2026',
@@ -212,6 +216,7 @@ async function seed() {
     JSON.stringify(defaultAssumptions),
     'Finance Admin',
   ]);
+  await seedDailyFromAssumptions({ syncMode: 'seed' });
 
   const presets = [
     { id: 'pre-1', preset_name: 'Short Term (12 Bulan)', duration_months: 12, category: 'SHORT_TERM' },

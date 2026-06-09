@@ -16,6 +16,7 @@ import {
   Activity,
   ListChecks,
   ArrowRight,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RiskDistributionBar } from "@/components/dashboard/RiskDistributionBar";
@@ -45,6 +46,13 @@ export default function DashboardPage() {
     queryKey: ["portfolio"],
     queryFn: () => navproApi.getDashboardPortfolio(),
     enabled: backendOnline === true,
+  });
+
+  const exchangeRate = useQuery({
+    queryKey: ["exchange-rate"],
+    queryFn: () => navproApi.getExchangeRate(),
+    enabled: backendOnline === true,
+    staleTime: 5 * 60 * 1000,
   });
 
   const useV2Queue = usesV2ApprovalsQueue(user?.role);
@@ -221,6 +229,23 @@ export default function DashboardPage() {
               <Plus className="w-4 h-4 mr-2" />
               Proyek Baru
             </Button>
+          )}
+          {exchangeRate.data?.rate != null && (
+            <Link
+              href="/kurs-usd"
+              className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm hover:bg-muted/40 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-primary" />
+                <span>
+                  Kurs USD:{" "}
+                  <span className="font-semibold tabular-nums">
+                    Rp {new Intl.NumberFormat("id-ID").format(exchangeRate.data.rate)}
+                  </span>
+                </span>
+              </span>
+              <span className="text-[10px] text-primary block mt-0.5">Lihat historis →</span>
+            </Link>
           )}
         </div>
       </div>
