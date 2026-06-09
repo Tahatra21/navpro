@@ -23,6 +23,13 @@ const MAX_ORG_NAME_LEN = 200;
 const MAX_EMPLOYEE_ID_LEN = 50;
 const MAX_ORG_LEVEL_LEN = 5;
 
+function parsePaginationQuery(req, { defaultPageSize = 15, maxPageSize = 100 } = {}) {
+  const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
+  const rawSize = parseInt(String(req.query.pageSize || req.query.limit || defaultPageSize), 10);
+  const pageSize = Math.min(Math.max(1, rawSize || defaultPageSize), maxPageSize);
+  return { page, pageSize, offset: (page - 1) * pageSize };
+}
+
 const router = Router();
 router.use(authRequired);
 router.use(requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN'));
@@ -435,7 +442,46 @@ router.put('/system-config/:key', async (req, res) => {
 });
 
 // Users
-router.get('/users', async (_req, res) => {
+router.get('/users', async (req, res) => {
+  const { page, pageSize, offset } = parsePaginationQuery(req, { defaultPageSize: 10 });
+  const search = String(req.query.search || req.query.q || '').trim();
+  const role = String(req.query.role || '').trim();
+  const active = String(req.query.active || '').trim().toLowerCase();
+
+  const conditions = [];
+  const params = [];
+  let idx = 1;
+
+  if (search) {
+    conditions.push(
+      `(u.full_name ILIKE $${idx} OR u.email ILIKE $${idx} OR COALESCE(ou.code, '') ILIKE $${idx} OR COALESCE(ou.name, '') ILIKE $${idx})`
+    );
+    params.push(`%${search}%`);
+    idx++;
+  }
+  if (role) {
+    conditions.push(`u.role = $${idx}`);
+    params.push(role);
+    idx++;
+  }
+  if (active === 'true' || active === 'active') {
+    conditions.push('u.is_active = true');
+  } else if (active === 'false' || active === 'inactive') {
+    conditions.push('u.is_active = false');
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const { rows: countRows } = await query(
+    `SELECT COUNT(*)::int AS c
+     FROM users u
+     LEFT JOIN organization_units ou ON ou.id = u.org_unit_id
+     ${where}`,
+    params
+  );
+  const total = countRows[0]?.c ?? 0;
+
+  const listParams = [...params, pageSize, offset];
   const { rows } = await query(
     `SELECT
        u.id, u.email, u.full_name, u.role, u.is_active, u.last_login_at, u.created_at,
@@ -443,9 +489,13 @@ router.get('/users', async (_req, res) => {
        ou.code AS org_unit_code, ou.name AS org_unit_name, ou.type AS org_unit_type, ou.segment AS org_unit_segment
      FROM users u
      LEFT JOIN organization_units ou ON ou.id = u.org_unit_id
-     ORDER BY u.full_name`
+     ${where}
+     ORDER BY u.full_name
+     LIMIT $${idx} OFFSET $${idx + 1}`,
+    listParams
   );
-  res.json({ users: rows });
+
+  res.json({ users: rows, total, page, pageSize });
 });
 
 router.post('/users', async (req, res) => {
@@ -632,38 +682,148 @@ router.post('/users/:id/reset-password', requireRoles('SUPER_ADMIN'), async (req
 
 // Audit logs
 router.get('/audit-logs', async (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit || '100', 10), 500);
+  const { page, pageSize, offset } = parsePaginationQuery(req, { defaultPageSize: 15 });
+  const search = String(req.query.search || req.query.q || '').trim();
+  const action = String(req.query.action || '').trim();
+
+  const conditions = [];
+  const params = [];
+  let idx = 1;
+
+  if (action) {
+    conditions.push(`action = $${idx}`);
+    params.push(action);
+    idx++;
+  }
+  if (search) {
+    conditions.push(
+      `(user_name ILIKE $${idx} OR action ILIKE $${idx} OR COALESCE(old_val, '') ILIKE $${idx} OR COALESCE(new_val, '') ILIKE $${idx} OR COALESCE(project_id::text, '') ILIKE $${idx})`
+    );
+    params.push(`%${search}%`);
+    idx++;
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const { rows: countRows } = await query(`SELECT COUNT(*)::int AS c FROM audit_logs ${where}`, params);
+  const total = countRows[0]?.c ?? 0;
+
+  const listParams = [...params, pageSize, offset];
   const { rows } = await query(
     `SELECT id, created_at AS timestamp, user_name AS user, action, old_val, new_val, project_id
-     FROM audit_logs ORDER BY created_at DESC LIMIT $1`,
-    [limit]
+     FROM audit_logs
+     ${where}
+     ORDER BY created_at DESC
+     LIMIT $${idx} OFFSET $${idx + 1}`,
+    listParams
   );
-  res.json({ logs: rows });
+
+  const { rows: actionRows } = await query(
+    `SELECT DISTINCT action FROM audit_logs ORDER BY action`
+  );
+
+  res.json({
+    logs: rows,
+    total,
+    page,
+    pageSize,
+    actions: actionRows.map((r) => r.action),
+  });
 });
 
 // System health
 router.get('/system-health', async (_req, res) => {
-  const { rows: projCount } = await query(
-    `SELECT COUNT(*)::int AS c FROM projects WHERE status NOT IN ('ARCHIVED','CANCELLED')`
-  );
-  const { rows: calcToday } = await query(
-    `SELECT COUNT(*)::int AS c FROM audit_logs WHERE action = 'CALCULATE' AND created_at::date = CURRENT_DATE`
-  );
-  const maintenance =
-    (
-      await query(`SELECT config_val FROM system_config WHERE config_key = 'maintenance_mode'`)
-    ).rows[0]?.config_val === 'true';
+  const dbStart = Date.now();
+  let dbStatus = 'healthy';
+  try {
+    await query('SELECT 1');
+  } catch {
+    dbStatus = 'down';
+  }
+  const dbLatencyMs = Date.now() - dbStart;
+
+  const PENDING_STATUSES = [
+    'SUBMITTED',
+    'UNDER_REVIEW',
+    'APPROVED_L1',
+    'IN_REVIEW_ASMAN',
+    'IN_REVIEW_MANAGER',
+  ];
+
+  const [
+    projCount,
+    calcToday,
+    auditToday,
+    activeUsers,
+    pendingApprovals,
+    draftProjects,
+    assRows,
+    maintenanceRow,
+    orgUnits,
+    recentAudit,
+  ] = await Promise.all([
+    query(`SELECT COUNT(*)::int AS c FROM projects WHERE status NOT IN ('ARCHIVED','CANCELLED')`),
+    query(
+      `SELECT COUNT(*)::int AS c FROM audit_logs WHERE action = 'CALCULATE' AND created_at::date = CURRENT_DATE`
+    ),
+    query(`SELECT COUNT(*)::int AS c FROM audit_logs WHERE created_at::date = CURRENT_DATE`),
+    query(`SELECT COUNT(*)::int AS c FROM users WHERE is_active = true`),
+    query(
+      `SELECT COUNT(*)::int AS c FROM projects WHERE status = ANY($1::text[])`,
+      [PENDING_STATUSES]
+    ),
+    query(`SELECT COUNT(*)::int AS c FROM projects WHERE status = 'DRAFT'`),
+    query(`SELECT data FROM assumptions_master ORDER BY id DESC LIMIT 1`),
+    query(`SELECT config_val FROM system_config WHERE config_key = 'maintenance_mode'`),
+    query(`SELECT COUNT(*)::int AS c FROM organization_units WHERE is_active = true`),
+    query(
+      `SELECT action, user_name, created_at FROM audit_logs ORDER BY created_at DESC LIMIT 5`
+    ),
+  ]);
+
+  const assumptions = assRows.rows[0]?.data || {};
+  const maintenance = maintenanceRow.rows[0]?.config_val === 'true';
+  const kursUsd = assumptions.kurs_usd != null ? Number(assumptions.kurs_usd) : null;
+  const kursPending = !!assumptions.kurs_usd_pending;
+  const kursUpdatedAt = assumptions.kurs_usd_updated_at || null;
+  const kursSource = assumptions.kurs_usd_source || null;
+
+  const overallHealthy = dbStatus === 'healthy' && !maintenance;
 
   res.json({
+    status: overallHealthy ? 'operational' : maintenance ? 'maintenance' : 'degraded',
+    checked_at: new Date().toISOString(),
     services: [
-      { name: 'backend', status: 'healthy', port: 4000 },
-      { name: 'postgres', status: 'healthy', port: 5432 },
+      { name: 'API Backend', status: 'healthy', port: Number(process.env.PORT) || 4000, latency_ms: null },
+      {
+        name: 'PostgreSQL',
+        status: dbStatus,
+        port: 5432,
+        latency_ms: dbLatencyMs,
+      },
     ],
     stats: {
-      active_projects: projCount[0]?.c || 0,
-      calculations_today: calcToday[0]?.c || 0,
+      active_projects: projCount.rows[0]?.c || 0,
+      draft_projects: draftProjects.rows[0]?.c || 0,
+      pending_approvals: pendingApprovals.rows[0]?.c || 0,
+      calculations_today: calcToday.rows[0]?.c || 0,
+      audit_events_today: auditToday.rows[0]?.c || 0,
+      active_users: activeUsers.rows[0]?.c || 0,
+      org_units: orgUnits.rows[0]?.c || 0,
     },
+    fx: {
+      kurs_usd: kursUsd,
+      kurs_usd_source: kursSource,
+      kurs_usd_updated_at: kursUpdatedAt,
+      kurs_pending: kursPending,
+    },
+    recent_activity: (recentAudit.rows || []).map((r) => ({
+      action: r.action,
+      user: r.user_name,
+      at: r.created_at,
+    })),
     maintenance_mode: maintenance,
+    environment: process.env.NODE_ENV || 'development',
   });
 });
 

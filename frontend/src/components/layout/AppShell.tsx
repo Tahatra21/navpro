@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LayoutDashboard, FolderKanban, CheckCircle2, Settings, ChevronDown, KeyRound, UserCog, LogOut, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { UsdRateTicker } from "@/components/kurs/UsdRateTicker";
 import { useAuthStore } from "@/stores/authStore";
 import { canViewAdmin, canViewApprovals } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
@@ -240,6 +241,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
+
+      <UsdRateTicker />
 
       <main className="flex-1 mx-auto w-full max-w-[1400px] px-4 sm:px-6 py-6 pb-[4.75rem] md:pb-6">
         {children}

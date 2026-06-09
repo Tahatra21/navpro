@@ -529,8 +529,40 @@ export class NavproApi {
     return this.request("DELETE", `/api/v1/admin/sla-config/${encodeURIComponent(roleKey)}`);
   }
 
-  adminGetUsers() {
-    return this.request("GET", "/api/v1/admin/users");
+  adminGetUsers(params?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    role?: string;
+    active?: string;
+  }) {
+    const q = new URLSearchParams();
+    if (params?.page != null) q.set("page", String(params.page));
+    if (params?.pageSize != null) q.set("pageSize", String(params.pageSize));
+    if (params?.search?.trim()) q.set("search", params.search.trim());
+    if (params?.role?.trim()) q.set("role", params.role.trim());
+    if (params?.active?.trim()) q.set("active", params.active.trim());
+    const qs = q.toString();
+    return this.request<{
+      users: Array<{
+        id: string;
+        email: string;
+        full_name: string;
+        role: string;
+        is_active: boolean;
+        last_login_at?: string | null;
+        created_at?: string;
+        employee_id?: string | null;
+        org_unit_id?: string | null;
+        org_level?: string | null;
+        org_unit_code?: string | null;
+        org_unit_name?: string | null;
+        org_unit_segment?: string | null;
+      }>;
+      total: number;
+      page: number;
+      pageSize: number;
+    }>("GET", `/api/v1/admin/users${qs ? `?${qs}` : ""}`);
   }
 
   adminCreateUser(body: {
@@ -567,13 +599,38 @@ export class NavproApi {
     });
   }
 
-  adminGetAuditLogs() {
-    return this.request("GET", "/api/v1/admin/audit-logs");
+  adminGetAuditLogs(params?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    action?: string;
+  }) {
+    const q = new URLSearchParams();
+    if (params?.page != null) q.set("page", String(params.page));
+    if (params?.pageSize != null) q.set("pageSize", String(params.pageSize));
+    if (params?.search?.trim()) q.set("search", params.search.trim());
+    if (params?.action?.trim()) q.set("action", params.action.trim());
+    const qs = q.toString();
+    return this.request<{
+      logs: Array<{
+        id: string;
+        timestamp: string;
+        user: string | null;
+        action: string;
+        old_val: string | null;
+        new_val: string | null;
+        project_id: string | null;
+      }>;
+      total: number;
+      page: number;
+      pageSize: number;
+      actions: string[];
+    }>("GET", `/api/v1/admin/audit-logs${qs ? `?${qs}` : ""}`);
   }
 
+  /** @deprecated use adminGetAuditLogs({ pageSize }) */
   adminGetAuditLogsWithLimit(limit: number) {
-    const q = new URLSearchParams({ limit: String(limit) }).toString();
-    return this.request("GET", `/api/v1/admin/audit-logs?${q}`);
+    return this.adminGetAuditLogs({ page: 1, pageSize: limit });
   }
 
   adminGetSystemHealth() {

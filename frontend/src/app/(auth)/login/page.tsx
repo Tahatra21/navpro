@@ -35,10 +35,19 @@ export default function LoginPage() {
       failCount.current = 0;
       setUser(user);
       router.push("/dashboard");
-    } catch {
+    } catch (err: unknown) {
       failCount.current += 1;
-      // Generic error — do not reveal whether email exists or not
-      setError("Email atau password tidak valid.");
+      const status = (err as { status?: number })?.status;
+      const message = err instanceof Error ? err.message : "";
+      if (!status && /fetch|network|abort|Failed/i.test(message)) {
+        setError("Backend tidak tersedia. Pastikan npm run dev berjalan dan API di port 4000 online.");
+      } else if (status === 401) {
+        setError("Email atau password salah.");
+      } else if (status === 429) {
+        setError("Terlalu banyak percobaan login. Tunggu sebentar lalu coba lagi.");
+      } else {
+        setError(message || "Login gagal. Periksa koneksi ke backend.");
+      }
       setLoading(false);
     }
   };

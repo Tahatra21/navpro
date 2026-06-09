@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, ExternalLink, Database } from "lucide-react";
+import { RefreshCw, ExternalLink, Coins, History, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { navproApi } from "@/services/api";
@@ -12,13 +11,23 @@ import { useToast } from "@/components/shared/toast";
 import { cn } from "@/lib/utils";
 import { wibDateOffsetDays } from "@/lib/wib-date";
 import { useState } from "react";
+import {
+  AdminPanelAlert,
+  AdminPanelCard,
+  AdminPanelSkeleton,
+} from "@/components/admin/AdminPanelCard";
 
 function fmtIdr(n: number | null | undefined) {
   if (n == null || !Number.isFinite(n)) return "—";
   return `Rp ${new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(n)}`;
 }
 
-export function ExchangeRateAdminPanel() {
+type Props = {
+  /** Full-width layout for dedicated admin tab (not embedded in Asumsi Master) */
+  standalone?: boolean;
+};
+
+export function ExchangeRateAdminPanel({ standalone = false }: Props) {
   const toast = useToast();
   const qc = useQueryClient();
   const [backfillFrom, setBackfillFrom] = useState(() => wibDateOffsetDays(-90));
@@ -97,123 +106,159 @@ export function ExchangeRateAdminPanel() {
   const autoOn = rate?.auto_sync_enabled !== false;
   const hasPending = rate?.pending_rate != null;
 
-  return (
-    <Card className="p-4 mb-4 border-primary/20 bg-primary/5">
-      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold">Kurs USD — Auto Sync</p>
-            <span
-              className={cn(
-                "text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border",
-                autoOn
-                  ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
-                  : "bg-muted text-muted-foreground border-border"
-              )}
-            >
-              {autoOn ? "Auto ON" : "Auto OFF"}
-            </span>
-            {hasPending && (
-              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-800 border-amber-500/30">
-                Pending approval
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Kurs aktif: <span className="font-semibold text-foreground">{fmtIdr(rate?.rate ?? null)}</span>
-            {rate?.source ? ` · ${rate.source.replace(/_/g, " ")}` : ""}
-            {rate?.rate_date ? ` · ${rate.rate_date}` : ""}
-          </p>
-          {hasPending && (
-            <p className="text-sm text-amber-800 bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2">
-              Menunggu persetujuan: {fmtIdr(rate?.pending_rate)} (
-              {rate?.pending_delta_percent?.toFixed(2)}% dari kurs aktif, sumber:{" "}
-              {rate?.pending_source?.replace(/_/g, " ") || "—"})
-            </p>
-          )}
-          {rate?.updated_at && (
-            <p className="text-xs text-muted-foreground">
-              Terakhir di-update: {new Date(rate.updated_at).toLocaleString("id-ID")}
-            </p>
-          )}
-          <Link href="/kurs-usd" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-            Lihat historis lengkap <ExternalLink className="w-3 h-3" />
-          </Link>
-        </div>
+  if (current.isLoading) {
+    return standalone ? <AdminPanelSkeleton cards={2} /> : <div className="h-32 animate-pulse rounded-xl bg-muted/40" />;
+  }
 
-        <div className="flex flex-wrap gap-2 shrink-0">
-          {hasPending ? (
-            <>
-              <Button size="sm" disabled={approveMut.isPending} onClick={() => approveMut.mutate()}>
-                Setujui kurs
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={rejectMut.isPending}
-                onClick={() => rejectMut.mutate()}
-              >
-                Tolak
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={syncMut.isPending}
-              onClick={() => syncMut.mutate(!autoOn)}
-            >
-              <RefreshCw className={cn("w-4 h-4 mr-1.5", syncMut.isPending && "animate-spin")} />
-              Sync sekarang
-            </Button>
-          )}
-          <Button
-            variant={autoOn ? "secondary" : "default"}
-            size="sm"
-            disabled={settingsMut.isPending}
-            onClick={() => settingsMut.mutate(!autoOn)}
-          >
-            {autoOn ? "Matikan auto sync" : "Aktifkan auto sync"}
+  const statusGrid = (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <div className="rounded-lg border border-border/70 bg-muted/20 px-4 py-3">
+        <p className="text-xs text-muted-foreground">Kurs USD aktif</p>
+        <p className="mt-1 text-lg font-semibold">{fmtIdr(rate?.rate ?? null)}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {rate?.source?.replace(/_/g, " ") || "—"} · {rate?.rate_date || "—"}
+        </p>
+      </div>
+      <div className="rounded-lg border border-border/70 bg-muted/20 px-4 py-3">
+        <p className="text-xs text-muted-foreground">Auto sync</p>
+        <p className={cn("mt-1 text-lg font-semibold", autoOn ? "text-emerald-700" : "text-muted-foreground")}>
+          {autoOn ? "Aktif" : "Nonaktif"}
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">Scheduler 09:00 WIB</p>
+      </div>
+      <div className="rounded-lg border border-border/70 bg-muted/20 px-4 py-3">
+        <p className="text-xs text-muted-foreground">Terakhir update</p>
+        <p className="mt-1 text-sm font-medium">
+          {rate?.updated_at ? new Date(rate.updated_at).toLocaleString("id-ID") : "—"}
+        </p>
+        <Link href="/kurs-usd" className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline">
+          Historis lengkap <ExternalLink className="h-3 w-3" />
+        </Link>
+      </div>
+    </div>
+  );
+
+  const actions = (
+    <div className="flex flex-wrap gap-2">
+      {hasPending ? (
+        <>
+          <Button size="sm" disabled={approveMut.isPending} onClick={() => approveMut.mutate()}>
+            Setujui kurs
+          </Button>
+          <Button variant="outline" size="sm" disabled={rejectMut.isPending} onClick={() => rejectMut.mutate()}>
+            Tolak
+          </Button>
+        </>
+      ) : (
+        <Button variant="outline" size="sm" disabled={syncMut.isPending} onClick={() => syncMut.mutate(!autoOn)}>
+          <RefreshCw className={cn("mr-1.5 h-4 w-4", syncMut.isPending && "animate-spin")} />
+          Sync sekarang
+        </Button>
+      )}
+      <Button
+        variant={autoOn ? "secondary" : "default"}
+        size="sm"
+        disabled={settingsMut.isPending}
+        onClick={() => settingsMut.mutate(!autoOn)}
+      >
+        {autoOn ? "Matikan auto sync" : "Aktifkan auto sync"}
+      </Button>
+    </div>
+  );
+
+  const pendingBanner = hasPending ? (
+    <AdminPanelAlert variant="warning">
+      Menunggu persetujuan: <strong>{fmtIdr(rate?.pending_rate)}</strong> ({rate?.pending_delta_percent?.toFixed(2)}%
+      perubahan)
+    </AdminPanelAlert>
+  ) : null;
+
+  const advancedSections = standalone ? (
+    <>
+      <AdminPanelCard
+        title="Backfill BI JISDOR"
+        description="Isi historis dari Bank Indonesia"
+        icon={Download}
+        accent="sky"
+        collapsible
+        defaultOpen={false}
+      >
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Dari</Label>
+            <Input
+              type="date"
+              value={backfillFrom}
+              onChange={(e) => setBackfillFrom(e.target.value)}
+              className="h-9 w-[150px]"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Sampai</Label>
+            <Input
+              type="date"
+              value={backfillTo}
+              onChange={(e) => setBackfillTo(e.target.value)}
+              className="h-9 w-[150px]"
+            />
+          </div>
+          <Button variant="outline" size="sm" disabled={backfillMut.isPending} onClick={() => backfillMut.mutate()}>
+            {backfillMut.isPending ? "Memuat…" : "Jalankan backfill"}
           </Button>
         </div>
-      </div>
+      </AdminPanelCard>
 
-      <div className="mt-4 pt-3 border-t border-border/60 flex flex-wrap items-end gap-3">
-        <Database className="w-4 h-4 text-muted-foreground mb-2" />
-        <div className="space-y-1">
-          <Label className="text-xs">Backfill BI JISDOR — dari</Label>
-          <Input type="date" value={backfillFrom} onChange={(e) => setBackfillFrom(e.target.value)} className="w-[150px] h-9" />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">sampai</Label>
-          <Input type="date" value={backfillTo} onChange={(e) => setBackfillTo(e.target.value)} className="w-[150px] h-9" />
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={backfillMut.isPending}
-          onClick={() => backfillMut.mutate()}
+      {syncLog.data?.items && syncLog.data.items.length > 0 ? (
+        <AdminPanelCard
+          title="Log sync"
+          description="5 percobaan terakhir"
+          icon={History}
+          accent="muted"
+          collapsible
+          defaultOpen={false}
+          badge={`${syncLog.data.items.length} entri`}
         >
-          {backfillMut.isPending ? "Memuat…" : "Backfill historis"}
-        </Button>
-      </div>
-
-      {syncLog.data?.items && syncLog.data.items.length > 0 && (
-        <div className="mt-4 pt-3 border-t border-border/60">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Sync log (5 terakhir)
-          </p>
-          <div className="space-y-1">
+          <div className="space-y-2">
             {syncLog.data.items.map((row) => (
-              <div key={row.id} className="text-xs flex flex-wrap gap-x-3 gap-y-0.5 text-muted-foreground">
-                <span>{new Date(row.fetched_at).toLocaleString("id-ID")}</span>
+              <div
+                key={row.id}
+                className="flex flex-wrap gap-x-4 gap-y-1 border-b border-border/40 pb-2 text-xs last:border-0 last:pb-0"
+              >
+                <span className="text-muted-foreground">{new Date(row.fetched_at).toLocaleString("id-ID")}</span>
                 <span>{row.sync_mode}</span>
-                <span>{row.applied ? fmtIdr(row.rate) : row.error_message || "gagal"}</span>
+                <span className="font-medium">{row.applied ? fmtIdr(row.rate) : row.error_message || "gagal"}</span>
               </div>
             ))}
           </div>
-        </div>
-      )}
-    </Card>
+        </AdminPanelCard>
+      ) : null}
+    </>
+  ) : null;
+
+  const mainCard = (
+    <AdminPanelCard
+      title="Kurs USD — Auto Sync"
+      description="Sinkronisasi kurs dari BI JISDOR dan persetujuan perubahan"
+      icon={Coins}
+      accent="sky"
+      headerAction={standalone ? undefined : actions}
+    >
+      <div className="space-y-4">
+        {statusGrid}
+        {pendingBanner}
+        {standalone ? actions : null}
+      </div>
+    </AdminPanelCard>
   );
+
+  if (standalone) {
+    return (
+      <div className="space-y-4">
+        {mainCard}
+        {advancedSections}
+      </div>
+    );
+  }
+
+  return <div className="mb-4">{mainCard}</div>;
 }

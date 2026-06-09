@@ -16,7 +16,6 @@ import {
   Activity,
   ListChecks,
   ArrowRight,
-  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RiskDistributionBar } from "@/components/dashboard/RiskDistributionBar";
@@ -46,13 +45,6 @@ export default function DashboardPage() {
     queryKey: ["portfolio"],
     queryFn: () => navproApi.getDashboardPortfolio(),
     enabled: backendOnline === true,
-  });
-
-  const exchangeRate = useQuery({
-    queryKey: ["exchange-rate"],
-    queryFn: () => navproApi.getExchangeRate(),
-    enabled: backendOnline === true,
-    staleTime: 5 * 60 * 1000,
   });
 
   const useV2Queue = usesV2ApprovalsQueue(user?.role);
@@ -210,16 +202,16 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <div className="rounded-xl border border-border bg-card px-4 py-2.5 text-center min-w-[100px]">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-center min-w-[88px]">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-              Health score
+              Health
             </p>
-            <p className="text-2xl font-bold text-primary tabular-nums">{healthScore}</p>
+            <p className="text-2xl font-bold text-primary tabular-nums leading-none mt-0.5">{healthScore}</p>
           </div>
           {canViewApprovals(user?.role) && overdueCount > 0 && (
             <Link
               href="/approvals"
-              className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-sm text-destructive font-medium hover:bg-destructive/10"
+              className="inline-flex items-center rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive font-medium hover:bg-destructive/10"
             >
               {overdueCount} SLA terlambat
             </Link>
@@ -229,23 +221,6 @@ export default function DashboardPage() {
               <Plus className="w-4 h-4 mr-2" />
               Proyek Baru
             </Button>
-          )}
-          {exchangeRate.data?.rate != null && (
-            <Link
-              href="/kurs-usd"
-              className="rounded-xl border border-border bg-card px-4 py-2.5 text-sm hover:bg-muted/40 transition-colors"
-            >
-              <span className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-primary" />
-                <span>
-                  Kurs USD:{" "}
-                  <span className="font-semibold tabular-nums">
-                    Rp {new Intl.NumberFormat("id-ID").format(exchangeRate.data.rate)}
-                  </span>
-                </span>
-              </span>
-              <span className="text-[10px] text-primary block mt-0.5">Lihat historis →</span>
-            </Link>
           )}
         </div>
       </div>

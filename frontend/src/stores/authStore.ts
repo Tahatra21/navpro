@@ -35,8 +35,24 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setLoading: (isLoading: boolean) => void;
   setBackendOnline: (online: boolean | null) => void;
+  recheckBackend: () => Promise<boolean>;
   hydrate: () => Promise<void>;
   logout: () => Promise<void>;
+}
+
+async function probeBackendHealth(retries = 2): Promise<boolean> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const health = await navproApi.health();
+      if (health?.status === "ok") return true;
+    } catch {
+      /* retry */
+    }
+    if (i < retries - 1) {
+      await new Promise((r) => setTimeout(r, 1200));
+    }
+  }
+  return false;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -50,9 +66,21 @@ export const useAuthStore = create<AuthState>()(
         const s = get();
         return s.user?.role || null;
       },
-      setUser: (user) => set({ user, isAuthenticated: !!user, isLoading: false }),
+      setUser: (user) =>
+        set({
+          user,
+          isAuthenticated: !!user,
+          isLoading: false,
+          ...(user ? { backendOnline: true } : {}),
+        }),
       setLoading: (isLoading) => set({ isLoading }),
       setBackendOnline: (backendOnline) => set({ backendOnline }),
+      recheckBackend: async () => {
+        set({ backendOnline: null });
+        const online = await probeBackendHealth(2);
+        set({ backendOnline: online });
+        return online;
+      },
       hydrate: async () => {
         set({ isLoading: true });
 
@@ -61,13 +89,8 @@ export const useAuthStore = create<AuthState>()(
           localStorage.removeItem("navpro_token");
         }
 
-        // Check backend health (non-blocking)
-        try {
-          const health = await navproApi.health();
-          set({ backendOnline: health?.status === "ok" });
-        } catch {
-          set({ backendOnline: false });
-        }
+        const online = await probeBackendHealth(2);
+        set({ backendOnline: online });
 
         // No in-memory token → not authenticated (after page refresh, must re-login)
         if (!_inMemoryToken) {

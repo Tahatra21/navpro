@@ -3,7 +3,7 @@ import {
   buildProjectRates,
   collectProjectCurrencies,
   kursMasterKey,
-} from './exchangeRateResolver.js';
+} from '../utils/exchangeRateResolver.js';
 
 /** Latest daily rate on or before effective date */
 export async function getHistoricalRateForDate(currency, effectiveDate) {

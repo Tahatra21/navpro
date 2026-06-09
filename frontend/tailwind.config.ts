@@ -81,6 +81,15 @@ const config: Config = {
         xl:    "var(--shadow-xl)",
         "2xl": "var(--shadow-2xl)",
       },
+      keyframes: {
+        "usd-ticker": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+      },
+      animation: {
+        "usd-ticker": "usd-ticker 50s linear infinite",
+      },
     },
   },
   plugins: [],
