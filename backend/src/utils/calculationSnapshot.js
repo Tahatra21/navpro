@@ -22,6 +22,7 @@ export function buildSnapshotsFromProject(proj) {
     opex: proj.opex || [],
     revenue: proj.revenue || [],
     submit_comment: proj.submit_comment || null,
+    exchange_rate_snapshot: proj.exchange_rate_snapshot || null,
   };
   const resultSnapshot = {
     kpi: proj.kpi,

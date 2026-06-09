@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DataSet xmlns="http://tempuri.org/">
+  <diffgr:diffgram xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:diffgr="urn:schemas-microsoft-com:xml-diffgram-v1">
+    <NewDataSet xmlns="">
+      <Table diffgr:id="Table1" msdata:rowOrder="0">
+        <id_subkurs>1</id_subkurs>
+        <mts_subkurs>USD</mts_subkurs>
+        <nil_subkurs>16480.00</nil_subkurs>
+        <tgl_subkurs>2026-05-26T00:00:00+07:00</tgl_subkurs>
+      </Table>
+      <Table diffgr:id="Table2" msdata:rowOrder="1">
+        <id_subkurs>2</id_subkurs>
+        <mts_subkurs>USD</mts_subkurs>
+        <nil_subkurs>16500.00</nil_subkurs>
+        <tgl_subkurs>2026-05-27T00:00:00+07:00</tgl_subkurs>
+      </Table>
+      <Table diffgr:id="Table3" msdata:rowOrder="2">
+        <id_subkurs>3</id_subkurs>
+        <mts_subkurs>USD</mts_subkurs>
+        <nil_subkurs>16520.00</nil_subkurs>
+        <tgl_subkurs>2026-05-28T00:00:00+07:00</tgl_subkurs>
+      </Table>
+    </NewDataSet>
+  </diffgr:diffgram>
+</DataSet>

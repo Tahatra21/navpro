@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -108,20 +109,24 @@ export function ProjectWizard({
   const configQuery = useQuery({
     queryKey: ["wizard-config"],
     queryFn: async () => {
-      const [assumptions, presets, orgUnitsRes, opexCatalogRes] = await Promise.all([
+      const [assumptions, presets, orgUnitsRes, opexCatalogRes, exchangeRate] = await Promise.all([
         navproApi.getAssumptions(),
         navproApi.getPresets(),
         navproApi.getOrgUnits(),
         navproApi.getOpexCatalog(),
+        navproApi.getExchangeRate().catch(() => null),
       ]);
       return {
         assumptions,
         presets: presets.presets as Array<{ preset_name: string; duration_months: number }>,
         orgUnits: orgUnitsRes.org_units,
         opexCatalog: opexCatalogRes.items as OpexCatalogItem[],
+        exchangeRate,
       };
     },
   });
+
+  const masterExchangeRate = configQuery.data?.exchangeRate;
 
   const globalAssumptions = configQuery.data?.assumptions as Record<string, number> | undefined;
   const resolvedAssumptions = resolveGlobalAssumptions(globalAssumptions);
@@ -157,7 +162,7 @@ export function ProjectWizard({
     name: string;
     category: string;
     amount: number;
-    currency: "IDR" | "USD";
+    currency: "IDR" | "USD" | "EUR" | "SGD";
     period: number;
   }>({ name: "", category: "HARDWARE", amount: 0, currency: "IDR", period: 0 });
 
@@ -709,6 +714,16 @@ export function ProjectWizard({
                       step="1"
                       className={`h-10 ${useMasterAssumptions ? "bg-muted/50 cursor-default" : ""}`}
                     />
+                    {useMasterAssumptions && masterExchangeRate?.rate != null && (
+                      <p className="text-xs text-muted-foreground">
+                        Kurs master: {formatRp(masterExchangeRate.rate)}
+                        {masterExchangeRate.rate_date ? ` (${masterExchangeRate.rate_date})` : ""}
+                        {masterExchangeRate.source ? `, sumber: ${masterExchangeRate.source.replace(/_/g, " ")}` : ""}.{" "}
+                        <Link href="/kurs-usd" className="text-primary hover:underline">
+                          Riwayat kurs
+                        </Link>
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-sm">BCR Mandatory</Label>
@@ -779,10 +794,12 @@ export function ProjectWizard({
                   <Label className="text-xs">Nilai</Label>
                   <div className="flex gap-1">
                     <Input type="number" min={0} value={capexInput.amount} onChange={e => setCapexInput(p => ({ ...p, amount: Number(e.target.value) }))} className="h-8 text-sm" />
-                    <select value={capexInput.currency} onChange={e => setCapexInput(p => ({ ...p, currency: e.target.value as "IDR" | "USD" }))}
+                    <select value={capexInput.currency} onChange={e => setCapexInput(p => ({ ...p, currency: e.target.value as "IDR" | "USD" | "EUR" | "SGD" }))}
                       className="h-8 px-1 border border-input rounded-md text-xs bg-background text-foreground w-16">
                       <option value="IDR">IDR</option>
                       <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                      <option value="SGD">SGD</option>
                     </select>
                   </div>
                 </div>

@@ -4,6 +4,7 @@ import {
   monthlyRevenueAmount,
   recurringBaselineForItem,
 } from '../utils/revenueModes.js';
+import { buildProjectRates, rateToIdr } from '../utils/exchangeRateResolver.js';
 
 export function calculateXNPV(rate, cashflows, dates) {
   let npv = 0;
@@ -97,17 +98,15 @@ export function computeCashflowMonthly(proj, globalAss) {
     dates.push(d);
   }
 
-  const kurs_usd =
-    proj.kurs_usd_override != null && proj.kurs_usd_override !== undefined
-      ? parseFloat(proj.kurs_usd_override)
-      : globalAss.kurs_usd || 16500;
+  const rates = buildProjectRates(proj, globalAss);
+  const kurs_usd = rates.USD;
 
   let otc = 0;
   if (proj.revenue && proj.revenue.length > 0) {
     let hasRowOtc = false;
     for (const r of proj.revenue) {
       if (r.otc !== undefined) {
-        const rate_conv = r.currency === 'USD' ? kurs_usd : 1;
+        const rate_conv = rateToIdr(r.currency, rates);
         otc += parseFloat(r.otc || 0) * rate_conv;
         hasRowOtc = true;
       }
@@ -126,7 +125,7 @@ export function computeCashflowMonthly(proj, globalAss) {
         item,
         start,
         end,
-        kurs_usd,
+        rates,
         N
       );
     }
@@ -142,7 +141,7 @@ export function computeCashflowMonthly(proj, globalAss) {
     for (const item of proj.capex || []) {
       if (item.period === m) {
         const amt = parseFloat(item.amount || 0);
-        const rate_conv = item.currency === 'USD' ? kurs_usd : 1;
+        const rate_conv = rateToIdr(item.currency, rates);
         capex += amt * rate_conv;
       }
     }
@@ -158,7 +157,7 @@ export function computeCashflowMonthly(proj, globalAss) {
             base_amt = coef * total_recurring_revenue_baseline;
           } else {
             base_amt = parseFloat(item.baseline_amount || 0);
-            const rate_conv = item.currency === 'USD' ? kurs_usd : 1;
+            const rate_conv = rateToIdr(item.currency, rates);
             base_amt = base_amt * rate_conv;
           }
           const item_inflation = item.inflation_rate !== undefined ? item.inflation_rate : inflation;
@@ -171,7 +170,7 @@ export function computeCashflowMonthly(proj, globalAss) {
     if (active_flag) {
       for (const item of proj.revenue || []) {
         if (m >= item.start_period && m <= item.end_period) {
-          revenue += monthlyRevenueAmount(item, m, kurs_usd, N);
+          revenue += monthlyRevenueAmount(item, m, rates, N);
         }
       }
       if (m === 1 && otc > 0) revenue += otc;
@@ -198,10 +197,10 @@ export function computeCashflowMonthly(proj, globalAss) {
     net_cfs.push(periods[m].net_cashflow);
   }
 
-  return { dates, periods, net_cfs, wacc, inflation, kurs_usd, otc_amount: otc, total_capex_m0 };
+  return { dates, periods, net_cfs, wacc, inflation, rates, kurs_usd, otc_amount: otc, total_capex_m0 };
 }
 
-export function computeProjectKpi({ dates, periods, net_cfs, wacc, kurs_usd, total_capex_m0 }, proj, globalAss) {
+export function computeProjectKpi({ dates, periods, net_cfs, wacc, rates, kurs_usd, total_capex_m0 }, proj, globalAss) {
   const bcr_mandatory = proj.bcr_threshold_override?.mandatory || globalAss.bcr_mandatory;
   const bcr_minimum = proj.bcr_threshold_override?.minimum || globalAss.bcr_minimum;
   const N = proj.project_duration_months;
@@ -220,7 +219,7 @@ export function computeProjectKpi({ dates, periods, net_cfs, wacc, kurs_usd, tot
     total_capex_m0 > 0
       ? total_capex_m0
       : (proj.capex || []).reduce((s, c) => {
-          const rate_conv = c.currency === 'USD' ? kurs_usd : 1;
+          const rate_conv = rateToIdr(c.currency, rates);
           return s + parseFloat(c.amount || 0) * rate_conv;
         }, 0);
 
@@ -261,6 +260,7 @@ export function computeProjectKpi({ dates, periods, net_cfs, wacc, kurs_usd, tot
     wacc_used: wacc,
     inflation_used: (proj.inflation_rate_override != null ? proj.inflation_rate_override / 100 : (globalAss.inflation_annual !== undefined ? (Math.pow(1 + globalAss.inflation_annual / 100, 1 / 12) - 1) : globalAss.inflation_monthly / 100)),
     kurs_usd_used: kurs_usd,
+    exchange_rates_used: { ...rates },
     capex_total: capex_denom,
     lifetime_revenue_total,
     lifetime_opex_total,
@@ -269,10 +269,15 @@ export function computeProjectKpi({ dates, periods, net_cfs, wacc, kurs_usd, tot
 }
 
 export function runCalculationOnProject(proj, globalAss) {
-  const { dates, periods, net_cfs, wacc, inflation, kurs_usd, otc_amount, total_capex_m0 } = computeCashflowMonthly(proj, globalAss);
+  const { dates, periods, net_cfs, wacc, inflation, rates, kurs_usd, otc_amount, total_capex_m0 } =
+    computeCashflowMonthly(proj, globalAss);
   proj.otc_amount = otc_amount;
   proj.cashflow_monthly = periods;
-  proj.kpi = computeProjectKpi({ dates, periods, net_cfs, wacc, kurs_usd, total_capex_m0 }, proj, globalAss);
+  proj.kpi = computeProjectKpi(
+    { dates, periods, net_cfs, wacc, rates, kurs_usd, total_capex_m0 },
+    proj,
+    globalAss
+  );
   // Preserve legacy field expected elsewhere
   proj.kpi.inflation_used = inflation;
   return proj;

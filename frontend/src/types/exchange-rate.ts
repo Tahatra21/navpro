@@ -8,6 +8,12 @@ export type ExchangeRateCurrent = {
   previous_day_rate: number | null;
   change_amount: number | null;
   change_percent: number | null;
+  pending_rate?: number | null;
+  pending_delta_percent?: number | null;
+  pending_at?: string | null;
+  pending_source?: string | null;
+  master_rates?: Record<string, number>;
+  supported_currencies?: string[];
 };
 
 export type ExchangeRateHistoryItem = {
@@ -51,6 +57,16 @@ export type ExchangeRateSyncResult = {
   previous_rate: number | null;
   source: string;
   rate_date: string;
-  change_amount: number | null;
-  change_percent: number | null;
+  change_amount?: number | null;
+  change_percent?: number | null;
+  reason?: string;
+  pending_approval?: boolean;
+  delta_percent?: number;
+};
+
+export type ExchangeRateBackfillResult = {
+  inserted: number;
+  from: string;
+  to: string;
+  items: Array<{ rate_date: string; rate: number; source?: string }>;
 };

@@ -2,6 +2,8 @@
  * Revenue pricing modes (P2): flat, monthly escalation, step yearly (Y1/Y2/…).
  */
 
+import { rateToIdr } from './exchangeRateResolver.js';
+
 export const REVENUE_MODES = ['flat', 'escalation', 'step_yearly'];
 
 export function normalizeRevenueMode(item) {
@@ -48,9 +50,9 @@ export function yearSegmentStartMonth(m, startPeriod) {
   return startPeriod + Math.floor(offset / 12) * 12;
 }
 
-export function monthlyRevenueAmount(item, m, kurs_usd, durationMonths) {
+export function monthlyRevenueAmount(item, m, rates, durationMonths) {
   const qty = parseFloat(item?.qty ?? 1);
-  const rate_conv = item?.currency === 'USD' ? kurs_usd : 1;
+  const rate_conv = rateToIdr(item?.currency, rates);
   const harsat = getHarsatForMonth(item, m, durationMonths);
   const baseline = harsat * qty * rate_conv;
   const mode = normalizeRevenueMode(item);
@@ -64,9 +66,9 @@ export function monthlyRevenueAmount(item, m, kurs_usd, durationMonths) {
 }
 
 /** Average monthly recurring baseline (for % OPEX). */
-export function recurringBaselineForItem(item, startMonth, endMonth, kurs_usd, durationMonths) {
+export function recurringBaselineForItem(item, startMonth, endMonth, rates, durationMonths) {
   const qty = parseFloat(item?.qty ?? 1);
-  const rate_conv = item?.currency === 'USD' ? kurs_usd : 1;
+  const rate_conv = rateToIdr(item?.currency, rates);
   const mode = normalizeRevenueMode(item);
   if (mode !== 'step_yearly') {
     const harsat = parseFloat(item?.harsat ?? item?.monthly_amount ?? 0);

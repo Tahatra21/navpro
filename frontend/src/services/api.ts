@@ -335,12 +335,19 @@ export class NavproApi {
     );
   }
 
-  getExchangeRateHistory(params?: { from?: string; to?: string; limit?: number; order?: "asc" | "desc" }) {
+  getExchangeRateHistory(params?: {
+    from?: string;
+    to?: string;
+    limit?: number;
+    order?: "asc" | "desc";
+    currency?: string;
+  }) {
     const qs = new URLSearchParams();
     if (params?.from) qs.set("from", params.from);
     if (params?.to) qs.set("to", params.to);
     if (params?.limit != null) qs.set("limit", String(params.limit));
     if (params?.order) qs.set("order", params.order);
+    if (params?.currency) qs.set("currency", params.currency);
     const q = qs.toString();
     return this.request<import("@/types/exchange-rate").ExchangeRateHistoryResponse>(
       "GET",
@@ -368,6 +375,25 @@ export class NavproApi {
       "PATCH",
       "/api/v1/admin/exchange-rate/settings",
       { kurs_auto_sync_enabled }
+    );
+  }
+
+  approvePendingExchangeRate() {
+    return this.request<import("@/types/exchange-rate").ExchangeRateSyncResult>(
+      "POST",
+      "/api/v1/admin/exchange-rate/approve-pending"
+    );
+  }
+
+  rejectPendingExchangeRate() {
+    return this.request<{ rejected: boolean }>("POST", "/api/v1/admin/exchange-rate/reject-pending");
+  }
+
+  backfillExchangeRate(from?: string, to?: string) {
+    return this.request<import("@/types/exchange-rate").ExchangeRateBackfillResult>(
+      "POST",
+      "/api/v1/admin/exchange-rate/backfill",
+      { from, to }
     );
   }
 

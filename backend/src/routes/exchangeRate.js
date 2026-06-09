@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import { authRequired, loadUser, requireRoles } from '../middleware/auth.js';
 import {
+  approvePendingExchangeRate,
+  backfillBiJisdor,
   getCurrentExchangeRate,
   getExchangeRateHistory,
   getExchangeRateSyncLog,
   patchExchangeRateSettings,
+  rejectPendingExchangeRate,
   syncExchangeRate,
 } from '../services/exchangeRateService.js';
 
@@ -28,6 +31,7 @@ exchangeRateConfigRouter.get('/exchange-rate/history', async (req, res, next) =>
       to: req.query.to,
       limit: req.query.limit,
       order: req.query.order,
+      currency: req.query.currency,
     });
     res.json(data);
   } catch (e) {
@@ -47,6 +51,44 @@ exchangeRateAdminRouter.post('/exchange-rate/sync', async (req, res, next) => {
       userId: req.user.sub,
       userName: req.user.name,
       force,
+    });
+    res.json(result);
+  } catch (e) {
+    next(e);
+  }
+});
+
+exchangeRateAdminRouter.post('/exchange-rate/approve-pending', async (req, res, next) => {
+  try {
+    const result = await approvePendingExchangeRate({
+      userId: req.user.sub,
+      userName: req.user.name,
+    });
+    res.json(result);
+  } catch (e) {
+    next(e);
+  }
+});
+
+exchangeRateAdminRouter.post('/exchange-rate/reject-pending', async (req, res, next) => {
+  try {
+    const result = await rejectPendingExchangeRate({
+      userId: req.user.sub,
+      userName: req.user.name,
+    });
+    res.json(result);
+  } catch (e) {
+    next(e);
+  }
+});
+
+exchangeRateAdminRouter.post('/exchange-rate/backfill', async (req, res, next) => {
+  try {
+    const result = await backfillBiJisdor({
+      from: req.body?.from,
+      to: req.body?.to,
+      userId: req.user.sub,
+      userName: req.user.name,
     });
     res.json(result);
   } catch (e) {

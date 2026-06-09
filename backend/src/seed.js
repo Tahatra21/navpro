@@ -18,6 +18,8 @@ const defaultAssumptions = {
   bcr_minimum: 1.08,
   ppn_rate: 12.0,
   kurs_usd: 16500,
+  kurs_eur: 18000,
+  kurs_sgd: 12500,
   kurs_usd_source: 'manual',
   kurs_usd_updated_at: new Date().toISOString(),
   kurs_auto_sync_enabled: true,

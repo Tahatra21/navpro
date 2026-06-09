@@ -13,6 +13,8 @@ import { resolveProjectOrgUnit } from '../utils/orgUnit.js';
 import { getProjectScopeSql } from '../utils/globalOrg.js';
 import { computeDueAtForRole } from '../utils/sla.js';
 import { createCalculationSnapshot } from '../utils/calculationSnapshot.js';
+import { buildProjectExchangeRateSnapshot } from '../services/exchangeRateSnapshot.js';
+import { getLatestAssumptions } from '../services/exchangeRateService.js';
 
 const router = Router();
 router.use(authRequired);
@@ -624,9 +626,13 @@ router.post('/:id/submit', requireRoles('SUPER_ADMIN', 'FINANCE_ADMIN', 'SA'), a
   }
 
   const submitComment = req.body?.comment || 'Diajukan untuk approval.';
+  const globalAss = await getLatestAssumptions();
+  const exchangeRateSnapshot = await buildProjectExchangeRateSnapshot(proj, globalAss);
+  proj.exchange_rate_snapshot = exchangeRateSnapshot;
+
   const verNum = await createCalculationSnapshot({
     projectId: req.params.id,
-    proj: { ...proj, submit_comment: submitComment },
+    proj: { ...proj, submit_comment: submitComment, exchange_rate_snapshot: exchangeRateSnapshot },
     userId: req.user.sub,
     userName: req.user.name,
     snapshotType: 'SUBMIT',

@@ -47,7 +47,7 @@ export function OpexCatalogStep({
     unit: "per_month",
     type: "NOMINAL" as "NOMINAL" | "PERCENT",
     amount: 0,
-    currency: "IDR" as "IDR" | "USD",
+    currency: "IDR" as "IDR" | "USD" | "EUR" | "SGD",
     startPeriod: 1,
     endPeriod: durationMonths,
   });
@@ -217,12 +217,14 @@ export function OpexCatalogStep({
               <select
                 value={opexInput.currency}
                 onChange={(e) =>
-                  setOpexInput((p) => ({ ...p, currency: e.target.value as "IDR" | "USD" }))
+                  setOpexInput((p) => ({ ...p, currency: e.target.value as "IDR" | "USD" | "EUR" | "SGD" }))
                 }
                 className="h-8 px-1 border border-input rounded-md text-xs bg-background w-16"
               >
                 <option value="IDR">IDR</option>
                 <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="SGD">SGD</option>
               </select>
             )}
           </div>

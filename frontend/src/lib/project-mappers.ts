@@ -7,13 +7,16 @@ import type {
 } from "@/types/navpro";
 import type { RevenueMode } from "@/types/navpro";
 import { revenueItemToWizardRow, wizardRowToRevenueItem } from "@/lib/revenue-yearly";
+import { rateToIdr } from "./exchange-rate";
+
+const KURS_USD = 16500;
 
 export interface WizardCapexRow {
   id: string;
   name: string;
   category: string;
   amount: number;
-  currency: "IDR" | "USD";
+  currency: "IDR" | "USD" | "EUR" | "SGD";
   period: number;
 }
 
@@ -23,7 +26,7 @@ export interface WizardOpexRow {
   category: string;
   type: "NOMINAL" | "PERCENT";
   amount: number;
-  currency: "IDR" | "USD";
+  currency: "IDR" | "USD" | "EUR" | "SGD";
   startPeriod: number;
   endPeriod: number;
   catalogCode?: string;
@@ -37,7 +40,7 @@ export interface WizardRevenueRow {
   customerName: string;
   location: string;
   harsat: number;
-  currency: "IDR" | "USD";
+  currency: "IDR" | "USD" | "EUR" | "SGD";
   qty: number;
   otc: number;
   escalation: number;
@@ -48,8 +51,6 @@ export interface WizardRevenueRow {
   harsatYear2: number;
   harsatByYear?: number[];
 }
-
-const KURS_USD = 16500;
 
 export function getProjectKursUsd(p: Project): number {
   if (p.kurs_usd_override != null && Number.isFinite(Number(p.kurs_usd_override))) {
@@ -65,10 +66,10 @@ export function getProjectCapexTotal(p: Project): number {
   if (p.kpi?.capex_total != null && Number.isFinite(Number(p.kpi.capex_total))) {
     return Number(p.kpi.capex_total);
   }
-  const kurs = getProjectKursUsd(p);
+  const rates = p.kpi?.exchange_rates_used || { IDR: 1, USD: getProjectKursUsd(p) };
   return (p.capex || []).reduce((sum, item) => {
     const amt = parseFloat(String(item.amount || 0));
-    return sum + (item.currency === "USD" ? amt * kurs : amt);
+    return sum + amt * rateToIdr(item.currency, rates);
   }, 0);
 }
 

@@ -400,6 +400,7 @@ export function rowToProject(row) {
     otc_amount: detail.otc_amount,
     kurs_usd_override:
       detail.kurs_usd_override != null ? parseFloat(detail.kurs_usd_override) : null,
+    exchange_rate_snapshot: detail.exchange_rate_snapshot || null,
     approval_chain: detail.approval_chain || [],
     versions: detail.versions || [],
     cashflow_monthly: detail.cashflow_monthly,
@@ -418,6 +419,7 @@ export function projectToDetail(body) {
     tariff_calculator_snapshot: body.tariff_calculator_snapshot || null,
     otc_amount: body.otc_amount,
     kurs_usd_override: body.kurs_usd_override,
+    exchange_rate_snapshot: body.exchange_rate_snapshot,
     approval_chain: body.approval_chain || [],
     versions: body.versions || [],
     cashflow_monthly: body.cashflow_monthly,

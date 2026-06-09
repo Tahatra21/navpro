@@ -49,6 +49,7 @@ export interface ProjectKpi {
   wacc_used?: number;
   inflation_used?: number;
   kurs_usd_used?: number;
+  exchange_rates_used?: Record<string, number>;
   capex_total?: number;
   opex_baseline_total?: number;
   lifetime_revenue_total?: number;
@@ -107,6 +108,7 @@ export interface Project {
   versions?: CalculationVersionSummary[];
   cashflow_monthly?: CashflowPeriod[];
   kpi?: ProjectKpi;
+  exchange_rate_snapshot?: import("@/lib/exchange-rate").ExchangeRateSnapshot | null;
 }
 
 export interface CapexItem {
@@ -114,7 +116,7 @@ export interface CapexItem {
   category: string;
   amount: number;
   period: number;
-  currency?: "IDR" | "USD";
+  currency?: "IDR" | "USD" | "EUR" | "SGD";
 }
 
 export interface OpexItem {
@@ -125,7 +127,7 @@ export interface OpexItem {
   coefficient_rate?: number;
   start_period: number;
   end_period: number;
-  currency?: "IDR" | "USD";
+  currency?: "IDR" | "USD" | "EUR" | "SGD";
   /** P3: referensi katalog layanan Icon+ */
   catalog_code?: string;
   icon_key?: string;
@@ -177,7 +179,7 @@ export interface RevenueItem {
   otc?: number;
   customer_name?: string;
   location?: string;
-  currency?: "IDR" | "USD";
+  currency?: "IDR" | "USD" | "EUR" | "SGD";
   /** P2: flat | escalation | step_yearly (Y1/Y2 tariff step at month 13) */
   revenue_mode?: RevenueMode;
   harsat_year_1?: number;

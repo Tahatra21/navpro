@@ -571,30 +571,32 @@ export interface UsdDailyRateRow {
 
 **Definition of done Fase 1:**
 
-- [ ] `POST /admin/exchange-rate/sync` memperbarui `kurs_usd` dan **baris harian**
-- [ ] `GET /config/exchange-rate/history` dapat diakses **semua role** login
-- [ ] Halaman `/kurs-usd` menampilkan tabel historis per hari
-- [ ] Scheduler jalan jika `EXCHANGE_RATE_AUTO_SYNC=true`
-- [ ] Wizard Langkah 2 menampilkan kurs master terbaru setelah sync
-- [ ] Proyek dengan override tidak terpengaruh
+- [x] `POST /admin/exchange-rate/sync` memperbarui `kurs_usd` dan **baris harian**
+- [x] `GET /config/exchange-rate/history` dapat diakses **semua role** login
+- [x] Halaman `/kurs-usd` menampilkan tabel historis per hari
+- [x] Scheduler jalan jika `EXCHANGE_RATE_AUTO_SYNC=true`
+- [x] Wizard Langkah 2 menampilkan kurs master terbaru setelah sync
+- [x] Proyek dengan override tidak terpengaruh (existing behavior)
+- [x] Sync idempotent (`applied: false` jika kurs sama)
+- [x] Unit test provider (mock fetch + BI XML parser)
 
 ### Fase 2 — BI JISDOR & governance (estimasi 2–3 hari)
 
-| # | Task |
-|---|------|
-| 2.1 | Parser/provider BI JISDOR resmi |
-| 2.2 | Backfill historis BI (import CSV/API ke `usd_exchange_rate_daily`) |
-| 2.3 | Grafik tren kurs di `/kurs-usd` (Recharts) |
-| 2.4 | Approval workflow jika delta kurs > 5% (opsional) |
-| 2.5 | Notifikasi gagal sync ke Finance Admin |
+| # | Task | Status |
+|---|------|--------|
+| 2.1 | Parser/provider BI JISDOR resmi | ✅ `bi_jisdor` provider |
+| 2.2 | Backfill historis BI (import ke `usd_exchange_rate_daily`) | ✅ `POST /admin/exchange-rate/backfill` |
+| 2.3 | Grafik tren kurs di `/kurs-usd` (Recharts) | ✅ |
+| 2.4 | Approval workflow jika delta kurs > 5% | ✅ pending + approve/reject |
+| 2.5 | Notifikasi gagal sync ke Finance Admin | ✅ setelah 3× gagal berturut |
 
 ### Fase 3 — Enhancement (opsional)
 
-| # | Task |
-|---|------|
-| 3.1 | Kurs historis per tanggal efektif proyek (snapshot saat submit KKF) |
-| 3.2 | Multi-currency selain USD |
-| 3.3 | Integrasi Redis lock untuk multi-instance scheduler |
+| # | Task | Status |
+|---|------|--------|
+| 3.1 | Kurs historis per tanggal efektif proyek (snapshot saat submit KKF) | ✅ `exchange_rate_snapshot` |
+| 3.2 | Multi-currency selain USD (EUR, SGD) | ✅ resolver + historis + wizard |
+| 3.3 | Integrasi Redis lock untuk multi-instance scheduler | ✅ `withRedisLock` saat `REDIS_URL` set |
 
 ---
 

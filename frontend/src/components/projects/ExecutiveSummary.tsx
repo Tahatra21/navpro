@@ -396,6 +396,18 @@ export function ExecutiveSummary({ project }: { project: Project }) {
                       <strong className="text-foreground">
                         {kpi.kurs_usd_used != null ? formatCurrency(kpi.kurs_usd_used) : "—"}
                       </strong>
+                      {kpi.exchange_rates_used?.EUR != null && (
+                        <span className="text-muted-foreground font-normal">
+                          {" "}
+                          · EUR {formatCurrency(kpi.exchange_rates_used.EUR)}
+                        </span>
+                      )}
+                      {kpi.exchange_rates_used?.SGD != null && (
+                        <span className="text-muted-foreground font-normal">
+                          {" "}
+                          · SGD {formatCurrency(kpi.exchange_rates_used.SGD)}
+                        </span>
+                      )}
                     </span>
                   </>
                 )}
@@ -412,6 +424,30 @@ export function ExecutiveSummary({ project }: { project: Project }) {
                   </>
                 )}
               </div>
+
+              {project.exchange_rate_snapshot?.items?.length ? (
+                <div className="rounded-lg border border-border/60 bg-muted/20 px-4 py-3 text-xs space-y-2">
+                  <p className="font-semibold text-foreground">
+                    Snapshot kurs saat submit ({project.exchange_rate_snapshot.effective_date})
+                  </p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground">
+                    {project.exchange_rate_snapshot.items.map((item) => (
+                      <span key={item.currency}>
+                        {item.currency}: dipakai{" "}
+                        <strong className="text-foreground">
+                          {item.kurs_used != null ? formatCurrency(item.kurs_used) : "—"}
+                        </strong>
+                        {item.historical_rate != null && (
+                          <>
+                            {" "}
+                            · historis {item.historical_rate_date}: {formatCurrency(item.historical_rate)}
+                          </>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </>
           )}
         </div>

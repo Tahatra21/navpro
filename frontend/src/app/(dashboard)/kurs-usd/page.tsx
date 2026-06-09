@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { UsdRateHistoryTable, exportHistoryCsv } from "@/components/kurs/UsdRateHistoryTable";
+import { UsdRateChart } from "@/components/kurs/UsdRateChart";
+import { FX_CURRENCIES, type FxCurrency } from "@/lib/exchange-rate";
 import { cn } from "@/lib/utils";
 import { wibDateOffsetDays } from "@/lib/wib-date";
 
@@ -37,6 +39,7 @@ export default function KursUsdPage() {
   const [from, setFrom] = useState(() => wibDateOffsetDays(-30));
   const [to, setTo] = useState(today);
   const [limit, setLimit] = useState(90);
+  const [currency, setCurrency] = useState<FxCurrency>("USD");
 
   const current = useQuery({
     queryKey: ["exchange-rate"],
@@ -46,8 +49,8 @@ export default function KursUsdPage() {
   });
 
   const history = useQuery({
-    queryKey: ["exchange-rate-history", from, to, limit],
-    queryFn: () => navproApi.getExchangeRateHistory({ from, to, limit, order: "desc" }),
+    queryKey: ["exchange-rate-history", from, to, limit, currency],
+    queryFn: () => navproApi.getExchangeRateHistory({ from, to, limit, order: "desc", currency }),
     enabled: backendOnline === true,
   });
 
@@ -65,12 +68,24 @@ export default function KursUsdPage() {
       <div>
         <div className="flex items-center gap-2 mb-1">
           <DollarSign className="w-5 h-5 text-primary" />
-          <h1 className="text-xl font-bold tracking-tight">Kurs USD / IDR</h1>
+          <h1 className="text-xl font-bold tracking-tight">Kurs Valas / IDR</h1>
         </div>
         <p className="text-sm text-muted-foreground">
-          Historis kurs harian untuk seluruh pengguna NAVPRO. Sumber data: provider eksternal (Frankfurter) atau
-          input manual admin.
+          Historis kurs harian USD, EUR, dan SGD untuk seluruh pengguna NAVPRO.
         </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {FX_CURRENCIES.map((c) => (
+          <Button
+            key={c}
+            variant={currency === c ? "default" : "outline"}
+            size="sm"
+            onClick={() => setCurrency(c)}
+          >
+            {c}/IDR
+          </Button>
+        ))}
       </div>
 
       <Card className="p-5">
@@ -145,6 +160,8 @@ export default function KursUsdPage() {
             </Button>
           </div>
         </div>
+
+        <UsdRateChart items={items} loading={history.isLoading} />
 
         {history.isError && (
           <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
