@@ -13,6 +13,7 @@ const NAVPRO_API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:400
 export class NavproApi {
   private baseUrl: string;
   private defaultTimeoutMs = 4500;
+  private loginTimeoutMs = 15000;
 
   constructor(baseUrl: string = NAVPRO_API_BASE) {
     this.baseUrl = baseUrl.replace(/\/$/, "");
@@ -39,7 +40,7 @@ export class NavproApi {
   }
 
   async health(): Promise<{ status?: string }> {
-    const { res, data } = await this.fetchJsonWithTimeout(`${this.baseUrl}/health`, { method: "GET" }, 2500);
+    const { res, data } = await this.fetchJsonWithTimeout(`${this.baseUrl}/health`, { method: "GET" }, 5000);
     if (!res.ok) return {};
     return data as { status?: string };
   }
@@ -91,12 +92,32 @@ export class NavproApi {
   }
 
   login(email: string, password: string) {
-    return this.request<{ token: string; user: User }>("POST", "/api/v1/auth/login", {
-      email,
-      password,
-    }).then((data) => {
-      this.setToken(data.token);
-      return data;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const e2eSecret = process.env.NEXT_PUBLIC_E2E_BYPASS_SECRET;
+    if (e2eSecret) headers["X-Navpro-E2E"] = e2eSecret;
+
+    return this.fetchJsonWithTimeout(
+      `${this.baseUrl}/api/v1/auth/login`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ email, password }),
+      },
+      this.loginTimeoutMs
+    ).then(({ res, data }) => {
+      if (!res.ok) {
+        const err = new Error(
+          (data as { message?: string; error?: string }).message ||
+            (data as { error?: string }).error ||
+            `HTTP ${res.status}`
+        ) as Error & { status?: number; data?: unknown };
+        err.status = res.status;
+        err.data = data;
+        throw err;
+      }
+      const payload = data as { token: string; user: User };
+      this.setToken(payload.token);
+      return payload;
     });
   }
 

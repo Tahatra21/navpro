@@ -29,9 +29,21 @@ async function buildStore(prefix) {
 // ──────────────────────────────────────────────────────────────
 const isDev = process.env.NODE_ENV !== 'production';
 
+function parseLoginMax() {
+  const fromEnv = parseInt(process.env.LOGIN_RATE_LIMIT_MAX || '', 10);
+  if (Number.isFinite(fromEnv) && fromEnv > 0) return fromEnv;
+  return isDev ? 100 : 5;
+}
+
+function shouldSkipLoginRateLimit(req) {
+  const secret = process.env.E2E_BYPASS_SECRET;
+  if (secret && req.get('x-navpro-e2e') === secret) return true;
+  return false;
+}
+
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: isDev ? 50 : 5,
+  max: parseLoginMax(),
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: {
@@ -39,6 +51,7 @@ export const loginLimiter = rateLimit({
     message: 'Terlalu banyak percobaan login. Coba lagi setelah 15 menit.',
   },
   skipSuccessfulRequests: true, // only count failures
+  skip: shouldSkipLoginRateLimit,
   keyGenerator: (req) => ipKeyGenerator(req.ip, 56),
   store: undefined, // overridden in initRateLimiters()
 });

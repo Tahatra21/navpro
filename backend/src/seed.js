@@ -3,10 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
 import { pool, initDb, query } from './db.js';
 import { seedDailyFromAssumptions } from './services/exchangeRateService.js';
-import { runCalculationOnProject } from './services/calculationEngine.js';
-import { getDemoProjectDefinitions } from './data/demoProjects.js';
-import { loadOrgUnitByCode, resolveOrgUnitFromCode } from './utils/demoProjectOrg.js';
 import { getSeedDemoPassword } from './config/security.js';
+import { refreshDemoFixtures } from './services/demoFixtures.js';
 
 dotenv.config();
 
@@ -197,7 +195,14 @@ async function seed() {
 
   const seeded = await query(`SELECT value FROM app_meta WHERE key = 'seeded'`);
   if (seeded.rows[0]?.value === '1') {
-    console.log('Database already seeded.');
+    const { rows: assumptionsRows } = await query(
+      `SELECT data FROM assumptions_master ORDER BY updated_at DESC LIMIT 1`
+    );
+    const assumptions = assumptionsRows[0]?.data || defaultAssumptions;
+    const fx = await refreshDemoFixtures(query, assumptions);
+    console.log(
+      `Database already seeded. Demo fixtures refreshed (${fx.projects} projects inserted, ${fx.notifications} notifications).`
+    );
     await pool.end();
     return;
   }
@@ -302,72 +307,8 @@ async function seed() {
   // Legacy demo used predictable UUIDs (security risk) — remove before re-seeding.
   await query(`DELETE FROM projects WHERE id::text LIKE '22222222-2222-2222-2222-%'`);
 
-  const mockProjects = getDemoProjectDefinitions();
-  const orgByCode = await loadOrgUnitByCode(query);
-
-  for (const raw of mockProjects) {
-    const { rows: existing } = await query(`SELECT id FROM projects WHERE project_code = $1`, [
-      raw.project_code,
-    ]);
-    if (existing.length) continue;
-
-    const { orgUnitId, segment } = resolveOrgUnitFromCode(orgByCode, raw.org_unit_code);
-    const projectId = uuidv4();
-    let proj = { ...raw, wacc_override: null, inflation_rate_override: null, bcr_threshold_override: null };
-    proj = runCalculationOnProject(proj, defaultAssumptions);
-    const detail = {
-      customer_name: proj.customer_name,
-      contract_number: proj.contract_number,
-      pic_sales: proj.pic_sales,
-      capex: proj.capex,
-      opex: proj.opex,
-      revenue: proj.revenue,
-      otc_amount: proj.otc_amount,
-      approval_chain: proj.approval_chain,
-      versions: proj.versions.map((v) => ({
-        ...v,
-        xirr: proj.kpi.xirr,
-        xnpv: proj.kpi.xnpv,
-        bcr: proj.kpi.bcr,
-      })),
-      cashflow_monthly: proj.cashflow_monthly,
-      kpi: proj.kpi,
-    };
-
-    await query(
-      `INSERT INTO projects (id, created_by, org_unit_id, segment, project_code, project_name, status,
-        project_duration_months, duration_category, contract_start_date, detail)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-      [
-        projectId,
-        raw.created_by,
-        orgUnitId,
-        segment,
-        raw.project_code,
-        raw.project_name,
-        raw.status,
-        raw.project_duration_months,
-        raw.duration_category,
-        raw.contract_start_date,
-        JSON.stringify(detail),
-      ]
-    );
-  }
-
-  const { rows: ftthRows } = await query(
-    `SELECT id FROM projects WHERE project_code = 'NAVPRO-2026-0001' LIMIT 1`
-  );
-  if (ftthRows[0]?.id) {
-    await query(
-      `INSERT INTO notifications (user_id, title, body, project_id) VALUES ($1,$2,$3,$4)`,
-      [
-        '11111111-1111-1111-1111-111111111104',
-        'Proyek NAVPRO Baru',
-        'Proyek FTTH Expansion Jakarta Selatan menunggu review Anda.',
-        ftthRows[0].id,
-      ]
-    );
-  }
+  const fx = await refreshDemoFixtures(query, defaultAssumptions);
+  console.log(`Demo fixtures: ${fx.projects} projects inserted, ${fx.notifications} notifications upserted.`);
 
   await query(
     `INSERT INTO audit_logs (user_name, action, old_val, new_val) VALUES

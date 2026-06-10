@@ -14,6 +14,7 @@
     "db:up": "docker compose up -d postgres",
     "db:seed": "npm run seed --prefix backend",
     "reset:local": "npm run reset:local --prefix backend",
+    "seed:e2e": "npm run seed:e2e --prefix backend",
     "db:dump": "npm run db:dump --prefix backend",
     "backend:install": "npm install --prefix backend",
     "backend:dev": "npm run dev --prefix backend",

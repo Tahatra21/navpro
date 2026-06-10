@@ -7,7 +7,7 @@ router.use(authRequired);
 
 router.get('/', async (req, res) => {
   const { rows } = await query(
-    `SELECT id, title, body, project_id, is_read, created_at AS timestamp
+    `SELECT id, title, body, project_id, is_read, created_at
      FROM notifications WHERE user_id = $1
      ORDER BY created_at DESC LIMIT 50`,
     [req.user.sub]

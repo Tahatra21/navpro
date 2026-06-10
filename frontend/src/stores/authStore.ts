@@ -40,7 +40,7 @@ interface AuthState {
   logout: () => Promise<void>;
 }
 
-async function probeBackendHealth(retries = 2): Promise<boolean> {
+async function probeBackendHealth(retries = 3): Promise<boolean> {
   for (let i = 0; i < retries; i++) {
     try {
       const health = await navproApi.health();
@@ -49,7 +49,7 @@ async function probeBackendHealth(retries = 2): Promise<boolean> {
       /* retry */
     }
     if (i < retries - 1) {
-      await new Promise((r) => setTimeout(r, 1200));
+      await new Promise((r) => setTimeout(r, 1500));
     }
   }
   return false;

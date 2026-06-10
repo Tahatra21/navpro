@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { navproApi } from "@/services/api";
 import { Eye, EyeOff, ChevronRight } from "lucide-react";
 import type { User } from "@/types/navpro";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 // Progressive delay after failed attempts to slow down brute-force
 const RETRY_DELAY_MS = [0, 1000, 2000, 4000, 8000];
@@ -20,6 +22,12 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const failCount = useRef(0);
   const setUser = useAuthStore((state: { setUser: (u: User | null) => void }) => state.setUser);
+  const recheckBackend = useAuthStore((s) => s.recheckBackend);
+  const backendOnline = useAuthStore((s) => s.backendOnline);
+
+  useEffect(() => {
+    recheckBackend();
+  }, [recheckBackend]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +39,18 @@ export default function LoginPage() {
     if (delay > 0) await new Promise((r) => setTimeout(r, delay));
 
     try {
+      let online = backendOnline;
+      if (online !== true) {
+        online = await recheckBackend();
+      }
+      if (!online) {
+        setError(
+          `Backend tidak tersedia di ${API_BASE}. Pastikan API berjalan (npm run dev) dan NEXT_PUBLIC_API_URL benar.`
+        );
+        setLoading(false);
+        return;
+      }
+
       const { user } = await navproApi.login(email.trim(), password);
       failCount.current = 0;
       setUser(user);
@@ -40,9 +60,11 @@ export default function LoginPage() {
       const status = (err as { status?: number })?.status;
       const message = err instanceof Error ? err.message : "";
       if (!status && /fetch|network|abort|Failed/i.test(message)) {
-        setError("Backend tidak tersedia. Pastikan npm run dev berjalan dan API di port 4000 online.");
+        setError(
+          `Backend tidak tersedia di ${API_BASE}. Pastikan API berjalan dan NEXT_PUBLIC_API_URL sesuai lingkungan test.`
+        );
       } else if (status === 401) {
-        setError("Email atau password salah.");
+        setError("Email atau password salah. Gunakan akun demo dari SEED_DEMO_PASSWORD (admin@navpro.app).");
       } else if (status === 429) {
         setError("Terlalu banyak percobaan login. Tunggu sebentar lalu coba lagi.");
       } else {
