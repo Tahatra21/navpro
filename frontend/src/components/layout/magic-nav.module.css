@@ -156,8 +156,9 @@
   max-width: min(calc(100vw - 1.25rem), 28rem);
   height: 3.25rem;
   --magic-pad: 0.28rem;
-  background: color-mix(in oklch, var(--card) 94%, var(--background));
+  background: var(--card);
   border-color: var(--border);
+  backdrop-filter: blur(16px);
   box-shadow: var(--shadow-md);
 }
 

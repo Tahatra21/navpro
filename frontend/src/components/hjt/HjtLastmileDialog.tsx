@@ -39,9 +39,9 @@ export function HjtLastmileDialog({ open, onOpenChange, lineId, line, onApplied 
     setCapacity(formatIdNumber(Math.max(1, Math.round(Number(line?.capacity) || 1))));
     const suggestedRevenue =
       Number(line?.harga_dasar) > 0
-        ? Number(line.harga_dasar)
+        ? Number(line?.harga_dasar)
         : Number(line?.lastmile) > 0
-          ? Number(line.lastmile)
+          ? Number(line?.lastmile)
           : 5_000_000;
     setMonthlyRevenue(formatIdNumber(suggestedRevenue));
     setCapex(formatIdNumber(50_000_000));
