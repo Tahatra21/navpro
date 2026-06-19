@@ -7,6 +7,7 @@ import { getSeedDemoPassword } from './config/security.js';
 import { refreshDemoFixtures } from './services/demoFixtures.js';
 import { seedHjt } from './hjt/seedHjt.js';
 import { seedHjtDemoQuotations } from './hjt/seedHjtDemo.js';
+import { DEMO_USERS, DEMO_USER_IDS, ensureDemoUsers } from './data/demoUsers.js';
 
 dotenv.config();
 
@@ -29,25 +30,6 @@ const defaultAssumptions = {
 };
 
 /** Canonical demo accounts — lokal & VPS harus pakai password yang sama: SEED_DEMO_PASSWORD */
-const DEMO_USERS = [
-  { email: 'admin@navpro.app', full_name: 'Admin NAVPRO', role: 'SUPER_ADMIN' },
-  { email: 'budi.santoso@navpro.app', full_name: 'Budi Santoso', role: 'SUPER_ADMIN' },
-  { email: 'ani.lestari@navpro.app', full_name: 'Ani Lestari', role: 'FINANCE_ADMIN' },
-  { email: 'rian.hidayat@navpro.app', full_name: 'Rian Hidayat', role: 'SA' },
-  { email: 'sari.wulandari@navpro.app', full_name: 'Sari Wulandari', role: 'ASMAN' },
-  { email: 'dewi.sartika@navpro.app', full_name: 'Dewi Sartika', role: 'MANAGER' },
-  { email: 'irwan.setiawan@navpro.app', full_name: 'Irwan Setiawan', role: 'GM_SRM' },
-];
-
-const DEMO_USER_IDS = {
-  'admin@navpro.app': '11111111-1111-1111-1111-111111111100',
-  'budi.santoso@navpro.app': '11111111-1111-1111-1111-111111111101',
-  'ani.lestari@navpro.app': '11111111-1111-1111-1111-111111111102',
-  'rian.hidayat@navpro.app': '11111111-1111-1111-1111-111111111103',
-  'sari.wulandari@navpro.app': '11111111-1111-1111-1111-111111111104',
-  'dewi.sartika@navpro.app': '11111111-1111-1111-1111-111111111105',
-  'irwan.setiawan@navpro.app': '11111111-1111-1111-1111-111111111106',
-};
 
 async function seed() {
   await initDb();
@@ -177,16 +159,7 @@ async function seed() {
   const demoHash = await bcrypt.hash(seedPassword, 10);
   const demoEmails = DEMO_USERS.map((u) => u.email);
 
-  // Idempotent: pastikan semua akun demo ada (meski DB sudah pernah di-seed).
-  for (const u of DEMO_USERS) {
-    const userId = DEMO_USER_IDS[u.email] || uuidv4();
-    await query(
-      `INSERT INTO users (id, email, password_hash, full_name, role, is_active)
-       VALUES ($1,$2,$3,$4,$5,true)
-       ON CONFLICT (email) DO NOTHING`,
-      [userId, u.email, demoHash, u.full_name, u.role]
-    );
-  }
+  await ensureDemoUsers(query, { passwordHash: demoHash });
   if (process.env.SEED_RESET_DEMO_PASSWORDS === 'true') {
     await query(
       `UPDATE users SET password_hash = $1, is_active = true

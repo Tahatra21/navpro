@@ -3,14 +3,16 @@
  * Jalankan di VPS setelah deploy: npm run seed:hjt-demo
  */
 import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
 import { pool, initDb, query } from './db.js';
 import { seedHjt } from './hjt/seedHjt.js';
 import { seedHjtDemoQuotations } from './hjt/seedHjtDemo.js';
+import { DEMO_USER_IDS, ensureDemoUsers, logDemoUserRoles } from './data/demoUsers.js';
+import { getSeedDemoPassword } from './config/security.js';
 
 dotenv.config();
 
 const DEMO_SA_EMAIL = 'rian.hidayat@navpro.app';
-const DEMO_SA_ID = '11111111-1111-1111-1111-111111111103';
 
 async function ensureOrgUnits() {
   const units = [
@@ -30,16 +32,17 @@ async function ensureOrgUnits() {
 async function resolveDemoCreator() {
   const { rows: byEmail } = await query(`SELECT id FROM users WHERE email = $1 LIMIT 1`, [DEMO_SA_EMAIL]);
   if (byEmail[0]?.id) return byEmail[0].id;
-
-  const { rows: byId } = await query(`SELECT id FROM users WHERE id = $1 LIMIT 1`, [DEMO_SA_ID]);
-  if (byId[0]?.id) return byId[0].id;
-
-  return null;
+  return DEMO_USER_IDS[DEMO_SA_EMAIL] ?? null;
 }
 
 async function main() {
   await initDb();
   await ensureOrgUnits();
+
+  const seedPassword = getSeedDemoPassword();
+  const demoHash = await bcrypt.hash(seedPassword, 10);
+  await ensureDemoUsers(query, { passwordHash: demoHash });
+  await logDemoUserRoles(query);
 
   const { versionId } = await seedHjt(query);
   if (!versionId) {
@@ -49,9 +52,7 @@ async function main() {
 
   const createdBy = await resolveDemoCreator();
   if (!createdBy) {
-    console.error(
-      `[seed:hjt-demo] User ${DEMO_SA_EMAIL} belum ada. Jalankan: npm run seed:e2e`
-    );
+    console.error(`[seed:hjt-demo] User ${DEMO_SA_EMAIL} belum ada. Jalankan: npm run seed:e2e`);
     process.exit(1);
   }
 
@@ -82,6 +83,7 @@ async function main() {
     process.exit(1);
   }
 
+  console.log('[seed:hjt-demo] Selesai. Logout + login ulang admin@navpro.app agar JWT role SUPER_ADMIN aktif.');
   await pool.end();
 }
 
