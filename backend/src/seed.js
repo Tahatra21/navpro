@@ -7,7 +7,7 @@ import { getSeedDemoPassword } from './config/security.js';
 import { refreshDemoFixtures } from './services/demoFixtures.js';
 import { seedHjt } from './hjt/seedHjt.js';
 import { seedHjtDemoQuotations } from './hjt/seedHjtDemo.js';
-import { DEMO_USERS, DEMO_USER_IDS, ensureDemoUsers } from './data/demoUsers.js';
+import { DEMO_USERS, DEMO_USER_IDS, ensureDemoUsers, syncDemoUserRoles, logDemoUserRoles, resolveDemoUserIdByEmail } from './data/demoUsers.js';
 
 dotenv.config();
 

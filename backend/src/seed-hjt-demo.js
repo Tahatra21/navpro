@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 import { pool, initDb, query } from './db.js';
 import { seedHjt } from './hjt/seedHjt.js';
 import { seedHjtDemoQuotations } from './hjt/seedHjtDemo.js';
-import { DEMO_USER_IDS, ensureDemoUsers, logDemoUserRoles } from './data/demoUsers.js';
+import { syncDemoUserRoles, logDemoUserRoles, resolveDemoUserIdByEmail } from './data/demoUsers.js';
 import { getSeedDemoPassword } from './config/security.js';
 
 dotenv.config();
@@ -29,19 +29,13 @@ async function ensureOrgUnits() {
   }
 }
 
-async function resolveDemoCreator() {
-  const { rows: byEmail } = await query(`SELECT id FROM users WHERE email = $1 LIMIT 1`, [DEMO_SA_EMAIL]);
-  if (byEmail[0]?.id) return byEmail[0].id;
-  return DEMO_USER_IDS[DEMO_SA_EMAIL] ?? null;
-}
-
 async function main() {
   await initDb();
   await ensureOrgUnits();
 
   const seedPassword = getSeedDemoPassword();
   const demoHash = await bcrypt.hash(seedPassword, 10);
-  await ensureDemoUsers(query, { passwordHash: demoHash });
+  await syncDemoUserRoles(query, { passwordHash: demoHash });
   await logDemoUserRoles(query);
 
   const { versionId } = await seedHjt(query);
@@ -50,9 +44,14 @@ async function main() {
     process.exit(1);
   }
 
-  const createdBy = await resolveDemoCreator();
+  let createdBy = await resolveDemoUserIdByEmail(query, DEMO_SA_EMAIL);
   if (!createdBy) {
-    console.error(`[seed:hjt-demo] User ${DEMO_SA_EMAIL} belum ada. Jalankan: npm run seed:e2e`);
+    createdBy = await resolveDemoUserIdByEmail(query, 'admin@navpro.app');
+  }
+  if (!createdBy) {
+    console.error(
+      `[seed:hjt-demo] User ${DEMO_SA_EMAIL} atau admin@navpro.app tidak ditemukan. Buat user SA/admin dulu.`
+    );
     process.exit(1);
   }
 
@@ -74,13 +73,20 @@ async function main() {
   );
   const inDb = verifyRows[0]?.c ?? 0;
 
+  const { rows: regionRows } = await query(`SELECT COUNT(*)::int AS c FROM hjt_region`);
+  const regionCount = regionRows[0]?.c ?? 0;
+
   console.log(
-    `[seed:hjt-demo] inserted=${inserted} skipped=${skipped} regions=${regions} verified_in_db=${inDb} creator=${createdBy}`
+    `[seed:hjt-demo] inserted=${inserted} skipped=${skipped} regions=${regions} hjt_region=${regionCount} verified_in_db=${inDb} creator=${createdBy}`
   );
 
-  if (inDb === 0) {
-    console.error('[seed:hjt-demo] GAGAL — tidak ada baris DEMO-HJT di database.');
+  if (regionCount === 0) {
+    console.error('[seed:hjt-demo] GAGAL — hjt_region masih kosong.');
     process.exit(1);
+  }
+
+  if (inDb === 0 && inserted === 0) {
+    console.warn('[seed:hjt-demo] Tidak ada penawaran DEMO-HJT (opsional). Region katalog sudah terisi.');
   }
 
   console.log('[seed:hjt-demo] Selesai. Logout + login ulang admin@navpro.app agar JWT role SUPER_ADMIN aktif.');

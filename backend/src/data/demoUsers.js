@@ -20,15 +20,30 @@ export const DEMO_USER_IDS = {
 };
 
 /**
- * Pastikan akun demo ada dengan role benar.
- * VPS: admin@navpro.app sering dibuat manual dengan role selain SUPER_ADMIN → RLS sembunyikan HJT.
+ * Sinkron role akun demo yang sudah ada (aman di VPS — tidak insert user baru).
  */
-export async function ensureDemoUsers(query, { passwordHash = null } = {}) {
+export async function syncDemoUserRoles(query, { passwordHash = null } = {}) {
   for (const u of DEMO_USERS) {
-    const userId = DEMO_USER_IDS[u.email];
-    const { rows } = await query(`SELECT id FROM users WHERE email = $1`, [u.email]);
+    const { rowCount } = await query(
+      `UPDATE users SET role = $1, full_name = $2, is_active = true WHERE email = $3`,
+      [u.role, u.full_name, u.email]
+    );
+    if (rowCount > 0 && passwordHash) {
+      await query(`UPDATE users SET password_hash = $1 WHERE email = $2`, [passwordHash, u.email]);
+    }
+  }
+}
 
-    if (rows[0]) {
+/**
+ * Pastikan akun demo ada dengan role benar.
+ * VPS: UUID fixed bisa bentrok dengan user manual → insert tanpa id jika perlu.
+ */
+export async function ensureDemoUsers(query, { passwordHash = null, insertMissing = true } = {}) {
+  for (const u of DEMO_USERS) {
+    const preferredId = DEMO_USER_IDS[u.email];
+    const { rows: byEmail } = await query(`SELECT id FROM users WHERE email = $1`, [u.email]);
+
+    if (byEmail[0]) {
       await query(
         `UPDATE users SET role = $1, full_name = $2, is_active = true WHERE email = $3`,
         [u.role, u.full_name, u.email]
@@ -39,12 +54,32 @@ export async function ensureDemoUsers(query, { passwordHash = null } = {}) {
       continue;
     }
 
-    if (!passwordHash) continue;
+    if (!insertMissing || !passwordHash) continue;
+
+    const { rows: byId } = await query(`SELECT id, email FROM users WHERE id = $1`, [preferredId]);
+    if (byId[0]) {
+      await query(
+        `INSERT INTO users (email, password_hash, full_name, role, is_active)
+         VALUES ($1,$2,$3,$4,true)
+         ON CONFLICT (email) DO UPDATE SET
+           role = EXCLUDED.role,
+           full_name = EXCLUDED.full_name,
+           is_active = true,
+           password_hash = EXCLUDED.password_hash`,
+        [u.email, passwordHash, u.full_name, u.role]
+      );
+      continue;
+    }
 
     await query(
       `INSERT INTO users (id, email, password_hash, full_name, role, is_active)
-       VALUES ($1,$2,$3,$4,$5,true)`,
-      [userId, u.email, passwordHash, u.full_name, u.role]
+       VALUES ($1,$2,$3,$4,$5,true)
+       ON CONFLICT (email) DO UPDATE SET
+         role = EXCLUDED.role,
+         full_name = EXCLUDED.full_name,
+         is_active = true,
+         password_hash = EXCLUDED.password_hash`,
+      [preferredId, u.email, passwordHash, u.full_name, u.role]
     );
   }
 }
@@ -60,4 +95,9 @@ export async function logDemoUserRoles(query) {
     const ok = row?.role === u.role && row?.is_active !== false;
     console.log(`[demo-users] ${u.email} → ${row?.role ?? 'MISSING'}${ok ? '' : ` (expected ${u.role})`}`);
   }
+}
+
+export async function resolveDemoUserIdByEmail(query, email) {
+  const { rows } = await query(`SELECT id FROM users WHERE email = $1 LIMIT 1`, [email]);
+  return rows[0]?.id ?? DEMO_USER_IDS[email] ?? null;
 }
