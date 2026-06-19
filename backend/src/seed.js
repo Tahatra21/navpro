@@ -52,13 +52,6 @@ const DEMO_USER_IDS = {
 async function seed() {
   await initDb();
   const { versionId } = await seedHjt(query);
-  const hjtDemo = await seedHjtDemoQuotations(query, {
-    versionId,
-    createdBy: DEMO_USER_IDS['rian.hidayat@navpro.app'],
-  });
-  if (hjtDemo.inserted) {
-    console.log(`HJT demo: ${hjtDemo.inserted} penawaran use-case (draft/submitted/approved/tidak layak).`);
-  }
 
   await query(
     `UPDATE users SET email = REPLACE(email, '@iconplus.co.id', '@navpro.app')
@@ -201,6 +194,14 @@ async function seed() {
       [demoHash, demoEmails]
     );
     console.log('SEED_RESET_DEMO_PASSWORDS=true — demo user passwords updated.');
+  }
+
+  const hjtDemo = await seedHjtDemoQuotations(query, {
+    versionId,
+    createdBy: DEMO_USER_IDS['rian.hidayat@navpro.app'],
+  });
+  if (hjtDemo.inserted) {
+    console.log(`HJT demo: ${hjtDemo.inserted} penawaran use-case (draft/submitted/approved/tidak layak).`);
   }
 
   const seeded = await query(`SELECT value FROM app_meta WHERE key = 'seeded'`);

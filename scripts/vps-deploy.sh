@@ -41,10 +41,15 @@ log "→ backend npm ci"
 (cd backend && npm ci)
 
 if [[ "${SKIP_SEED:-0}" != "1" ]]; then
-  log "→ seed:e2e (reset demo passwords + demo projects/notifications)"
+  log "→ seed:e2e (reset demo passwords + demo projects/notifications + HJT demo)"
   (cd backend && npm run seed:e2e)
 else
-  log "→ skip seed (SKIP_SEED=1)"
+  log "→ skip seed:e2e (SKIP_SEED=1)"
+fi
+
+if [[ "${SKIP_HJT_DEMO:-0}" != "1" ]]; then
+  log "→ seed:hjt-demo (12 penawaran DEMO-HJT-*)"
+  (cd backend && npm run seed:hjt-demo)
 fi
 
 log "→ pm2 restart navpro-backend"
