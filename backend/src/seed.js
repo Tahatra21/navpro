@@ -196,12 +196,19 @@ async function seed() {
     console.log('SEED_RESET_DEMO_PASSWORDS=true — demo user passwords updated.');
   }
 
+  const { rows: regSbuForHjt } = await query(
+    `SELECT id, segment FROM organization_units WHERE code = 'REG-SBU' LIMIT 1`
+  );
   const hjtDemo = await seedHjtDemoQuotations(query, {
     versionId,
     createdBy: DEMO_USER_IDS['rian.hidayat@navpro.app'],
+    orgUnitId: regSbuForHjt[0]?.id ?? null,
+    segment: regSbuForHjt[0]?.segment ?? 'ENT2',
   });
   if (hjtDemo.inserted) {
     console.log(`HJT demo: ${hjtDemo.inserted} penawaran use-case (draft/submitted/approved/tidak layak).`);
+  } else if (hjtDemo.skipped) {
+    console.warn(`HJT demo: 0 inserted (${hjtDemo.skipped} skipped, ${hjtDemo.regions} regions).`);
   }
 
   const seeded = await query(`SELECT value FROM app_meta WHERE key = 'seeded'`);

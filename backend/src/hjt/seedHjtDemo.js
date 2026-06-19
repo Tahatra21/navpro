@@ -180,13 +180,24 @@ const DEMO_QUOTATIONS = [
   },
 ];
 
-export async function seedHjtDemoQuotations(query, { versionId, createdBy = DEMO_SA_ID } = {}) {
-  if (!versionId) return { inserted: 0 };
+export async function seedHjtDemoQuotations(
+  query,
+  { versionId, createdBy = DEMO_SA_ID, orgUnitId = null, segment = 'ENT2' } = {}
+) {
+  if (!versionId) {
+    console.warn('[seedHjtDemo] Lewati — tariff version tidak ditemukan.');
+    return { inserted: 0, skipped: DEMO_QUOTATIONS.length, regions: 0 };
+  }
 
   await query(`DELETE FROM hjt_quotation WHERE contract_no LIKE 'DEMO-HJT-%'`);
 
   const { rows: regions } = await query(`SELECT id, region_code FROM hjt_region`);
   const regionByCode = Object.fromEntries(regions.map((r) => [r.region_code, r.id]));
+
+  if (!regions.length) {
+    console.warn('[seedHjtDemo] Lewati — tabel hjt_region kosong. Jalankan seedHjt dulu.');
+    return { inserted: 0, skipped: DEMO_QUOTATIONS.length, regions: 0 };
+  }
 
   const { rows: products } = await query(
     `SELECT id, product_name FROM hjt_product WHERE product_name LIKE 'Dedicated Internet%' OR product_name LIKE 'Metro Ethernet%' LIMIT 2`
@@ -195,12 +206,15 @@ export async function seedHjtDemoQuotations(query, { versionId, createdBy = DEMO
   const productId2 = products[1]?.id || productId;
 
   let inserted = 0;
+  let skipped = 0;
 
   for (const demo of DEMO_QUOTATIONS) {
     const regionId = regionByCode[demo.region_code];
-    if (!regionId) continue;
-
-    const creator = createdBy;
+    if (!regionId) {
+      console.warn(`[seedHjtDemo] Lewati ${demo.contract_no} — region "${demo.region_code}" tidak ada.`);
+      skipped += 1;
+      continue;
+    }
 
     await query(
       `INSERT INTO hjt_quotation
@@ -208,9 +222,9 @@ export async function seedHjtDemoQuotations(query, { versionId, createdBy = DEMO
           tariff_version_id, status, total_per_month, grand_total_hjt, grand_total_all,
           offer_floor, offer_recommended, harga_final, margin_percent,
           current_approval_role, submitted_at, approved_at, rejected_at, rejected_note,
-          created_by, updated_at, created_at)
+          org_unit_id, segment, created_by, updated_at, created_at)
        VALUES ($1,$2,$3,1,$4,'Subscription',$5,1,$6,$7,$8,$9,$10,$11,$12,$13,20,
-               $14,$15,$16,$17,$18,$19,NOW() - ($20::int * INTERVAL '1 day'), NOW() - ($20::int * INTERVAL '1 day'))`,
+               $14,$15,$16,$17,$18,$19,$20,$21,NOW() - ($22::int * INTERVAL '1 day'), NOW() - ($22::int * INTERVAL '1 day'))`,
       [
         demo.id,
         demo.customer_name,
@@ -230,7 +244,9 @@ export async function seedHjtDemoQuotations(query, { versionId, createdBy = DEMO
         demo.approved_at ?? null,
         demo.rejected_at ?? null,
         demo.rejected_note ?? null,
-        creator,
+        orgUnitId,
+        segment,
+        createdBy,
         inserted,
       ]
     );
@@ -290,5 +306,5 @@ export async function seedHjtDemoQuotations(query, { versionId, createdBy = DEMO
     inserted += 1;
   }
 
-  return { inserted };
+  return { inserted, skipped, regions: regions.length };
 }
