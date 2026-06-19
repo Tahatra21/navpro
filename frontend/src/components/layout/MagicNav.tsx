@@ -12,6 +12,7 @@ export type MagicNavItem = {
   icon: LucideIcon;
   match: (pathname: string) => boolean;
   shortLabel?: string;
+  group?: "kkf" | "hjt" | "shared";
 };
 
 type MagicNavProps = {
@@ -23,7 +24,7 @@ type MagicNavProps = {
 
 export function MagicNav({ items, pathname, variant = "header", className }: MagicNavProps) {
   const navRef = useRef<HTMLElement>(null);
-  const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const found = items.findIndex((item) => item.match(pathname));
   const resolvedIndex = found >= 0 ? found : 0;
@@ -85,25 +86,38 @@ export function MagicNav({ items, pathname, variant = "header", className }: Mag
             const Icon = item.icon;
             const text =
               variant === "bottom" && item.shortLabel ? item.shortLabel : item.label;
+            const prevGroup = index > 0 ? items[index - 1].group : undefined;
+            const showDivider =
+              variant === "header" &&
+              item.group &&
+              prevGroup &&
+              item.group !== prevGroup &&
+              item.group === "hjt";
             return (
-              <li
-                key={item.href}
-                ref={(el) => {
-                  itemRefs.current[index] = el;
-                }}
-                className={cn(styles.item, active && styles.itemActive)}
-              >
-                <Link
-                  href={item.href}
-                  className={styles.link}
-                  aria-current={active ? "page" : undefined}
-                  title={item.label}
-                >
-                  <span className={styles.iconWrap}>
-                    <Icon className="w-4 h-4" strokeWidth={active ? 2.25 : 1.85} />
+              <li key={item.href} className={styles.rowWrap}>
+                {showDivider ? (
+                  <span className={styles.groupDivider} aria-hidden title="HJT">
+                    HJT
                   </span>
-                  <span className={styles.label}>{text}</span>
-                </Link>
+                ) : null}
+                <div
+                  ref={(el) => {
+                    itemRefs.current[index] = el;
+                  }}
+                  className={cn(styles.item, active && styles.itemActive)}
+                >
+                  <Link
+                    href={item.href}
+                    className={styles.link}
+                    aria-current={active ? "page" : undefined}
+                    title={item.label}
+                  >
+                    <span className={styles.iconWrap}>
+                      <Icon className="w-4 h-4" strokeWidth={active ? 2.25 : 1.85} />
+                    </span>
+                    <span className={styles.label}>{text}</span>
+                  </Link>
+                </div>
               </li>
             );
           })}

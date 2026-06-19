@@ -8,6 +8,8 @@ import {
   getProjectLifetimeFinancials,
   sumCapexTotal,
 } from '../utils/projectLifetimeFinancials.js';
+import { buildHjtDashboardSummary } from '../hjt/services/dashboardService.js';
+import { HJT_READ_ROLES } from '../hjt/middleware/hjtRbac.js';
 
 const router = Router();
 router.use(authRequired);
@@ -256,6 +258,17 @@ router.get('/approval-queue', async (req, res) => {
     });
 
   res.json({ items });
+});
+
+router.get('/hjt-summary', async (req, res) => {
+  if (!HJT_READ_ROLES.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  const summary = await buildHjtDashboardSummary({
+    userId: req.user.sub,
+    role: req.user.role,
+  });
+  res.json(summary);
 });
 
 export default router;

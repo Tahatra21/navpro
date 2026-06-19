@@ -8,4 +8,5 @@ export { OrgPanel } from "./OrgPanel";
 export { UsersPanel } from "./UsersPanel";
 export { AuditPanel } from "./AuditPanel";
 export { HealthPanel } from "./HealthPanel";
+export { HjtTariffPanel } from "./HjtTariffPanel";
 export type * from "./types";

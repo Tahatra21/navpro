@@ -6,6 +6,7 @@ import {
   Building2,
   ClipboardList,
   DollarSign,
+  FileSpreadsheet,
   Settings,
   Shield,
   Tags,
@@ -25,6 +26,7 @@ export const ADMIN_TAB_IDS = [
   "users",
   "audit",
   "health",
+  "hjt-tariff",
 ] as const;
 
 export type AdminTabId = (typeof ADMIN_TAB_IDS)[number];
@@ -114,6 +116,17 @@ export const ADMIN_TABS: AdminTabDef[] = [
     icon: Users,
   },
   {
+    id: "hjt-tariff",
+    label: "HJT Tarif",
+    desc: "Versi kepdir, grid tarif connectivity, import Excel, IBBC & overhead.",
+    hints: [
+      "Hanya versi draft yang bisa di-edit/import.",
+      "Aktivasi versi meng-archive versi active sebelumnya.",
+      "Lihat docs/HJT_ADMIN_KEPDIR.md untuk prosedur lengkap.",
+    ],
+    icon: FileSpreadsheet,
+  },
+  {
     id: "audit",
     label: "Audit Log",
     desc: "Jejak aktivitas: login, perubahan data, approval.",
@@ -135,7 +148,7 @@ export const ADMIN_TAB_MAP = Object.fromEntries(
 
 export const ADMIN_TAB_GROUPS: { title: string; tabIds: AdminTabId[] }[] = [
   { title: "Finansial", tabIds: ["assumptions", "kurs", "presets"] },
-  { title: "Operasional", tabIds: ["categories", "sla", "templates", "org"] },
+  { title: "Operasional", tabIds: ["categories", "sla", "templates", "org", "hjt-tariff"] },
   { title: "Sistem", tabIds: ["system", "users", "audit", "health"] },
 ];
 

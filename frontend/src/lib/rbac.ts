@@ -56,3 +56,40 @@ export function canSubmitProject(role: string | undefined, status: string): bool
 export function usesV2ApprovalsQueue(role?: string): boolean {
   return hasRole(role, ["ASMAN", "MANAGER"]);
 }
+
+export function canViewHjtQuotations(role?: string): boolean {
+  return hasRole(role, [
+    "SUPER_ADMIN",
+    "FINANCE_ADMIN",
+    "VP_SA",
+    "SA",
+    "STAFF",
+    "MANAGER",
+    "ASMAN",
+    "GM_SRM",
+  ]);
+}
+
+/** View eksekutif / BOD — agregat portofolio lintas unit */
+export function isExecutiveDashboardRole(role?: string): boolean {
+  return hasRole(role, ["SUPER_ADMIN", "FINANCE_ADMIN", "VP_SA", "GM_SRM"]);
+}
+
+export function canViewHjtApprovals(role?: string): boolean {
+  return hasRole(role, ["SUPER_ADMIN", "FINANCE_ADMIN", "MANAGER", "GM_SRM", "ASMAN"]);
+}
+
+export function canEditHjtQuotation(role?: string, status?: string): boolean {
+  if (!hasRole(role, ["SUPER_ADMIN", "FINANCE_ADMIN", "SA", "STAFF"])) return false;
+  return !status || status === "draft" || status === "rejected";
+}
+
+export function canSubmitHjtQuotation(role?: string, status?: string): boolean {
+  return canEditHjtQuotation(role, status) && status === "draft";
+}
+
+export function canApproveHjtAtRole(userRole?: string, currentApprovalRole?: string | null): boolean {
+  if (!userRole || !currentApprovalRole) return false;
+  if (userRole === "SUPER_ADMIN") return true;
+  return userRole === currentApprovalRole;
+}

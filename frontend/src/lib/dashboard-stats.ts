@@ -48,6 +48,16 @@ export function buildStatusPipeline(dist: Record<string, number>): StatusPipelin
   return groups.filter((g) => g.count > 0);
 }
 
+export function buildHjtStatusPipeline(dist: Record<string, number>): StatusPipelineGroup[] {
+  const groups: StatusPipelineGroup[] = [
+    { key: "draft", label: "Draf", count: dist.draft || 0, color: "bg-muted-foreground/70" },
+    { key: "submitted", label: "Diajukan", count: dist.submitted || 0, color: "bg-amber-500/80" },
+    { key: "approved", label: "Disetujui", count: dist.approved || 0, color: "bg-emerald-500/80" },
+    { key: "rejected", label: "Tidak layak", count: dist.rejected || 0, color: "bg-destructive/80" },
+  ];
+  return groups.filter((g) => g.count > 0);
+}
+
 /** Sembunyikan proyek uji/smoke dari ringkasan dashboard */
 export function isDashboardNoiseProject(p: Project): boolean {
   const code = p.project_code || "";

@@ -5,6 +5,8 @@ import { pool, initDb, query } from './db.js';
 import { seedDailyFromAssumptions } from './services/exchangeRateService.js';
 import { getSeedDemoPassword } from './config/security.js';
 import { refreshDemoFixtures } from './services/demoFixtures.js';
+import { seedHjt } from './hjt/seedHjt.js';
+import { seedHjtDemoQuotations } from './hjt/seedHjtDemo.js';
 
 dotenv.config();
 
@@ -49,6 +51,14 @@ const DEMO_USER_IDS = {
 
 async function seed() {
   await initDb();
+  const { versionId } = await seedHjt(query);
+  const hjtDemo = await seedHjtDemoQuotations(query, {
+    versionId,
+    createdBy: DEMO_USER_IDS['rian.hidayat@navpro.app'],
+  });
+  if (hjtDemo.inserted) {
+    console.log(`HJT demo: ${hjtDemo.inserted} penawaran use-case (draft/submitted/approved/tidak layak).`);
+  }
 
   await query(
     `UPDATE users SET email = REPLACE(email, '@iconplus.co.id', '@navpro.app')

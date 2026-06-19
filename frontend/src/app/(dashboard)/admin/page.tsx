@@ -15,6 +15,7 @@ import {
   AuditPanel,
   CategoriesPanel,
   HealthPanel,
+  HjtTariffPanel,
   NotificationTemplatesPanel,
   OrgPanel,
   PresetsPanel,
@@ -224,6 +225,7 @@ function AdminPageInner() {
               onToggle={(enabled) => setMaintenance.mutate(enabled)}
             />
           )}
+          {tab === "hjt-tariff" && <HjtTariffPanel />}
         </AdminContentShell>
       </div>
     </div>

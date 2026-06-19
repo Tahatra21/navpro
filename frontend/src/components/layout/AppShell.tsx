@@ -4,14 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { LayoutDashboard, FolderKanban, CheckCircle2, Settings, ChevronDown, KeyRound, UserCog, LogOut, DollarSign } from "lucide-react";
+import { ChevronDown, KeyRound, UserCog, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { UsdRateTicker } from "@/components/kurs/UsdRateTicker";
 import { useAuthStore } from "@/stores/authStore";
-import { canViewAdmin, canViewApprovals } from "@/lib/rbac";
+import { filterNavEntries } from "@/lib/nav-config";
 import { cn } from "@/lib/utils";
-import { MagicNav } from "@/components/layout/MagicNav";
+import { PrimaryNav } from "@/components/layout/PrimaryNav";
 import { navproApi } from "@/services/api";
 import { useToast } from "@/components/shared/toast";
 import {
@@ -25,46 +25,6 @@ import {
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-const NAV_ITEMS = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    shortLabel: "Dashboard",
-    icon: LayoutDashboard,
-    match: (p: string) => p === "/dashboard",
-  },
-  {
-    href: "/projects",
-    label: "Daftar Proyek",
-    shortLabel: "Proyek",
-    icon: FolderKanban,
-    match: (p: string) => p.startsWith("/projects"),
-  },
-  {
-    href: "/approvals",
-    label: "Approvals",
-    shortLabel: "Approvals",
-    icon: CheckCircle2,
-    match: (p: string) => p.startsWith("/approvals"),
-    roles: canViewApprovals,
-  },
-  {
-    href: "/kurs-usd",
-    label: "Kurs USD",
-    shortLabel: "Kurs",
-    icon: DollarSign,
-    match: (p: string) => p.startsWith("/kurs-usd"),
-  },
-  {
-    href: "/admin",
-    label: "Admin",
-    shortLabel: "Admin",
-    icon: Settings,
-    match: (p: string) => p.startsWith("/admin"),
-    roles: canViewAdmin,
-  },
-];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -112,6 +72,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const roleLabel = useMemo(() => (effectiveRole || "").replace("_", " "), [effectiveRole]);
 
+  const navEntries = useMemo(() => filterNavEntries(effectiveRole), [effectiveRole]);
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace("/login");
@@ -135,8 +97,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-
-  const visibleNav = NAV_ITEMS.filter((item) => !item.roles || item.roles(effectiveRole));
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -165,7 +125,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <div className="flex-1 hidden md:flex justify-center items-center min-w-0 px-2">
-            <MagicNav items={visibleNav} pathname={pathname} variant="header" />
+            <PrimaryNav entries={navEntries} pathname={pathname} variant="header" />
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
@@ -250,8 +210,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile: magic nav bottom bar */}
       <div className="md:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center pb-3 px-4 pointer-events-none">
-        <MagicNav
-          items={visibleNav}
+        <PrimaryNav
+          entries={navEntries}
           pathname={pathname}
           variant="bottom"
           className="pointer-events-auto"

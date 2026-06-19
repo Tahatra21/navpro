@@ -1,6 +1,7 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
 import { applyRlsContext, isRlsEnabled, rlsStorage } from './utils/rls.js';
+import { initHjtSchema } from './hjt/schema.js';
 
 dotenv.config();
 
@@ -297,10 +298,13 @@ export async function initDb() {
       CHECK (type IN ('PUSAT', 'SBU', 'GLOBAL'));
   `);
 
+  await initHjtSchema(query);
+
   if (isRlsEnabled()) {
     await ensureRlsPolicies();
     await query(`ALTER TABLE projects ENABLE ROW LEVEL SECURITY`);
-    console.log('[navpro] RLS enabled on projects (NAVPRO_RLS_ENABLED=true)');
+    await query(`ALTER TABLE hjt_quotation ENABLE ROW LEVEL SECURITY`);
+    console.log('[navpro] RLS enabled on projects + hjt_quotation (NAVPRO_RLS_ENABLED=true)');
   }
 }
 
@@ -343,6 +347,51 @@ async function ensureRlsPolicies() {
 
   await query(`
     CREATE POLICY projects_write_policy ON projects
+    FOR INSERT, UPDATE, DELETE
+    USING (
+      (current_setting('navpro.role', true) IN ('SUPER_ADMIN','FINANCE_ADMIN'))
+      OR (
+        current_setting('navpro.role', true) IN ('STAFF','SA')
+        AND created_by = nullif(current_setting('navpro.user_id', true), '')::uuid
+      )
+    )
+    WITH CHECK (
+      (current_setting('navpro.role', true) IN ('SUPER_ADMIN','FINANCE_ADMIN'))
+      OR (
+        current_setting('navpro.role', true) IN ('STAFF','SA')
+        AND created_by = nullif(current_setting('navpro.user_id', true), '')::uuid
+      )
+    );
+  `);
+
+  await query(`ALTER TABLE hjt_quotation DISABLE ROW LEVEL SECURITY`);
+  await query(`DROP POLICY IF EXISTS hjt_quotation_select_policy ON hjt_quotation`);
+  await query(`DROP POLICY IF EXISTS hjt_quotation_write_policy ON hjt_quotation`);
+
+  await query(`
+    CREATE POLICY hjt_quotation_select_policy ON hjt_quotation
+    FOR SELECT
+    USING (
+      (current_setting('navpro.role', true) IN ('SUPER_ADMIN','FINANCE_ADMIN','VP_SA'))
+      OR (
+        current_setting('navpro.role', true) IN ('STAFF','SA')
+        AND created_by = nullif(current_setting('navpro.user_id', true), '')::uuid
+      )
+      OR (
+        current_setting('navpro.role', true) = 'ASMAN'
+        AND org_unit_id IS NOT NULL
+        AND org_unit_id = nullif(current_setting('navpro.org_unit_id', true), '')::uuid
+      )
+      OR (
+        current_setting('navpro.role', true) IN ('MANAGER','GM_SRM')
+        AND segment IS NOT NULL
+        AND segment = nullif(current_setting('navpro.segment', true), '')
+      )
+    );
+  `);
+
+  await query(`
+    CREATE POLICY hjt_quotation_write_policy ON hjt_quotation
     FOR INSERT, UPDATE, DELETE
     USING (
       (current_setting('navpro.role', true) IN ('SUPER_ADMIN','FINANCE_ADMIN'))

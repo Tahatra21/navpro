@@ -18,6 +18,7 @@ import { seedDailyFromAssumptions } from './services/exchangeRateService.js';
 import { exchangeRateConfigRouter, exchangeRateAdminRouter } from './routes/exchangeRate.js';
 import jobsRoutes from './routes/jobs.js';
 import approvalsRoutes from './routes/approvals.js';
+import hjtRoutes from './routes/hjt.js';
 import { isQueueEnabled, startWorker } from './services/queue.js';
 import { processCalcJob } from './services/calcWorker.js';
 import { assertRuntimeSecrets, warnInsecureDevSecrets } from './config/security.js';
@@ -110,6 +111,7 @@ app.use('/api/v1/config', exchangeRateConfigRouter);
 app.use('/api/v1/admin', exchangeRateAdminRouter);
 app.use('/api/v1/jobs', jobsRoutes);
 app.use('/api/v1/approvals', approvalsRoutes);
+app.use('/api/v1/hjt', hjtRoutes);
 
 // ── 404 handler ────────────────────────────────────────────────
 app.use((_req, res) => {

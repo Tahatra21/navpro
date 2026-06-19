@@ -44,6 +44,24 @@
   z-index: 1;
 }
 
+.rowWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+  height: 100%;
+}
+
+.groupDivider {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--muted-foreground) 75%, transparent);
+  padding: 0 0.15rem 0 0.35rem;
+  user-select: none;
+}
+
 .item {
   position: relative;
   flex: 0 0 auto;

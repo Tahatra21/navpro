@@ -69,11 +69,11 @@ export default function ApprovalsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Approval Queue</h1>
+        <h1 className="text-3xl font-bold text-foreground">Approval KKF</h1>
         <p className="text-muted-foreground text-sm mt-1">
           {useV2
             ? "KKF yang menunggu tindakan Anda (Asman / Manager) — BRD v2.0"
-            : "Daftar proyek yang menunggu persetujuan sesuai role Anda, diurutkan berdasarkan SLA Due"}
+            : "Daftar proyek KKF yang menunggu persetujuan sesuai role Anda, diurutkan berdasarkan SLA Due"}
         </p>
       </div>
 

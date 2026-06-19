@@ -248,6 +248,10 @@ export class NavproApi {
     return this.request<PortfolioResponse>("GET", "/api/v1/dashboard/portfolio?compact=true");
   }
 
+  getDashboardHjtSummary() {
+    return this.request<import("@/types/hjt").HjtDashboardSummary>("GET", "/api/v1/dashboard/hjt-summary");
+  }
+
   getDashboardApprovalQueue() {
     return this.request<{ items: ApprovalQueueItem[] }>(
       "GET",
@@ -681,6 +685,233 @@ export class NavproApi {
       `/api/v1/admin/system-config/${encodeURIComponent(key)}`,
       { val }
     );
+  }
+
+  // ── HJT module ────────────────────────────────────────────────
+  hjtListRegions() {
+    return this.request<{ regions: import("@/types/hjt").HjtRegion[] }>("GET", "/api/v1/hjt/regions");
+  }
+
+  hjtListProducts(q?: string) {
+    const qs = q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : "";
+    return this.request<{ products: import("@/types/hjt").HjtProduct[] }>("GET", `/api/v1/hjt/products${qs}`);
+  }
+
+  hjtListTariffVersions(status?: string) {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+    return this.request<{ versions: Array<{ id: string; kepdir_ref: string; status: string }> }>(
+      "GET",
+      `/api/v1/hjt/tariff-versions${qs}`
+    );
+  }
+
+  hjtListQuotations(params?: { search?: string; status?: string; limit?: number; offset?: number }) {
+    const q = new URLSearchParams();
+    if (params?.search?.trim()) q.set("search", params.search.trim());
+    if (params?.status) q.set("status", params.status);
+    if (params?.limit != null) q.set("limit", String(params.limit));
+    if (params?.offset != null) q.set("offset", String(params.offset));
+    const qs = q.toString();
+    return this.request<{
+      quotations: import("@/types/hjt").HjtQuotation[];
+      total: number;
+      limit?: number;
+      offset?: number;
+    }>("GET", `/api/v1/hjt/quotations${qs ? `?${qs}` : ""}`);
+  }
+
+  hjtCreateQuotation(body: Partial<import("@/types/hjt").HjtQuotation>) {
+    return this.request<{ quotation: import("@/types/hjt").HjtQuotation }>(
+      "POST",
+      "/api/v1/hjt/quotations",
+      body
+    );
+  }
+
+  hjtGetQuotation(id: string) {
+    return this.request<import("@/types/hjt").HjtQuotationFull>("GET", `/api/v1/hjt/quotations/${id}`);
+  }
+
+  hjtUpdateQuotation(id: string, body: Partial<import("@/types/hjt").HjtQuotation>) {
+    return this.request<{ quotation: import("@/types/hjt").HjtQuotation }>(
+      "PATCH",
+      `/api/v1/hjt/quotations/${id}`,
+      body
+    );
+  }
+
+  hjtUpsertLine(quotationId: string, line: Partial<import("@/types/hjt").HjtQuotationLine>) {
+    return this.request<{ line: import("@/types/hjt").HjtQuotationLine }>(
+      "POST",
+      `/api/v1/hjt/quotations/${quotationId}/lines`,
+      line
+    );
+  }
+
+  hjtDeleteLine(quotationId: string, lineId: string) {
+    return this.request("DELETE", `/api/v1/hjt/quotations/${quotationId}/lines/${lineId}`);
+  }
+
+  hjtUpsertExpense(quotationId: string, expense: Partial<import("@/types/hjt").HjtOtherExpense>) {
+    return this.request<{ expense: import("@/types/hjt").HjtOtherExpense }>(
+      "POST",
+      `/api/v1/hjt/quotations/${quotationId}/other-expenses`,
+      expense
+    );
+  }
+
+  hjtDeleteExpense(quotationId: string, expenseId: string) {
+    return this.request("DELETE", `/api/v1/hjt/quotations/${quotationId}/other-expenses/${expenseId}`);
+  }
+
+  hjtCalculate(quotationId: string, mode?: import("@/types/hjt").HjtCalcMode) {
+    const qs = mode ? `?mode=${mode}` : "";
+    return this.request<import("@/types/hjt").HjtCalculateResult>(
+      "POST",
+      `/api/v1/hjt/quotations/${quotationId}/calculate${qs}`
+    );
+  }
+
+  hjtLastmileKkf(body: Record<string, unknown>) {
+    return this.request<{ lastmile: import("@/types/hjt").HjtLastmileResult }>(
+      "POST",
+      "/api/v1/hjt/lastmile-kkf",
+      body
+    );
+  }
+
+  hjtSubmitQuotation(
+    id: string,
+    body?: { harga_final?: number; floor_override_justification?: string }
+  ) {
+    return this.request("POST", `/api/v1/hjt/quotations/${id}/submit`, body ?? {});
+  }
+
+  hjtApproveQuotation(id: string, note?: string) {
+    return this.request("POST", `/api/v1/hjt/quotations/${id}/approve`, { note });
+  }
+
+  hjtRejectQuotation(id: string, note: string) {
+    return this.request("POST", `/api/v1/hjt/quotations/${id}/reject`, { note });
+  }
+
+  hjtApprovalQueue() {
+    return this.request<{ items: import("@/types/hjt").HjtQuotation[] }>("GET", "/api/v1/hjt/approvals/queue");
+  }
+
+  hjtApprovalTimeline(id: string) {
+    return this.request<{ approvals: import("@/types/hjt").HjtApprovalStep[] }>(
+      "GET",
+      `/api/v1/hjt/quotations/${id}/approvals`
+    );
+  }
+
+  async hjtDownloadExport(id: string, format: "pdf" | "xlsx") {
+    const ext = format === "pdf" ? "pdf" : "xlsx";
+    const blob = await this.requestBlob(`/api/v1/hjt/quotations/${id}/export.${ext}`);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `HJT_${id.slice(0, 8)}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  hjtAdminTariffGrid(params: { version: string; q?: string; limit?: number; offset?: number }) {
+    const q = new URLSearchParams();
+    q.set("version", params.version);
+    if (params.q?.trim()) q.set("q", params.q.trim());
+    if (params.limit != null) q.set("limit", String(params.limit));
+    if (params.offset != null) q.set("offset", String(params.offset));
+    return this.request<{ items: Array<Record<string, unknown>> }>(
+      "GET",
+      `/api/v1/hjt/admin/tariff?${q.toString()}`
+    );
+  }
+
+  hjtAdminCreateVersion(body: { kepdir_ref: string; effective_date: string }) {
+    return this.request("POST", "/api/v1/hjt/admin/tariff-versions", body);
+  }
+
+  hjtAdminActivateVersion(id: string) {
+    return this.request("POST", `/api/v1/hjt/admin/tariff-versions/${id}/activate`);
+  }
+
+  hjtAdminIbbc(params?: { version?: string }) {
+    const q = params?.version ? `?version=${encodeURIComponent(params.version)}` : "";
+    return this.request<{ items: Array<Record<string, unknown>> }>("GET", `/api/v1/hjt/admin/ibbc${q}`);
+  }
+
+  hjtAdminOverhead(params?: { version?: string }) {
+    const q = params?.version ? `?version=${encodeURIComponent(params.version)}` : "";
+    return this.request<{ items: Array<Record<string, unknown>> }>("GET", `/api/v1/hjt/admin/overhead${q}`);
+  }
+
+  async hjtDownloadImportTemplate() {
+    const blob = await this.requestBlob("/api/v1/hjt/admin/import/template");
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "hjt-tariff-template.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async hjtUploadImport(versionId: string, file: File) {
+    const form = new FormData();
+    form.append("version_id", versionId);
+    form.append("file", file);
+    const token = this.getToken();
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`${this.baseUrl}/api/v1/hjt/admin/import`, {
+      method: "POST",
+      headers,
+      body: form,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error((data as { message?: string }).message || "Upload gagal");
+    }
+    return data as { import: { id: string }; summary: Record<string, unknown> };
+  }
+
+  hjtImportPreview(importId: string) {
+    return this.request<{
+      import: { valid_rows?: number; error_rows?: number };
+      rows: Array<{ row_no: number; product_name: string; region_code: string; row_status: string }>;
+    }>("GET", `/api/v1/hjt/admin/import/${importId}/preview`);
+  }
+
+  hjtImportCommit(importId: string) {
+    return this.request<{ committed: number }>("POST", `/api/v1/hjt/admin/import/${importId}/commit`);
+  }
+
+  hjtCreateKkfProject(quotationId: string) {
+    return this.request<{ project_id: string; project_code: string }>(
+      "POST",
+      `/api/v1/hjt/quotations/${quotationId}/create-project`
+    );
+  }
+
+  hjtLookupTariff(params: { product: number; region: number; version?: string }) {
+    const q = new URLSearchParams({
+      product: String(params.product),
+      region: String(params.region),
+    });
+    if (params.version) q.set("version", params.version);
+    return this.request<{
+      found?: boolean;
+      backbone: number;
+      uplink: number;
+      vas: number;
+      access: number;
+      tarif: number;
+    }>("GET", `/api/v1/hjt/tariff?${q.toString()}`);
   }
 }
 

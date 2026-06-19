@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -96,13 +97,25 @@ export function RevenueTariffStep({
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-xl font-bold text-foreground">Langkah 5: Kalkulator Tarif → Revenue</h2>
+        <h2 className="text-xl font-bold text-foreground">Langkah 5: Estimasi Revenue (KKF)</h2>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Isi <strong>parameter komersial</strong> (paket, bandwidth, SLA, diskon). Revenue dihasilkan otomatis —
-          bukan input harsat manual. Klik <strong>Hitung Tarif</strong>, tinjau preview, lalu{" "}
-          <strong>Terapkan ke proyek</strong>.
+          Perkiraan revenue komersial untuk kelayakan investasi — bukan penawaran resmi HJT.
         </p>
       </div>
+
+      <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-950">
+        Untuk penawaran connectivity resmi sesuai kepdir, gunakan modul{" "}
+        <Link href="/hjt/quotations" className="font-semibold underline">
+          Penawaran HJT
+        </Link>
+        .
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Isi <strong>parameter komersial</strong> (paket, bandwidth, SLA, diskon). Revenue dihasilkan otomatis —
+        bukan input harsat manual. Klik <strong>Hitung Tarif</strong>, tinjau preview, lalu{" "}
+        <strong>Terapkan ke proyek</strong>.
+      </p>
 
       <div className="bg-muted/30 border border-border rounded-lg p-4 space-y-3">
         <p className="text-xs font-semibold text-primary flex items-center gap-1.5">

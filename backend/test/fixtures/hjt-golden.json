@@ -1,0 +1,132 @@
+[
+  {
+    "id": "mode-a-inet-intim",
+    "mode": "standard",
+    "product_name": "Inet Corp IX&IIX (1–10 Mbps)",
+    "region_code": "INTIM",
+    "capacity": 1,
+    "qty": 1,
+    "scheme": "Subscription",
+    "duration_years": 1,
+    "lastmile": 0,
+    "expected": { "backbone": 97000, "uplink": 8800, "harga_dasar": 105800 }
+  },
+  {
+    "id": "mode-a-clear-sumatera",
+    "mode": "standard",
+    "product_name": "Clear Channel (TDM) (1–10 Mbps)",
+    "region_code": "Sumatera",
+    "capacity": 1,
+    "qty": 1,
+    "lastmile": 0,
+    "tariff": { "backbone": 222200, "uplink": 0, "vas": 0 },
+    "expected": { "backbone": 222200, "uplink": 0, "harga_dasar": 222200 }
+  },
+  {
+    "id": "mode-a-ipvpn-jb",
+    "mode": "standard",
+    "product_name": "IP VPN (1–10 Mbps)",
+    "region_code": "Jawa - Bali",
+    "capacity": 2,
+    "qty": 1,
+    "lastmile": 0,
+    "tariff": { "backbone": 20200, "uplink": 0, "vas": 0 },
+    "expected": { "backbone": 20200, "uplink": 0, "harga_dasar": 40400 }
+  },
+  {
+    "id": "mode-a-route-zero-uplink",
+    "mode": "standard",
+    "region_code": "Sumkal - Jabodetabek",
+    "is_route": true,
+    "tariff": { "backbone": 50000, "uplink": 1000, "vas": 2000 },
+    "expected": { "backbone": 50000, "uplink": 0, "vas": 0 }
+  },
+  {
+    "id": "mode-a-subscription-grand",
+    "mode": "standard",
+    "lines": [{ "harga_dasar": 105800 }],
+    "scheme": "Subscription",
+    "duration_years": 1,
+    "expected": { "total_per_month": 105800, "grand_total_hjt": 1269600 }
+  },
+  {
+    "id": "mode-b-disc-port-max",
+    "mode": "revenue_sharing",
+    "disc_port": 0.65,
+    "valid": false,
+    "error_code": "DISC_PORT_MAX"
+  },
+  {
+    "id": "mode-b-target-irr-wacc",
+    "mode": "revenue_sharing",
+    "target_irr": 0.05,
+    "wacc": 0.1043,
+    "valid": false,
+    "error_code": "TARGET_IRR_BELOW_WACC"
+  },
+  {
+    "id": "mode-a-metronet-qty2",
+    "mode": "standard",
+    "capacity": 1,
+    "qty": 2,
+    "tariff": { "backbone": 45000, "uplink": 5000, "vas": 0 },
+    "lastmile": 1000,
+    "expected": { "harga_dasar": 101000 }
+  },
+  {
+    "id": "mode-a-otc-scheme",
+    "mode": "standard",
+    "scheme": "OTC",
+    "duration_years": 1,
+    "lines": [{ "harga_dasar": 500000 }],
+    "expected": { "grand_total_hjt": 500000 }
+  },
+  {
+    "id": "lastmile-bcr-feasible",
+    "mode": "lastmile",
+    "capex": 50000000,
+    "monthly_revenue": 8000000,
+    "expected": { "is_feasible": true, "bcr_min": 1.4 }
+  },
+  {
+    "id": "margin-floor-10pct",
+    "mode": "standard",
+    "lines": [{ "harga_dasar": 100000 }],
+    "margin_floor": 0.1,
+    "expected": { "offer_floor": 110000 }
+  },
+  {
+    "id": "mode-a-jabodetabek-inet",
+    "mode": "standard",
+    "tariff": { "backbone": 105000, "uplink": 9200, "vas": 0 },
+    "capacity": 1,
+    "qty": 1,
+    "lastmile": 0,
+    "expected": { "harga_dasar": 114200 }
+  },
+  {
+    "id": "mode-a-capacity-10",
+    "mode": "standard",
+    "capacity": 10,
+    "qty": 1,
+    "tariff": { "backbone": 97000, "uplink": 8800, "vas": 0 },
+    "lastmile": 0,
+    "expected": { "harga_dasar": 1058000 }
+  },
+  {
+    "id": "mode-b-disc-backbone",
+    "mode": "revenue_sharing",
+    "disc_backbone": 0.1,
+    "disc_port": 0.05,
+    "valid": true
+  },
+  {
+    "id": "other-expense-total",
+    "mode": "standard",
+    "lines": [{ "harga_dasar": 100000 }],
+    "other_expenses": [{ "total": 50000 }],
+    "scheme": "Subscription",
+    "duration_years": 1,
+    "expected": { "grand_total_all": 1250000 }
+  }
+]
